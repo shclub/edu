@@ -70,12 +70,22 @@ Jenkins 를 설치하고 CI 환경을 구성한다.
    ```
    
    3.6) admin 초기 패스워드 확인 및 복사
+   ```
    cat /var/lib/jenkins/secrets/initialAdminPassword
+   ```
    
    3.7) 젠킨스 서버 접속
    이제 브라우져로 http://(본인서버ip):9000으로  접속하면 아래와 같은 화면이 나온다.
    패스워드에 위 명령으로 확인한 문자열을 입력한다.
    Install Suggested Plugin 선택하고 Plugin 설치 한다. 아래 와 같이 화면이 나오면 성공.
+   
+   3.8) 추가 플러그인 설치
+   ```
+   Manage Jenkins 메뉴 선택 -> Manage Plugin -> Avaiable tab 이동
+   git 으로 검색 후 Git Parameter Plug-In , GitHub Integration Plugin 선택
+   docker 로 검색 후 	Docker Pipeline , Docker plugin , docker-build-step 선택
+   설치
+   ```
 
    ###  4) Docker 를 설치한다 ( https://shanepark.tistory.com/237 )
 
@@ -135,7 +145,11 @@ Jenkins 를 설치하고 CI 환경을 구성한다.
    
    7.3) 빌드 실행
    
-   7.4) Docker pull 및 
+   7.4) Docker pull 및 실행 테스트
+   
+   
+   
+   * 과제 : github webkook를 통한 빌드 자동화
 
    
 
