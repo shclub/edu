@@ -1,8 +1,8 @@
-# < php base image 생성 >
+# 1일차
 
  
 
-> appdu 에서 사용되는 php base image 를 생성 관련 설명이다.
+> Jenkins 를 설치하고 CI 환경을 구성한다.
 
  
 
