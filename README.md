@@ -140,6 +140,8 @@ Jenkins 를 설치하고 CI 환경을 구성한다.
    6.2) Docker push 테스트를 한다.
         docker tag hello-world (본인id)/hello-world
         docker push (본인id)/hello-world
+        권한 에러 발생시
+        docker login 하여 연결
    ```
        
    * 도커허브 본인 계정에서 도커 이미지 생성 확인
@@ -200,9 +202,12 @@ Jenkins 를 설치하고 CI 환경을 구성한다.
    7.5) 빌드 실행
    
    7.6) Docker pull 및 실행 테스트
+        docker pull shclub/edu
+        docker run -p 40003:8080 shclub/edu
+        브라우저에서 http://(본인ip):40003 호출하여 Hello World 확인
    
    ```
-   * 과제 : github webkook를 통한 빌드 자동화
+   * 과제 : github webhook를 통한 빌드 자동화
 
    
 
