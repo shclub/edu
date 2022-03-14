@@ -119,6 +119,11 @@ Jenkins 를 설치하고 CI 환경을 구성한다.
    ```
    docker run hello-world
    ```
+   4.7) 젠킨스의 pipeline 으로 docker 를 실행하기 위해 권한을 부여한다.
+   ```
+   /usr/bin/docker 의 사용자그룹을 jenkins 에 추가해준다
+   usermod -aG root jenkins
+   ```
    
    ###  5) GitHub 계정을 생성한다. 
 
@@ -140,13 +145,31 @@ Jenkins 를 설치하고 CI 환경을 구성한다.
    ###  7) Jenkins 설정 ( https://cwal.tistory.com/21 )
 
    7.1) 일반 사용자 계정을 생성한다.
+        
+   7.2) github token 생성하기.
+        jenkins 에서 github repository 인증을 위해 사용할 token 을 생성한다.
+        settings - Developer settings - Personal access tokens - Generate new token 선택해서 토큰 생성
+        repo, admin:repo_hook 만 체크하고 생성한다
+      
+   7.3) Credential을 생성한다.
+        ```
+        github 계정
+        도커 계정
+        ```
+   7.4) 파이프 라인을 구성한다.
+        메인 화면 좌측 메뉴에서 새로운 Item 선택
+        item 이름을 입력하고 Pipeline 을 선택 후에 OK
+        Build Triggers - GitHub hook trigger for GITScm polling 선택
+        https://github.com/shclub/edu.git
+        파이프 라인을 아래와 같이 설정한다.
+        Repository URL 은 위에서 사용한 저장소 url 을 입력한다.
+        branch 는 실제 github 저장소에 push 되었을 때 배포가 이루어질 branch 를 선택한다.
+        Script Path 는 github 저장소의 Jenkinsfile 의 경로를 적어준다.
+        credential에는 github 계정을 넣어준다ㅏ.
+
+   7.5) 빌드 실행
    
-   7.2) 파이프 라인을 구성한다.
-   
-   7.3) 빌드 실행
-   
-   7.4) Docker pull 및 실행 테스트
-   
+   7.6) Docker pull 및 실행 테스트
    
    
    * 과제 : github webkook를 통한 빌드 자동화
