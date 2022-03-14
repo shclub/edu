@@ -134,14 +134,14 @@ Jenkins 를 설치하고 CI 환경을 구성한다.
    * 샘플은 pyhon flask 로 구성
    
    ###  6) Docker Hub 계정을 생성한다. 
-
+   ```
    6.1) https://hub.docker.com/ 접속하고 계정 생성 ( 향후 사내에서 개발시는 d-space Nexus 사용 )
    6.2) Docker push 테스트를 한다.
-        ```
         docker tag hello-world (본인id)/hello-world
         docker push (본인id)/hello-world
-        ```
-        도커허브 본인 계정에서 도커 이미지 생성 확인
+   ```
+       
+   * 도커허브 본인 계정에서 도커 이미지 생성 확인
    
    ###  7) Jenkins 설정 ( https://cwal.tistory.com/21 )
 
