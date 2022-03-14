@@ -163,12 +163,13 @@ Jenkins 를 설치하고 CI 환경을 구성한다.
         
         Manage Jenkins -> Manage Credential -> System -> Global Credential  로 이동한다.
         Add Credential를 클릭하면 계정 설정하는 화면이 나온다.
-        Kind는  GitHub는  secret 선택 Docker Hub는 Username with password 를 선택해주시면 됩니다
-        Username 은 본인의 Github/Docker 아이디를 선택해주시면 됩니다
+        Kind는  Username with password 를 선택해주시면 됩니다
+        Username 은 본인의 Github/Docker 아이디를 선택해주시면 됩니다.
+        ID는 본인이 원하는 식별자를 넣어준다.
         
         
         github 계정 생성
-        secret은 이전에 발급받은 Github Token 값을 복사해주시면 됩니다. 
+        password는 이전에 발급받은 Github Token 값을 복사해주시면 됩니다. 
         
         * github 비밀번호 입력하면 안됨
         
