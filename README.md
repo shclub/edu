@@ -144,7 +144,13 @@ Jenkins 를 설치하고 CI 환경을 구성한다.
    
    ###  7) Jenkins 설정 ( https://cwal.tistory.com/21 )
 
-   7.1) 일반 사용자 계정을 생성한다.
+   7.1) 일반 사용자 계정을 생성한다 ( https://hongddo.tistory.com/121 )
+        Manage Jenkins -> Manage Users  로 이동한다. 사용자 생성 버튼 클릭 후 사용자 생성.
+        
+        계정 별 권한 부여방법
+        Configure Global Security로 이동하여 생성한 계정을 입력하고 Add 클릭
+        추가후 권한 설정은 일단 Ovrall 체크 후 저장.
+
         
    7.2) github token 생성하기.
         jenkins 에서 github repository 인증을 위해 사용할 token 을 생성한다.
@@ -152,9 +158,19 @@ Jenkins 를 설치하고 CI 환경을 구성한다.
         repo, admin:repo_hook 만 체크하고 생성한다
       
    7.3) Credential을 생성한다.
+        Manage Jenkins -> Mange Credential -> System -> Global Credential  로 이동한다.
+        Add Credential를 클릭하면 계정 설정하는 화면이 나온다.
+        Kind는  GitHub는  secret 선택 Docker Hub는 Username with password 를 선택해주시면 됩니다
+        Username 은 본인의 Github/Docker 아이디를 선택해주시면 됩니다
+        
         ```
-        github 계정
+        github 계정 생성
+        secret은 이전에 발급받은 Github Token 값을 복사해주시면 됩니다. 
+        ```
+        * github 비밀번호 입력하면 안됨
+        ```
         도커 계정
+        도커 비밀번호는 도커 계정 비밀번호를 입력한다.
         ```
    7.4) 파이프 라인을 구성한다.
         메인 화면 좌측 메뉴에서 새로운 Item 선택
