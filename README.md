@@ -1,5 +1,5 @@
 # < 1일차 >
- 
+--- 
 Jenkins 를 설치하고 CI 환경을 구성한다.
 
  ##  1.1 kt cloud 에서 VM ( Ununtu ) 을 생성한다. 
@@ -22,7 +22,7 @@ Jenkins 를 설치하고 CI 환경을 구성한다.
    
    
    ###  3) Jenkins를 설치한다 ( https://velog.io/@ifthenelse/jenkins-설치하기-ubuntu-20.04 )
-   3.1) 저장소 키 다운로드
+    3.1) 저장소 키 다운로드
    ```
    wget -q -O - https://pkg.jenkins.io/debian/jenkins.io.key | sudo apt-key add -
    echo deb http://pkg.jenkins.io/debian-stable binary/ | sudo tee /etc/apt/sources.list.d/jenkins.list
