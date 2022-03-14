@@ -163,15 +163,15 @@ Jenkins 를 설치하고 CI 환경을 구성한다.
         Kind는  GitHub는  secret 선택 Docker Hub는 Username with password 를 선택해주시면 됩니다
         Username 은 본인의 Github/Docker 아이디를 선택해주시면 됩니다
         
-        ```
+        
         github 계정 생성
         secret은 이전에 발급받은 Github Token 값을 복사해주시면 됩니다. 
-        ```
+        
         * github 비밀번호 입력하면 안됨
-        ```
+        
         도커 계정
         도커 비밀번호는 도커 계정 비밀번호를 입력한다.
-        ```
+        
    7.4) 파이프 라인을 구성한다.
         메인 화면 좌측 메뉴에서 새로운 Item 선택
         item 이름을 입력하고 Pipeline 을 선택 후에 OK
