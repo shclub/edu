@@ -122,7 +122,8 @@ Jenkins 를 설치하고 CI 환경을 구성한다.
    4.7) 젠킨스의 pipeline 으로 docker 를 실행하기 위해 권한을 부여한다.
    ```
    /usr/bin/docker 의 사용자그룹을 jenkins 에 추가해준다
-   usermod -aG root jenkins
+   usermod -aG docker jenkins
+   service restart jenkins
    ```
    
    ###  5) GitHub 계정을 생성한다. 
