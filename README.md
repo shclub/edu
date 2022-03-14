@@ -123,7 +123,7 @@ Jenkins 를 설치하고 CI 환경을 구성한다.
    ```
    /usr/bin/docker 의 사용자그룹을 jenkins 에 추가해준다
    usermod -aG docker jenkins
-   service restart jenkins
+   service jenkins restart
    ```
    
    ###  5) GitHub 계정을 생성한다. 
