@@ -9,17 +9,19 @@ Jenkins 를 설치하고 CI 환경을 구성한다.
   ```
 
    ###  1) Port Forwarding 설정
+   ```
    ssh : 22 -> 22222
    jenkins : 9000 -> 9000
    flask web : 8080 -> 40003
    k8s  : 8443 -> 8443
-   
+   ```
    ###  2) 터미널 프로그램으로 서버에 접속하고 비밀번호를 변경한다.
-   >ssh root@ip -p 22222
-   >passwd
+   ```
+   ssh root@ip -p 22222
+   passwd
     old password:
     new password:
-   
+   ```
    
    ###  3) Jenkins를 설치한다 ( https://velog.io/@ifthenelse/jenkins-설치하기-ubuntu-20.04 )
    3.1) 저장소 키 다운로드
