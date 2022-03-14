@@ -3,7 +3,7 @@
 Jenkins 를 설치하고 CI 환경을 구성한다.
 
  ##  1.1 kt cloud 에서 VM ( Ununtu ) 을 생성한다. 
-  기준 : 16 core , 32G
+  기준 : 8 core , 16G
   ```
    jenkins , k3s , ArgoCD , Pinpoint 설치 예정
   ```
