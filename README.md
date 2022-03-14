@@ -19,8 +19,7 @@ Jenkins 를 설치하고 CI 환경을 구성한다.
    ```
    ssh root@ip -p 22222
    passwd
-    old password:
-    new password:
+    new Unix password:
    ```
    
    ###  3) Jenkins를 설치한다 ( https://velog.io/@ifthenelse/jenkins-설치하기-ubuntu-20.04 )
