@@ -130,7 +130,12 @@ Jenkins 를 설치하고 CI 환경을 구성한다.
    ###  7) Jenkins 설정 ( https://cwal.tistory.com/21 )
 
    7.1) 일반 사용자 계정을 생성한다.
+   
    7.2) 파이프 라인을 구성한다.
+   
+   7.3) 빌드 실행
+   
+   7.4) Docker pull 및 
 
    
 
