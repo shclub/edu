@@ -126,10 +126,11 @@ Jenkins 를 설치하고 CI 환경을 구성한다.
    ```
    
    ###  5) GitHub 계정을 생성한다. 
-
+   ```
    5.1) https://github.com/ 접속하고 계정 생성 ( 향후 사내에서 개발시는 d-space GitLab 사용 )
    5.2) Repository를 하나 생성한다.
    5.3) https://github.com/shclub/edu 폴더의 파일을 복사하여 본인이 생성한 Repository에 신규 화일을 생성한다.
+   ```
    * 샘플은 pyhon flask 로 구성
    
    ###  6) Docker Hub 계정을 생성한다. 
@@ -146,23 +147,25 @@ Jenkins 를 설치하고 CI 환경을 구성한다.
 
    7.1) 일반 사용자 계정을 생성한다 ( https://hongddo.tistory.com/121 )
         Manage Jenkins -> Manage Users  로 이동한다. 사용자 생성 버튼 클릭 후 사용자 생성.
-        
+        ```
         계정 별 권한 부여방법
         Configure Global Security로 이동하여 생성한 계정을 입력하고 Add 클릭
         추가후 권한 설정은 일단 Ovrall 체크 후 저장.
-
+        ```
         
    7.2) github token 생성하기.
+        ```
         jenkins 에서 github repository 인증을 위해 사용할 token 을 생성한다.
         settings - Developer settings - Personal access tokens - Generate new token 선택해서 토큰 생성
         repo, admin:repo_hook 만 체크하고 생성한다
-      
+        ```
    7.3) Credential을 생성한다.
-        Manage Jenkins -> Mange Credential -> System -> Global Credential  로 이동한다.
+        ```
+        Manage Jenkins -> Manage Credential -> System -> Global Credential  로 이동한다.
         Add Credential를 클릭하면 계정 설정하는 화면이 나온다.
         Kind는  GitHub는  secret 선택 Docker Hub는 Username with password 를 선택해주시면 됩니다
         Username 은 본인의 Github/Docker 아이디를 선택해주시면 됩니다
-        
+        ```
         
         github 계정 생성
         secret은 이전에 발급받은 Github Token 값을 복사해주시면 됩니다. 
