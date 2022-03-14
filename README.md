@@ -173,15 +173,24 @@ Jenkins 를 설치하고 CI 환경을 구성한다.
         도커 비밀번호는 도커 계정 비밀번호를 입력한다.
         
    7.4) 파이프 라인을 구성한다.
+        
         메인 화면 좌측 메뉴에서 새로운 Item 선택
+        
         item 이름을 입력하고 Pipeline 을 선택 후에 OK
+        
         Build Triggers - GitHub hook trigger for GITScm polling 선택
+        
         https://github.com/shclub/edu.git
+        
         파이프 라인을 아래와 같이 설정한다.
+        
         Repository URL 은 위에서 사용한 저장소 url 을 입력한다.
+        
         branch 는 실제 github 저장소에 push 되었을 때 배포가 이루어질 branch 를 선택한다.
+        
         Script Path 는 github 저장소의 Jenkinsfile 의 경로를 적어준다.
-        credential에는 github 계정을 넣어준다ㅏ.
+        
+        credential에는 github 계정을 넣어준다.
 
    7.5) 빌드 실행
    
