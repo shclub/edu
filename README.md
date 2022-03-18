@@ -13,11 +13,14 @@ CI 구성을 위해 Jenkins와 GitHub 그리고 Docker Hub를 연계하는 방�
  
 실제 CI 과정에선 코드 리뷰나 테스트 등의 과정이 포함되어야 하나 이번 실습에선 생략하도록 한다.
 
- 
+<br />
 
 ##  VM 생성  
+---
 
 ### kt cloud 에서 VM ( Ubuntu 18.04 ) 을 생성한다. 
+---
+
   기준 : 8 core , 16G  
   설치 예정
   ```
@@ -29,41 +32,46 @@ zone은 KOR-Seoul M2 선택 후 서버 이름을 입력하고 사양을 선택�
 
 오른쪽 하단에 Launch를 클릭하여 vm을 생성한다. 
 
-![](./assets/kt_cloud_vm_create.png)
+<img src="./assets/kt_cloud_vm_create.png" style="width: 80%; height: auto;"/>
 
 5분정도 경과하면 Alarm 아이콘에  vm생성 및 root 비밀번호를 확인 할 수 있다.  
 비밀번호는 반드시 저장한다. 
 
-![](./assets/vm_created.png)  
+<!--![](./assets/vm_created.png)-->
+
+<img src="./assets/vm_created.png" style="width: 60%; height: auto;"/>
 
 
-### Private IP를 생성 한다.   
+### Private IP를 생성 한다.
+---   
 zone은  VM 생성 했던 존을 선택한다. ( KOR-Seoul M2 )
 
-![](./assets/private_ip_create.png)
+<img src="./assets/private_ip_create.png" style="width: 80%; height: auto;"/>
 
 Launch 를 클릭하면 IP가 생성이 된다.  
-![](./assets/private_ip_info.png)  
 
+![](./assets/private_ip_info.png)  
 
 생성된 IP의 오른쪽 끝을 클릭하여 식별할 수 있는 이름을 만들어준다.
 
-![](./assets/private_ip_more.png)
+<img src="./assets/private_ip_more.png" style="width: 60%; height: auto;"/>
 
 변경 완료
 ![](./assets/private_ip_modify.png)
- 
-### Port Forwarding 설정한다.
+
+### Port Forwarding을 설정한다.
+---
 VM 과 Private IP를 매핑하면 외부에서 접속 가능 하다.  
 
 서버를 선택하고  Connection String을 선택한다.
-![](./assets/port_forwarding1.png)
+<!--![](./assets/port_forwarding1.png)-->
+ <img src="./assets/port_forwarding1.png" style="width: 80%; height: auto;"/>
 
 - 사설 포트 : vm 서버의 포트  
 - 공인 포트 : 외부에 노출할 포트  
 - 공인 IP : 외부에서 접속할 IP ( 위에서 생성한 Private IP ) 
 
-![](./assets/port_forwarding2.png)
+ <img src="./assets/port_forwarding2.png" style="width: 80%; height: auto;"/>
 
 추가 버튼을 클릭하여 생성하고 아래 포트들도 반복하여 설정한다.
 
@@ -75,6 +83,8 @@ k8s  : 8443 -> 8443
 ```
 
 ### 터미널 프로그램으로 서버에 접속하고 비밀번호를 변경한다.
+---
+
    Mac 에서는 Iterm2, 윈도우는 Putty 추천  
 
 터미널에서 아래 명령어를 입력하여 로그인 한다.  
