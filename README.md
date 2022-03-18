@@ -1,7 +1,19 @@
 # 1일차 
  
-**목표 : Jenkins 를 설치하고 CI 환경을 구성한다.**  
+CI 구성을 위해 Jenkins와 GitHub 그리고 Docker Hub를 연계하는 방법에 대해 설명한다.   
 
+![](./assets/jenkins_ci_start.png)
+
+1. 개발자가 자신이 작업한 코드를 GitHub Repository에 반영
+
+2. Jenkins는 해당 Repository를 Checkout하여 Docker Image로 빌드
+
+3. 빌드 완료 후 Docker Hub로 Image를 Push
+
+ 
+실제 CI 과정에선 코드 리뷰나 테스트 등의 과정이 포함되어야 하나 이번 실습에선 생략하도록 한다.
+
+ 
 
 ##  VM 생성  
 
@@ -327,23 +339,23 @@ setting 으로 이동하여 Make public 클릭후 repository 이름을 입력후
 ![](./assets/docker_hub_make_public.png)
 
 ## Jenkins 설정 ( https://cwal.tistory.com/21 )
-   ```
-   7.1) 일반 사용자 계정을 생성한다 ( https://hongddo.tistory.com/121 )
-        Manage Jenkins -> Manage Users  로 이동한다. 사용자 생성 버튼 클릭 후 사용자 생성.
+
+### 일반 사용자 계정을 생성한다 ( https://hongddo.tistory.com/121 )
+    Manage Jenkins -> Manage Users  로 이동한다. 사용자 생성 버튼 클릭 후 사용자 생성.
         
-        계정 별 권한 부여방법
-        Configure Global Security로 이동하여 생성한 계정을 입력하고 Add 클릭
-        추가후 권한 설정은 일단 Ovrall 체크 후 저장.
+    계정 별 권한 부여방법
+    Configure Global Security로 이동하여 생성한 계정을 입력하고 Add 클릭
+    추가후 권한 설정은 일단 Ovrall 체크 후 저장.
+     
         
-        
-   7.2) github token 생성하기.
-        
+### github token 생성하기
         jenkins 에서 github repository 인증을 위해 사용할 token 을 생성한다.
         settings - Developer settings - Personal access tokens - Generate new token 선택해서 토큰 생성
         repo, admin:repo_hook 만 체크하고 생성한다
         
-   7.3) Credential을 생성한다.
-        
+### GitHub Credential을 생성한다.
+        Jenkins가 GitHub에서 Code를 가져올 수 있도록 Credential을 추가하자
+
         Manage Jenkins -> Manage Credential -> System -> Global Credential  로 이동한다.
         Add Credential를 클릭하면 계정 설정하는 화면이 나온다.
         Kind는  Username with password 를 선택해주시면 됩니다
@@ -359,7 +371,7 @@ setting 으로 이동하여 Make public 클릭후 repository 이름을 입력후
         도커 계정
         도커 비밀번호는 도커 계정 비밀번호를 입력한다.
         
-   7.4) 파이프 라인을 구성한다.
+### 파이프 라인을 구성한다.
         
         메인 화면 좌측 메뉴에서 새로운 Item 선택
         
@@ -379,13 +391,13 @@ setting 으로 이동하여 Make public 클릭후 repository 이름을 입력후
         
         credential에는 github 계정을 넣어준다.
 
-   7.5) 빌드 실행
+### 빌드 실행
    
-   7.6) Docker pull 및 실행 테스트
+### Docker pull 및 실행 테스트
         docker pull shclub/edu
         docker run -p 40003:8080 shclub/edu
         브라우저에서 http://(본인ip):40003 호출하여 Hello World 확인
    
-   ```
+   
    * 과제 : github webhook를 통한 빌드 자동화
 
