@@ -341,63 +341,175 @@ setting 으로 이동하여 Make public 클릭후 repository 이름을 입력후
 ## Jenkins 설정 ( https://cwal.tistory.com/21 )
 
 ### 일반 사용자 계정을 생성한다 ( https://hongddo.tistory.com/121 )
-    Manage Jenkins -> Manage Users  로 이동한다. 사용자 생성 버튼 클릭 후 사용자 생성.
-        
-    계정 별 권한 부여방법
-    Configure Global Security로 이동하여 생성한 계정을 입력하고 Add 클릭
-    추가후 권한 설정은 일단 Ovrall 체크 후 저장.
-     
-        
-### github token 생성하기
-        jenkins 에서 github repository 인증을 위해 사용할 token 을 생성한다.
-        settings - Developer settings - Personal access tokens - Generate new token 선택해서 토큰 생성
-        repo, admin:repo_hook 만 체크하고 생성한다
-        
-### GitHub Credential을 생성한다.
-        Jenkins가 GitHub에서 Code를 가져올 수 있도록 Credential을 추가하자
+Manage Jenkins -> Manage Users  로 이동한다. 사용자 생성 버튼 클릭 후 사용자 생성.
+![](./assets/jenkins_user.png)
 
-        Manage Jenkins -> Manage Credential -> System -> Global Credential  로 이동한다.
-        Add Credential를 클릭하면 계정 설정하는 화면이 나온다.
-        Kind는  Username with password 를 선택해주시면 됩니다
-        Username 은 본인의 Github/Docker 아이디를 선택해주시면 됩니다 ( 이메일 아님 )
-        ID는 본인이 원하는 식별자를 넣어준다.
-        
-        
-        github 계정 생성
-        password는 이전에 발급받은 Github Token 값을 복사해주시면 됩니다. 
-        
-        * github 비밀번호 입력하면 안됨
-        
-        도커 계정
-        도커 비밀번호는 도커 계정 비밀번호를 입력한다.
-        
+이미 생성했으면 skip.
+
+### 계정 별 권한 부여방법 
+Configure Global Security로 이동
+    
+![](./assets/configure_global_security.png)
+
+생성한 계정을 입력하고 Add 클릭 추가후 권한 설정은 일단 Ovrall 체크 후 저장  
+Project-based Matrix Authorization Strategy 체크 후 권한 설정  
+
+![](./assets/configure_global_security2.png)
+
+     
+### Github token 생성하기
+
+Jenkins 에서 github repository 인증을 위해 사용할 token 을 생성한다.  
+
+Settings - Developer settings - Personal access tokens - Generate token  
+선택해서 토큰 생성  
+
+Github 사이트의 오른쪽 상단 본인 계정의 Setting으로 이동한다. ( 프로젝트의 setting이 아님 )
+![](./assets/github_token_setting1.png)
+
+Expiration 은 No Expiration으로 선택하고 repo, admin:repo_hook 만 체크하고  Generation Token 버튼 클릭해서 토큰 생성
+
+![](./assets/github_token_setting2.png)
+
+복사 아이콘을 클릭하여 토큰 값을 복사한다. 
+- 다시 페이지에 들어가면 보이지 않아서 복사 후 저장 필요 
+![](./assets/github_token_setting3.png)
+
+
+### GitHub Credential을 생성한다.
+Jenkins가 GitHub에서 Code를 가져올 수 있도록 Credential을 추가하자
+
+Manage Jenkins -> Manage Credential -> System 으로 이동한다.
+
+![](./assets/jenkins_github_credential1.png)
+
+Global Credential 클릭  
+
+![](./assets/jenkins_github_credential2.png)
+
+Add Credential를 클릭하면 계정 설정하는 화면이 나온다.  
+
+![](./assets/jenkins_github_credential3.png)
+
+Kind는  Username with password 를 선택해주시면 됩니다.  
+
+Username 은 본인의 Github ID 를 선택해주시면 됩니다. ( 이메일 아님 )  
+
+ID는 본인이 원하는 식별자를 넣어준다.  
+
+password는 이전에 발급받은 Github Token 값을 입력한다.  
+
+![](./assets/jenkins_github_credential4.png)        
+
+
+### Docker Hub Credential을 생성한다.
+Jenkins가 Docker Hub에 Image를 push 할 수 있도록 Credential을 추가하자
+
+Manage Jenkins -> Manage Credential -> System  -> Global Credential 로 이동한다.
+
+Add Credential를 클릭하면 계정 설정하는 화면이 나온다.  
+
+Kind는  Username with password 를 선택해주시면 됩니다.  
+
+Username 은 본인의 Docker Hub ID 를 선택해주시면 됩니다. ( 이메일 아님 )  
+
+ID는 본인이 원하는 식별자를 넣어준다.  
+
+password는 이전에 Docker Hub 본인 계정의 비밀번호 값을 입력한다.  
+
+![](./assets/jenkins_dockerhub_credential.png) 
+
+GitHub와 Docker Hub Credential 이 생선된 것을 확인한다.  
+
+![](./assets/jenkins_github_dockerhub_credential.png) 
+
+
 ### 파이프 라인을 구성한다.
         
-        메인 화면 좌측 메뉴에서 새로운 Item 선택
-        
-        item 이름을 입력하고 Pipeline 을 선택 후에 OK
-        
-        Build Triggers - GitHub hook trigger for GITScm polling 선택
-        
-        https://github.com/shclub/edu.git
-        
-        파이프 라인을 아래와 같이 설정한다.
-        
-        Repository URL 은 위에서 사용한 저장소 url 을 입력한다.
-        
-        branch 는 실제 github 저장소에 push 되었을 때 배포가 이루어질 branch 를 선택한다.
-        
-        Script Path 는 github 저장소의 Jenkinsfile 의 경로를 적어준다.
-        
-        credential에는 github 계정을 넣어준다.
+메인 화면 좌측 메뉴에서 새로운 Item 선택
+![](./assets/pipeline_newitem.png) 
+
+item 이름을 입력하고 Pipeline 을 선택 후에 OK
+![](./assets/pipeline_main.png) 
+
+로그 Rotation을 5로 설정한다.  
+
+![](./assets/pipeline_log_rotation.png) 
+
+Github Project URL을 설정하고 Git Parameter 를 체크하고 Parameter Type은 교육을 위한 용도 임으로 Branch를 선택한다. ( Tag는 배포를 위한 snapshot 설정 )   
+Branch의 default는 orgin/master를 설정한다.  
+
+![](./assets/pipeline_git.png) 
+
+Build Triggers - GitHub hook trigger for GITScm polling 선택  
+Repository 에 Git Url을 입력한다.  
+Credential에 Jenkins에서 생성한 github_ci를 선택하여 추가한다.
+
+![](./assets/pipeline_git2.png) 
+
+Script Path는 Jenkinsfile 로 설정한다.  
+github에 대소문자 구문하여 Jenkinsfile 이 있어야함.  
+Save 버튼을 클릭하여 저장한다.  
+
+![](./assets/pipeline_scriptpath.png) 
 
 ### 빌드 실행
-   
+
+대쉬보드에서 Build With Parameter를 선택하고 Branch 선택 후 빌드 한다.  
+
+![](./assets/jenkins_first_build.png) 
+
+빌드가 진행 되는 것을 단계별로 확인 할 수 있다.  
+
+![](./assets/build_stage2.png) 
+
+에러가 발생하면 해당 단계에서 마우스 오른쪽 버튼을 클릭하여 로그 확인 할수 있다.  
+또한 왼쪽 하단의 Build History 에서 해당 빌드 번호를 클릭하여 자세한 에러를 볼수 있다.  
+
+![](./assets/build_error.png) 
+
+Console Output을 선택하고 에러를 확인 할 수 있다.  
+
+![](./assets/build_console_output.png) 
+
+아래 에러는 docker hub에서 repository가 private 으로 설정이 되어 발생한 에러이고 위에 설명한 대로 public 으로 변경하면 에러가 발생하지 않는다.  
+
+![](./assets/build_docker_access_denied.png) 
+
+대쉬보드에서 해당 파이프라인인 edu1을 선택하고 다시 빌드 한다.  
+
+![](./assets/build_again.png) 
+
+성공적으로 완료된 화면을 볼 수 있다.   
+
+![](./assets/build_finish.png) 
+
+Docker Hub에서 정상적으로 생성된 이미지를 확인 할수 있다.  
+![](./assets/build_dockerhub_check.png) 
+
 ### Docker pull 및 실행 테스트
-        docker pull shclub/edu
-        docker run -p 40003:8080 shclub/edu
-        브라우저에서 http://(본인ip):40003 호출하여 Hello World 확인
-   
-   
-   * 과제 : github webhook를 통한 빌드 자동화
+터미널로 VM 서버에 접속하여 생성된 도커이미지를 다운로드(pull)하고 실행 (run)  
+
+```
+docker pull shclub/edu1
+```
+![](./assets/docker_pull_edu1.png) 
+```
+docker run -p 40003:8080 shclub/edu1
+```
+Python Flask 가 정상적으로 로드가 된걸 확인 할 수 있다.
+
+![](./assets/docker_run_edu1.png) 
+
+브라우저에서 http://(본인ip):40003 호출하여 Hello World 확인
+
+![](./assets/flask_web_edu1.png) 
+
+- 과제 : github webhook를 통한 빌드 자동화
+
+### Jenkinsfile 설명
+Jenkins 화일에서 github와 docker credential 은  Jenkins 설정에서 Credential을 생성한
+id를 입력하면 된다.  
+
+![](./assets/pipeline_credential.png) 
 
