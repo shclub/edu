@@ -6,6 +6,7 @@
 1. Chapter 1 : 1주차  
      주요 내용 : Jenkins 설치 및 설정 , GitHub , Docker 계정 생성 , Jenkins Pipeline 생성하여 CI 실습  
      샘플 소스 : shclub/edu1
+     
 2. Chapter 2 : 2주차  
      주요 내용 : git 설치 및 활용 , Docker 이해 및 활용 , Docker Compose 설치 및 활용 ( DB 연동 )
 3. Chapter 3 : 3주차  
