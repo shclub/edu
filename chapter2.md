@@ -12,7 +12,7 @@ Jenkins CI 구성 요소인 Git , Docker에 대해서 자세한 설명과 함께
  
 <br/>
 
-##  Git  ( https://backlog.com/git-tutorial/ )
+##  Git  ( https://backlog.com/git-tutorial/kr/intro/intro1_1.html )
 
 ### Git 개요 
 
@@ -118,13 +118,44 @@ git push시에 로그인이 필요하며 username은 본인 github id를 넣어�
 
 github 화면으로 가서 README.md 화일이 생성되거나 변경 된것을 확인할 수있다.  
 
-rejected 에러가 발생하면 아래 와 같이 force 옵션을 준다.
+rejected 에러가 아래 처럼 발생하는 경우가 있는데 리모트 리포지토리의 변경사항과 로컬 리포지토리 내용이 충돌이 날때 발생한다.  ( 지금 경우는 리모트의 README.md 화일과  로컬의  README.md 화일이 충돌 )
+
+```bash
+To https://github.com/shclub/edu.git
+ ! [rejected]        master -> master (non-fast-forward)
+error: failed to push some refs to 'https://github.com/shclub/edu.git'
+hint: Updates were rejected because the tip of your current branch is behind
+hint: its remote counterpart. Integrate the remote changes (e.g.
+hint: 'git pull ...') before pushing again.
+hint: See the 'Note about fast-forwards' in 'git push --help' for details.
+```
+
+
+- 해결방법 1 : 아래 와 같이 force 옵션을 준다.     
 
 ```bash
 git push -u origin master --force
 ```  
 
+- 해결방법 2 : 아래 과정을 거쳐 conflict 된 내용을 확인한다.    
+
+```bash
+git pull
+git merge --continue
+```  
+
+아래 처럼 메시지가 나오고
+
+Auto-merging README.md
+CONFLICT (content): Merge conflict in README.md
+
+충돌을 하나씩 해결해 나가고  다시 push를 하면 아래와 같이 원격 저장소에 수정된 내용이 반영이 된다.
+
 <img src="./assets/git_push_github.png" style="width: 60%; height: auto;"/>  
+
+git 사용법에 대한 자세한 내용은 아래 사이트의 발전편을 참고한다.  
+
+https://backlog.com/git-tutorial/kr/stepup/stepup1_1.html
 
 <br/><br/>
 
