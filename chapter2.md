@@ -27,7 +27,7 @@ Private 형태로는 Gitlab을 많이 사용 함.
 
 (본인계정)/edu2라는 Repository를 생성. ( branch는 master )
 
-<img src="./assets/github_edu2.png" style="width: 40%; height: auto;"/>  
+<img src="./assets/github_edu2.png" style="width: 60%; height: auto;"/>  
 
 ### Git 설치.
 
@@ -43,7 +43,7 @@ ssh root@(본인 private ip) -p 22222
 git --version
 ``` 
 
-<img src="./assets/git_version.png" style="width: 40%; height: auto;"/>
+<img src="./assets/git_version.png" style="width: 60%; height: auto;"/>
 
 git이 없으면 설치 한다.  
 
@@ -56,7 +56,7 @@ apt-update && apt-get intsall git
 github에서  shclub/edu2 를 선택하고 code를 클릭한다.  
 https의 url를 복사한다. 오른쪽 복사 아이콘 클릭  
 
-<img src="./assets/github_clone.png" style="width: 40%; height: auto;"/>  
+<img src="./assets/github_clone.png" style="width: 60%; height: auto;"/>  
 
 터미털에서 git clone 명령어를 사용하여 로컬에 소스를 가져온다.  
 정상적으로 가져오면 edu2 폴더로 이동하여 파일 받아진것 확인한다.
@@ -65,7 +65,7 @@ https의 url를 복사한다. 오른쪽 복사 아이콘 클릭
 git clone https://github.com/shclub/edu2.git
 ```
 
-<img src="./assets/git_clone.png" style="width: 40%; height: auto;"/>  
+<img src="./assets/git_clone.png" style="width: 60%; height: auto;"/>  
 
 
 ### 로컬에서 본인 github에 소스 push.  
@@ -306,7 +306,7 @@ Cache를 사용 하기 때문에 훨씬 빨리 빌드가 된다.
 docker images
 ```  
 
-<img src="./assets/docker_images.png" style="width: 40%; height: auto;"/>
+<img src="./assets/docker_images.png" style="width: 60%; height: auto;"/>
 
 Docker Hub에 전송하기 위해서는 tagging을 하고 push를 한다.
 tag 명령어 뒤에는 로컬 이미지 이름 , 다음에는 도커허브 이미지 이름을 입력.
@@ -315,7 +315,7 @@ tag 명령어 뒤에는 로컬 이미지 이름 , 다음에는 도커허브 이�
 docker tag edu2 (본인 도커 허브 ID)/edu2
 ```  
 
-<img src="./assets/docker_edu2_push.png" style="width: 40%; height: auto;"/>
+<img src="./assets/docker_edu2_push.png" style="width: 60%; height: auto;"/>
 
 Docker Hub에 페이지에서 push된 이미지를 확인한다.
 
@@ -341,7 +341,7 @@ docker run -d --name my-python -p 40003:5000 (본인 도커 허브 ID)/edu2
 
 docker ps 명령어로 정상적인지 확인한다.
 
-<img src="./assets/docker_run_d.png" style="width: 40%; height: auto;"/>
+<img src="./assets/docker_run_d.png" style="width: 60%; height: auto;"/>
 
 docker ps 로 아무 것도 없으면 docker ps -a 명령어도 kill 된 컨테이너를 확인하고
 docker logs 명령어로 로그를 확인한다.
@@ -350,7 +350,7 @@ docker logs 명령어로 로그를 확인한다.
 ```bash
 docker logs (컨테이너id)
 ```  
-<img src="./assets/docker_logs.png" style="width: 40%; height: auto;">  
+<img src="./assets/docker_logs.png" style="width: 60%; height: auto;">  
 
 docker 컨테이너 안으로 들어가 본다.
 
@@ -360,7 +360,7 @@ docker exec -it (컨테이너id) /bin/sh
 
 컨테이너 내부에서 ls 명령어를 쳐보면 도커 빌드시 복사되었던 소스를 확인 할 수 있다.
 
-<img src="./assets/docker_exec.png" style="width: 40%; height: auto;">  
+<img src="./assets/docker_exec.png" style="width: 60%; height: auto;">  
 
 현재 컨테이너의 내용을 도커 이미지로 저장하고 싶을때는 commit 명령어를 사용한다.
 - -m : 뒤에 comment를 적어준다
@@ -371,7 +371,7 @@ docker exec -it (컨테이너id) /bin/sh
 docker commit -m "new edu2" (컨테이너 이름) (생성하고싶은 이미지 이름):(버전)
 ```  
 
-<img src="./assets/docker_commit.png" style="width: 40%; height: auto;">
+<img src="./assets/docker_commit.png" style="width: 60%; height: auto;">
 
 <br/>
 
@@ -412,13 +412,13 @@ Swagger의 기능
 생성된 이미지는 간단한 계산을 하는 기능으로  swagger 를 내장하고 있다.
 
 브라우저에서 (본인 VM IP ):40003를 호출하면 아래 화면을 볼 수 있다.
-<img src="./assets/swagger_first.png" style="width: 40%; height: auto;">   
+<img src="./assets/swagger_first.png" style="width: 60%; height: auto;">   
 
 GET을 클릭하고 오른쪽에 try it out를 클릭하면 API를 테스트 할 수 있다.
-<img src="./assets/swagger_second.png" style="width: 40%; height: auto;">  
+<img src="./assets/swagger_second.png" style="width: 60%; height: auto;">  
 
 연산자 1, 2에 값을 넣고 execute를 하면 API 가 수행이된다.
-<img src="./assets/swagger_third.png" style="width: 40%; height: auto;">  
+<img src="./assets/swagger_third.png" style="width: 60%; height: auto;">  
 
 <br/>
 
@@ -455,14 +455,14 @@ apt-get update && apt install docker-compose
 ```  
 중간에 추가 설치 내용이 나오면 Y를 입력하고 엔터를 친다.
 
-<img src="./assets/docker_compose_install.png" style="width: 40%; height: auto;">
+<img src="./assets/docker_compose_install.png" style="width: 60%; height: auto;">
 
 도커 컴포즈 버전을 확인하고 아래와 같이 나오면 정상적으로 설치가 된 것이다.
 
 ```bash
 docker-compose --version
 ```  
-<img src="./assets/docker_compose_version.png" style="width: 40%; height: auto;">  
+<img src="./assets/docker_compose_version.png" style="width: 60%; height: auto;">  
 
 ### Docker Compose yaml  
 
@@ -477,7 +477,7 @@ cd edu2-1
 vi docker-compose.yml
 ```  
 
-<img src="./assets/docker_compose_mkdir.png" style="width: 40%; height: auto;"> 
+<img src="./assets/docker_compose_mkdir.png" style="width: 60%; height: auto;"> 
 
 아래의 내용을 복사하여 docker-compose.yml에 붙여 넣기한다.
 esc 눌러주고 :wq를 입력하여 저장하고 나온다.
@@ -525,7 +525,7 @@ docker-compose up -d
 - –build 옵션으로 도커 이미지를 다시 빌드한다. (build로 선언했을 때만)  
 
 
-<img src="./assets/docker_compose_up.png" style="width: 40%; height: auto;"> 
+<img src="./assets/docker_compose_up.png" style="width: 60%; height: auto;"> 
 
 Docker ps를 해보면 2개의 컨테이너가 떠 있는 것을 확인 할 수 있다.
 
@@ -533,7 +533,7 @@ Docker ps를 해보면 2개의 컨테이너가 떠 있는 것을 확인 할 수 
 docker ps 또는 docker-compose ps
 ```  
 
-<img src="./assets/docker_compose_ps.png" style="width: 40%; height: auto;"> 
+<img src="./assets/docker_compose_ps.png" style="width: 60%; height: auto;"> 
 
 
 해당 폴더를 보면 .wp 와  .mysql 폴더가 생성 된 것을 확인 할수 있다.
@@ -541,11 +541,11 @@ docker ps 또는 docker-compose ps
 ```bash
 ls
 ```  
-<img src="./assets/docker_compose_ls.png" style="width: 40%; height: auto;">
+<img src="./assets/docker_compose_ls.png" style="width: 60%; height: auto;">
 
 docker compose 기동시에 volumes 설정이 로컬 폴더와 컨테이너 폴더를 연결 한것 을 볼수 있다. 
 
-<img src="./assets/docker_compose_volume.png" style="width: 40%; height: auto;">
+<img src="./assets/docker_compose_volume.png" style="width: 60%; height: auto;">
 
 브라우저를 통해서 http://(본인IP):40004로 접속하여 정상적으로 로드 된걸 확인 할 수 있다.
 
@@ -557,7 +557,7 @@ docker compose 기동시에 volumes 설정이 로컬 폴더와 컨테이너 폴�
 - stop으로 정지 된 컨테이너 시작 : docker-compose start
 - 도커 네트웍 지우기 : docker network prune
 
-<img src="./assets/docker_compose_web.png" style="width: 40%; height: auto;">
+<img src="./assets/docker_compose_web.png" style="width: 60%; height: auto;">
 
 
 
