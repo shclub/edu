@@ -5,9 +5,9 @@ Jenkins CI 구성 요소인 Git , Docker에 대해서 자세한 설명과 함께
 
 1. GitHub를 통한 Git 사용법
 
-2. Dockerfile 구성 및 빌드 , Tag , Push 
+2. Dockerfile 구성 및 빌드 , Tag , Push 그리고 Swagger 실습 
 
-3. Docker compose 설치 및 Front/Backend, NoSQL 구성 예제 실습
+3. Docker compose 설치 및 WordPress, SQL 구성 예제 실습
 
  
 <br/>
@@ -466,7 +466,12 @@ docker-compose --version
 
 ### Docker Compose yaml  
 
-도커 실행 명령어를 yml 파일로 스크립트 문서화 하여 관리한다.
+도커 실행 명령어를 yml 파일로 스크립트 문서화 하여 관리한다.  
+
+이번 예제는 워드프레스(WordPress)라는 오픈 소스 블로그 소프트웨어 이고
+워드 프레스를 통해서 PHP기반의 웹페이지를 만들수 있다.
+기본적으로 Mysql DB를 내장하고 있다.
+
 
 터미널로 접속하여 새로운 폴더를 하나 생성하고 생성된 폴더로 이동한다.
 vi 에디터로  docker-compose.yml 를 생성한다.
@@ -561,4 +566,6 @@ docker compose 기동시에 volumes 설정이 로컬 폴더와 컨테이너 폴�
 
 
 
-* 과제 : docker compose로 구성한 mysql container  접속하여 로그인 한 후 wordpress db에 customer 테이블을 생성해 본다.
+* 과제 1 : docker compose로 구성한 mysql container  접속하여 로그인 한 후 wordpress db에 customer 테이블을 생성해 본다.  
+
+* 과제 2 : 금일 실습한 Dockerfile과 docker-compose.yml 화일을 git 명령어를 사용하여 edu2에 push 한다.
