@@ -18,7 +18,7 @@ Jenkins CI 구성 요소인 Git , Docker에 대해서 자세한 설명과 함께
 
 Git이란 소스코드를 효과적으로 관리하기 위해 개발된 '분산형 버전 관리 시스템'입니다. ( 이전 에는 SVN 많이 사용 )  
 
-가장 대중적인 SaaS 형태는 Mirosoft에서 제공하는 GitHub 이고
+가장 대중적인 SaaS 형태는 Microsoft에서 제공하는 GitHub 이고
 Private 형태로는 Gitlab을 많이 사용 함.
 
 
@@ -90,7 +90,6 @@ git remote add origin https://github.com/(본인계정)/edu2.git
 ```
 
 원격저장소를 본인의 github repository로 변경하고 다시 저장소를 확인한다.
-git remote set-url origin https://github.com/(본인계정)/edu2.git
 
 ```bash
 git remote set-url origin https://github.com/(본인계정)/edu2.git
@@ -111,11 +110,19 @@ git push -u origin master
 ```  
 
 git push시에 로그인이 필요하며 username은 본인 github id를 넣어주고 
-비밀번호는 token 값을 넣어주어야 한다. ( 비밀번호는 불가 )
+비밀번호는 token 값을 넣어주어야 한다. ( 비밀번호는 불가 )  
+
+토큰값은 별도로 저장하지 않았으면 Chapter1을 참고하여 새로 생성한다.
 
 <img src="./assets/git_push.png" style="width: 60%; height: auto;"/>  
 
-github 화면으로 가서 README.md 화일이 생성되거나 변경 된것을 확인할 수있다.
+github 화면으로 가서 README.md 화일이 생성되거나 변경 된것을 확인할 수있다.  
+
+rejected 에러가 발생하면 아래 와 같이 force 옵션을 준다.
+
+```bash
+git push -u origin master --force
+```  
 
 <img src="./assets/git_push_github.png" style="width: 60%; height: auto;"/>  
 
@@ -274,8 +281,8 @@ class FileReport(Resource):
         except KeyError:
             return {'result': 'ERROR_PARAMETER'}, 500
 
-    result = {'result': 'ERROR_SUCCESS','value': int(val1) + int(val2)}        
-    return result, 200
+        result = {'result': 'ERROR_SUCCESS','value': int(val1) + int(val2)}        
+        return result, 200
 
 
 if __name__ == '__main__':
@@ -313,6 +320,7 @@ tag 명령어 뒤에는 로컬 이미지 이름 , 다음에는 도커허브 이�
 
 ```bash
 docker tag edu2 (본인 도커 허브 ID)/edu2
+docker push (본인 도커 허브 ID)/edu2
 ```  
 
 <img src="./assets/docker_edu2_push.png" style="width: 60%; height: auto;"/>
@@ -361,6 +369,8 @@ docker exec -it (컨테이너id) /bin/sh
 컨테이너 내부에서 ls 명령어를 쳐보면 도커 빌드시 복사되었던 소스를 확인 할 수 있다.
 
 <img src="./assets/docker_exec.png" style="width: 60%; height: auto;">  
+
+exit 명령어를 사용하여 컨테이너 내부에서 나올수 있다.  
 
 현재 컨테이너의 내용을 도커 이미지로 저장하고 싶을때는 commit 명령어를 사용한다.
 - -m : 뒤에 comment를 적어준다
