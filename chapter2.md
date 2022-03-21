@@ -181,7 +181,7 @@ github 화면으로 가서 README.md 화일이 생성되거나 변경 된것을 
 
 Dockerfile 예제
 
-```bash
+```yaml
 
 # 베이스 이미지 이며 이미지 이름 앞에 아무것도 없으면 docker hub에서 가져온다.
 FROM python:3.8-slim
@@ -194,7 +194,14 @@ ADD . /app
 
 # pyhon의 경우 library를 requirements.txt에 기술을 하였고 RUN 명령어를 # 사용하여 아래 구문을 실행한다.
 
-RUN pip install -r requirements.txt
+# RUN pip install -r requirements.txt
+
+# 직접 라이브러리를 추가 할수 있다. 단 라이브러리가 많아지면 불편하다.
+RUN pip3 install flask==1.1.2
+RUN pip3 install flask-cors
+RUN pip3 install flask-restplus
+RUN pip3 install itsdangerous==2.0.1
+RUN pip3 install Werkzeug==2.0.3
 
 # 기본 이미지는 대부분 GMT+0 기준으로 생성되어 한국 시간으로 변경 해준다
 RUN ln -snf /usr/share/zoneinfo/Asia/Seoul /etc/localtime && echo Asia/Seoul > /etc/timezone
@@ -207,7 +214,209 @@ EXPOSE 40003
 CMD ["python", "app.py"]
 ```
 
+터미널에서 edu2 폴더로 이동하여 vi 에디터로 Dockerfile를 생성한다.  
+
+```bash
+vi Dockerfile
+``` 
+
+<img src="./assets/vi_dockerfile.png" style="width: 60%; height: auto;"/>  
+
+<br/>
+i (소문자) 를 누른 후 위의 Dockerfile 내용을 복사하여 붙여넣기 한다. 
+esc 키를 누른 후 :wq를 입력하여 저장하고 나온다.
 
 
+app.py를 생성하고 아래 소스를 추가하여 Dockerfile과 같이 저장하고 나온다.
 
+```python
+# -*- coding:utf-8 -*-
+# REST API로 구현한 계산기 예제
+
+import werkzeug
+werkzeug.cached_property = werkzeug.utils.cached_property
+
+from flask import Flask
+from flask_restplus import Resource, Api, reqparse
+
+
+# -----------------------------------------------------
+# api
+# -----------------------------------------------------
+app = Flask(__name__)
+api = Api(app, version='1.0', title='Calc API',
+          description='계산기 REST API 문서',)
+
+ns = api.namespace('calc', description='계산기 API 목록')
+app.config.SWAGGER_UI_DOC_EXPANSION = 'list'  # None, list, full
+
+
+# -----------------------------------------------------
+# 덧셈을 위한 API 정의
+# -----------------------------------------------------
+sum_parser = ns.parser()
+sum_parser.add_argument('value1', required=True, help='연산자1')
+sum_parser.add_argument('value2', required=True, help='연산자2')
+
+
+@ns.route('/sum')
+@ns.expect(sum_parser)
+class FileReport(Resource):
+    def get(self):
+        """
+                Calculate addition
+        """
+        args = sum_parser.parse_args()
+
+        try:
+            val1 = args['value1']
+            val2 = args['value2']
+        except KeyError:
+            return {'result': 'ERROR_PARAMETER'}, 500
+
+    result = {'result': 'ERROR_SUCCESS','value': int(val1) + int(val2)}        
+    return result, 200
+
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)  # , debug=True)
+```
+
+<br/>
+아래 명령어를 사용하여 도커 파일을 생성한다. 
+Dockerfile 위치와 같은 폴더에서 실행하여야 하며 생성할 이미지 이름 뒤에 . 을 반드시 사용한다.
+
+```bash
+docker build -t edu2 .
+```   
+
+<img src="./assets/docker_build_t1.png" style="width: 60%; height: auto;"/>
+
+Dockerfile의 line by line 으로 단계가 구성되어 도커 레이어를 생성을 한다.
+내부 적으로는 docker commit 명령어가 실행이 되면 도커를 재 생성시에는 
+Cache를 사용 하기 때문에 훨씬 빨리 빌드가 된다.
+
+<img src="./assets/docker_build_t2.png" style="width: 60%; height: auto;"/>  
+
+중간에 임시에 생성된 intermediate 컨테이너가 삭제가 되고 빌드 이미지가 만들어진다.  
+
+아래 명령어를 사용하여 생성된 도커 이미지를 확인 할 수 있다.
+
+```bash
+docker images
+```  
+
+<img src="./assets/docker_images.png" style="width: 40%; height: auto;"/>
+
+Docker Hub에 전송하기 위해서는 tagging을 하고 push를 한다.
+tag 명령어 뒤에는 로컬 이미지 이름 , 다음에는 도커허브 이미지 이름을 입력.
+
+```bash
+docker tag edu2 (본인 도커 허브 ID)/edu2
+```  
+
+<img src="./assets/docker_edu2_push.png" style="width: 40%; height: auto;"/>
+
+Docker Hub에 페이지에서 push된 이미지를 확인한다.
+
+<img src="./assets/dockerhub_edu2_image.png" style="width: 60%; height: auto;"/>
+
+실행 중인 컨테이너를 확인하고 40003  포트를 사용하는 컨테이너를 stop 한다.
+```bash
+docker ps
+docker stop (컨테이너id)
+```  
+
+<img src="./assets/docker_ps_stop.png" style="width: 60%; height: auto;"/>
+
+도커 이미지를 실행한다.
+- -d : 데몬모드
+- --name : 컨테이너에 이름을 부여한다.
+- -p : 포트 ( 외부접속포트 : 컨테이너 포트)
+- 맨 마지막에 도커 이미지 이름  
+
+```bash
+docker run -d --name my-python -p 40003:5000 (본인 도커 허브 ID)/edu2
+```  
+
+docker ps 명령어로 정상적인지 확인한다.
+
+<img src="./assets/docker_run_d.png" style="width: 40%; height: auto;"/>
+
+docker ps 로 아무 것도 없으면 docker ps -a 명령어도 kill 된 컨테이너를 확인하고
+docker logs 명령어로 로그를 확인한다.
+
+
+```bash
+docker logs (컨테이너id)
+```  
+<img src="./assets/docker_logs.png" style="width: 40%; height: auto;">  
+
+docker 컨테이너 안으로 들어가 본다.
+
+```bash
+docker exec -it (컨테이너id) /bin/sh
+```  
+
+컨테이너 내부에서 ls 명령어를 쳐보면 도커 빌드시 복사되었던 소스를 확인 할 수 있다.
+
+<img src="./assets/docker_exec.png" style="width: 40%; height: auto;">  
+
+현재 컨테이너의 내용을 도커 이미지로 저장하고 싶을때는 commit 명령어를 사용한다.
+- -m : 뒤에 comment를 적어준다
+- 컨테이너 이름 : 현재 실행되는 컨테이너 이름 또는 컨테이너 아이디를 적여준다
+- 신규 도커 이미지 : 신규로 생성하고 싶은 로컬 도커이미지 이름을 적어준다  
+
+```bash
+docker commit -m "new edu2" (컨테이너 이름) (생성하고싶은 이미지 이름):(버전)
+```  
+
+<img src="./assets/docker_commit.png" style="width: 40%; height: auto;">
+
+<br/>
+
+도커 추가 명령어
+- 정지 중인 컨테이너 삭제 : docker container prune
+- 이미지 , 정지되어 있는 컨테이너 , 네트웍크 삭제 : docker system prune
+- 도커 이미지 삭제 : docker rmi (도커 로컬 이미지 이름)
+- 컨테이너 삭제 : docker rm [CONTAINER_ID] 
+- 컨테이너 일시정지 :  docker stop [CONTAINER_ID]
+- 컨테이너 일시정지 :  docker commit [CONTAINER_ID]
+
+
+### Swagger
+
+Swagger 란
+- Open Api Specification(OAS)를 위한 프레임워크이다.
+- API들이 가지고 있는 스펙(spec)을 명세, 관리할 수 있는 프로젝트/문서
+- API 사용 방법을 사용자에게 알려주는 문서
+- Springboot에서 Swagger를 사용하면, 컨트롤러에 명시된 어노테이션을 해석하여 API문서를 자동으로 만들어준다.
+- 참고로 Swagger는 Java에 종속된 라이브러리가 아니다.
+
+    <img src="./assets/swagger_tool.png" style="width: 60%; height: auto;">
+
+Swagger의 기능    
+
+- API Design (API 설계)
+    - Swagger-editor를 통해 api를 문서화하고 빠르게 명세 가능
+- API Development
+    - Swagger-codepen을 통해 작성된 문서를 통해 SDK를 생성하여 빌드 프로세스를 간소화할 수 있도록 도와준다.
+- API Documentation
+    - Swagger-UI를 통해 작성된 API를 시각화시켜준다.
+- API Testing
+    - Swagger-Inspector를 통해 API를 시각화하고 빠른 테스팅을 진행할 수 있다.
+- Standardize
+    - Swagger-hub를 통해 개인, 팀원들이 API 정보를 공유하는 Hub
+
+
+생성된 이미지는 간단한 계산을 하는 기능으로  swagger 를 내장하고 있다.
+
+브라우저에서 (본인 VM IP ):40003를 호출하면 아래 화면을 볼 수 있다.
+<img src="./assets/swagger_first.png" style="width: 40%; height: auto;">   
+
+GET을 클릭하고 오른쪽에 try it out를 클릭하면 API를 테스트 할 수 있다.
+<img src="./assets/swagger_second.png" style="width: 40%; height: auto;">  
+
+연산자 1, 2에 값을 넣고 execute를 하면 API 가 수행이된다.
+<img src="./assets/swagger_third.png" style="width: 40%; height: auto;">  
 
