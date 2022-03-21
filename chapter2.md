@@ -360,10 +360,16 @@ docker logs (컨테이너id)
 ```  
 <img src="./assets/docker_logs.png" style="width: 60%; height: auto;">  
 
+에러가 발생한 도커는 같은 이름으로 docker run 명령어를 실행 하면 에러가 발생하기 때문에 아래 명령어를 실행 후에 위의 docker run 명령어를 다시 실행한다.  
+
+```bash
+docker rm (컨테이너 이름)
+```
+
 docker 컨테이너 안으로 들어가 본다.
 
 ```bash
-docker exec -it (컨테이너id) /bin/sh
+docker exec -it (컨테이너id)   /bin/sh
 ```  
 
 컨테이너 내부에서 ls 명령어를 쳐보면 도커 빌드시 복사되었던 소스를 확인 할 수 있다.
