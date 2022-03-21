@@ -558,3 +558,7 @@ docker compose 기동시에 volumes 설정이 로컬 폴더와 컨테이너 폴�
 - 도커 네트웍 지우기 : docker network prune
 
 <img src="./assets/docker_compose_web.png" style="width: 40%; height: auto;">
+
+
+
+* 과제 : docker compose로 구성한 mysql container  접속하여 로그인 한 후 wordpress db에 customer 테이블을 생성해 본다.
