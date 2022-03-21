@@ -330,7 +330,7 @@ docker stop (컨테이너id)
 <img src="./assets/docker_ps_stop.png" style="width: 60%; height: auto;"/>
 
 도커 이미지를 실행한다.
-- -d : 데몬모드
+- -d : 데몬모드(백그라운드)
 - --name : 컨테이너에 이름을 부여한다.
 - -p : 포트 ( 외부접속포트 : 컨테이너 포트)
 - 맨 마지막에 도커 이미지 이름  
@@ -420,3 +420,133 @@ GET을 클릭하고 오른쪽에 try it out를 클릭하면 API를 테스트 할
 연산자 1, 2에 값을 넣고 execute를 하면 API 가 수행이된다.
 <img src="./assets/swagger_third.png" style="width: 40%; height: auto;">  
 
+<br/>
+
+## Docker Compose 
+
+<br/>
+
+### Docker Compose 개요
+
+Docker compose란, 여러 개의 컨테이너로부터 이루어진 서비스를 구축, 실행하는 순서를 자동으로 하여, 관리를 간단히하는 기능이다.
+
+ Docker compose에서는 compose 파일을 준비하여 커맨드를 1회 실행하는 것으로, 그 파일로부터 설정을 읽어들여 모든 컨테이너 서비스를 실행시키는 것이 가능하다.
+
+### Docker Compose를 사용하기까지의 주요한 단계
+
+Docker compose를 사용하기 위해서는, 크게 나눠 아래의 세 가지 순서로 이루어진다.
+
+1) 각각의 컨테이너의 Dockerfile를 작성한다(기존에 있는 이미지를 사용하는 경우는 불필요).
+
+2) docker-compose.yml를 작성하고, 각각 독립된 컨테이너의 실행 정의를 실시한다(경우에 따라는 구축 정의도 포함).
+
+3) "docker-compose up" 커맨드를 실행하여 docker-compose.yml으로 정의한 컨테이너를 개시한다.
+
+ Docker compose는 start, stop, status, 실행 중의 컨테이너의 로그 출력, 약간의 커맨드의 실행이과 같은 기능도 가지고 있다.
+
+<br/>
+
+### Docker Compose 설치
+
+본인 VM에 터미널로 접속하여 아래 명령어를 입력한다.
+
+```bash
+apt-get update && apt install docker-compose
+```  
+중간에 추가 설치 내용이 나오면 Y를 입력하고 엔터를 친다.
+
+<img src="./assets/docker_compose_install.png" style="width: 40%; height: auto;">
+
+도커 컴포즈 버전을 확인하고 아래와 같이 나오면 정상적으로 설치가 된 것이다.
+
+```bash
+docker-compose --version
+```  
+<img src="./assets/docker_compose_version.png" style="width: 40%; height: auto;">  
+
+### Docker Compose yaml  
+
+도커 실행 명령어를 yml 파일로 스크립트 문서화 하여 관리한다.
+
+터미널로 접속하여 새로운 폴더를 하나 생성하고 생성된 폴더로 이동한다.
+vi 에디터로  docker-compose.yml 를 생성한다.
+
+```bash
+mkdir edu2-1
+cd edu2-1
+vi docker-compose.yml
+```  
+
+<img src="./assets/docker_compose_mkdir.png" style="width: 40%; height: auto;"> 
+
+아래의 내용을 복사하여 docker-compose.yml에 붙여 넣기한다.
+esc 눌러주고 :wq를 입력하여 저장하고 나온다.
+
+
+```yaml
+version: '2'
+services:
+  db:
+    image: mysql:5.7
+    volumes:
+      - ./mysql:/var/lib/mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: wordpress
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wordpress
+      MYSQL_PASSWORD: wordpress
+  wordpress:
+    image: wordpress:latest
+    volumes:
+      - ./wp:/var/www/html
+    ports:
+      - "40004:80"
+    restart: always
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_PASSWORD: wordpress
+```  
+
+Docker compose 명령어를 사용하여 컨테이너를 실행한다.
+
+```bash
+docker-compose up -d
+```  
+
+- 현재 디렉토리에 있는 docker-compose 파일을 실행하여, docker-compose 파일에 정의된 컨테이너를 실행한다.
+- -d 옵션을 주면 daemon(백그라운드)으로 실행한다.
+- –force-recreate 옵션으로 컨테이너를 새로 만들 수 있다.
+- –build 옵션으로 도커 이미지를 다시 빌드한다. (build로 선언했을 때만)  
+
+
+<img src="./assets/docker_compose_up.png" style="width: 40%; height: auto;"> 
+
+Docker ps를 해보면 2개의 컨테이너가 떠 있는 것을 확인 할 수 있다.
+
+```bash
+docker ps 또는 docker-compose ps
+```  
+
+<img src="./assets/docker_compose_ps.png" style="width: 40%; height: auto;"> 
+
+
+해당 폴더를 보면 .wp 와  .mysql 폴더가 생성 된 것을 확인 할수 있다.
+
+```bash
+ls
+```  
+<img src="./assets/docker_compose_ls.png" style="width: 40%; height: auto;">
+
+docker compose 기동시에 volumes 설정이 로컬 폴더와 컨테이너 폴더를 연결 한것 을 볼수 있다. 
+
+<img src="./assets/docker_compose_volume.png" style="width: 40%; height: auto;">
+
+브라우저를 통해서 http://(본인IP):40004로 접속하여 정상적으로 로드 된걸 확인 할 수 있다.
+
+도커 컴포즈 명령어
+- 컨테이너 종료 : docker-compose down
+- 컨테이너 정지 : docker-compose stop  
+- 컨테이너 로그 보기 : docker-compose logs
+- 컨테이저 재시작 : docker-compose restart
+- stop으로 정지 된 컨테이너 시작 : docker-compose start
