@@ -484,28 +484,33 @@ esc 눌러주고 :wq를 입력하여 저장하고 나온다.
 
 
 ```yaml
-version: '2'
+version: '3.3'
+
 services:
-  db:
-    image: mysql:5.7
-    volumes:
-      - ./mysql:/var/lib/mysql
-    restart: always
-    environment:
-      MYSQL_ROOT_PASSWORD: wordpress
-      MYSQL_DATABASE: wordpress
-      MYSQL_USER: wordpress
-      MYSQL_PASSWORD: wordpress
-  wordpress:
-    image: wordpress:latest
-    volumes:
-      - ./wp:/var/www/html
-    ports:
-      - "40004:80"
-    restart: always
-    environment:
-      WORDPRESS_DB_HOST: db:3306
-      WORDPRESS_DB_PASSWORD: wordpress
+   db:
+     image: mysql:5.7
+     volumes:
+       - ./mysql:/var/lib/mysql
+     restart: always
+     environment:
+       MYSQL_ROOT_PASSWORD: wordpress
+       MYSQL_DATABASE: wordpress
+       MYSQL_USER: wordpress
+       MYSQL_PASSWORD: wordpress
+   wordpress:
+     depends_on:
+       - db
+     image: wordpress:latest
+     ports:
+       - "40004:80"
+     restart: always
+     environment:
+       WORDPRESS_DB_HOST: db:3306 // mysql 기본 설정
+       WORDPRESS_DB_USER: wordpress
+       WORDPRESS_DB_PASSWORD: wordpress
+       WORDPRESS_DB_NAME: wordpress
+     volumes:
+       - ./wp:/var/www/html
 ```  
 
 Docker compose 명령어를 사용하여 컨테이너를 실행한다.
