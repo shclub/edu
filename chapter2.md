@@ -550,3 +550,6 @@ docker compose 기동시에 volumes 설정이 로컬 폴더와 컨테이너 폴�
 - 컨테이너 로그 보기 : docker-compose logs
 - 컨테이저 재시작 : docker-compose restart
 - stop으로 정지 된 컨테이너 시작 : docker-compose start
+- 도커 네트웍 지우기 : docker network prune
+
+<img src="./assets/docker_compose_web.png" style="width: 40%; height: auto;">
