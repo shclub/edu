@@ -43,7 +43,7 @@
 <br/>
 
 9. Chapter 9 : 9주차  
-     주요 내용 : k8s에 Jenkins 설치 및 설정 , Jenkins Master/Slave 구현, GitHub , Docker 연동 , skaffold를 사용한 Jenkins 빌드 Pipeline 생성하여 CI 실습  
+     주요 내용 : k8s에 Jenkins 설치 및 설정 , Jenkins Master/Slave 구현, GitHub , Docker 연동 , skaffold를 사용한 Jenkins 빌드 Pipeline 생성하여 CI 실습 , RBAC 
 
 10. Chapter 10 : 10주차 
      주요 내용 : EFK 설치 및 실습 ( fluent-bit ) , kibana 화면 구성
@@ -54,5 +54,14 @@
 12. Chapter 12 : 12주차 
      주요 내용 : Storage 설정 방법 ( PV/PVC ) 실습 
 
-13. Chapter 13 : SpringBoot 심화 학습 
-     주요 내용 : . 
+13. Chapter 13 : 13주차
+     주요 내용 : SpringBoot 심화 학습 
+
+14. Chapter 14 : 14주차
+     주요 내용 : kubernetes  심화 학습 
+
+15. Chapter 15 : 15주차 
+     주요 내용 : Airflow 설치 및 실습
+
+16. Chapter 16 : 16주차 
+     주요 내용 : Summary
