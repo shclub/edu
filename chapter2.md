@@ -134,7 +134,7 @@ hint: See the 'Note about fast-forwards' in 'git push --help' for details.
 - 해결방법 1 : 아래 와 같이 force 옵션을 준다.     
 
 ```bash
-git push -u origin master --force
+git push origin master --force
 ```  
 
 - 해결방법 2 : 아래 과정을 거쳐 conflict 된 내용을 확인한다.    
