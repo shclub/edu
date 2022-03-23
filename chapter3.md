@@ -5,8 +5,9 @@ kubernetes 는 light하고 빠른 설치가 가능한 Rancher에서 제공하는
 
 1. k3s 설치 및 기능 설명
 
-2. helm 설치 및 heml 으로 설치 실습
+2. helm 설치 및 helm 으로 prometheus 설치 실습
 
+3. kubernetes IDE Lens 설치 및 사용법 실습
 
  
 <br/>
@@ -374,7 +375,10 @@ lens 화면 구성
 <br/>
 
 클러스터란 ?
-Master/Worker Node란 
+Master/Worker Node란?
+API Server ?
+Scheduler ?
+kubelet ? 
 
 <br/>
 
@@ -414,7 +418,6 @@ PVC 란 ?
 
 <br/>
 
-
 ### Access Control
 
 <br/>
@@ -423,5 +426,15 @@ Service Account 란 ?
 Role/RoleBinding 란 ? 
 
 <br/>
+
+### 명령어  ( kubectl )
+
+<br/>
+
+Service Account 란 ?
+Role/RoleBinding 란 ? 
+
+<br/>
+
 
 * 과제 1 : 미정
