@@ -24,12 +24,17 @@ kubernetes 는 light하고 빠른 설치가 가능한 Rancher에서 제공하는
 
 
 ### k3s를 설치 한다.
+
+k3s는 가벼운 Kubernetes로 Rancher에서 개발되었으며 쉬운 설치로 적은 메모리/binary 파일을 사용하여 Edge/IoT 환경 혹은 CI/Dev 환경에서 k8s를 쉽게 사용할 수 있도록 도와주는 도구이다.   
+
+심지어 라즈베리파이 에서도 잘 작동한다.
+
    
 터미널로 VM에 로그인 한다.
 
 
 ```bash
-ssh root@(본인 private ip) -p 22222
+ssh root@(본인 VM 공인 ip) -p 22222
 ``` 
 
 root 계정으로 진행시 아래와 같이 입력하고 패키지를 업그레이드 한다.  
@@ -111,7 +116,7 @@ cat /etc/rancher/k3s/k3s.yaml
 2개의 값을 일관변경 한다.  
 
 - default ->  k3s-test ( 총 6개 ) 
-- ip는  127.0.0.1 ->  본인 VM서버 ip
+- ip는  127.0.0.1 ->  본인 VM서버 공인 ip
 
 ```bash
 apiVersion: v1

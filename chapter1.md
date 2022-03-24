@@ -599,7 +599,7 @@ Python Flask 가 정상적으로 로드가 된걸 확인 할 수 있다.
 
 <img src="./assets/docker_run_edu1.png" style="width: 60%; height: auto;"/>  
 
-브라우저에서 http://(본인ip):40003 호출하여 Hello World 확인
+브라우저에서 http://(본인 VM 공인 ip):40003 호출하여 Hello World 확인
  
 <img src="./assets/flask_web_edu1.png" style="width: 60%; height: auto;"/>  
 

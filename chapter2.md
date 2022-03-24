@@ -34,7 +34,7 @@ Private 형태로는 Gitlab을 많이 사용 함.
 터미널로 VM에 로그인 하여 Git이 설치되어 있는지 확인하고 없으면 Git을 설치 한다. 
 
 ```bash
-ssh root@(본인 private ip) -p 22222
+ssh root@(본인 vm 공인 ip) -p 22222
 ``` 
 
 버전을 확인한다.  
@@ -458,7 +458,7 @@ Swagger의 기능
 
 생성된 이미지는 간단한 계산을 하는 기능으로  swagger 를 내장하고 있다.
 
-브라우저에서 (본인 VM IP ):40003를 호출하면 아래 화면을 볼 수 있다.
+브라우저에서 (본인 VM 공인 IP ):40003를 호출하면 아래 화면을 볼 수 있다.
 <img src="./assets/swagger_first.png" style="width: 60%; height: auto;">   
 
 GET을 클릭하고 오른쪽에 try it out를 클릭하면 API를 테스트 할 수 있다.
@@ -599,7 +599,7 @@ docker compose 기동시에 volumes 설정이 로컬 폴더와 컨테이너 폴�
 
 <img src="./assets/docker_compose_volume.png" style="width: 60%; height: auto;">
 
-브라우저를 통해서 http://(본인IP):40004로 접속하여 정상적으로 로드 된걸 확인 할 수 있다.
+브라우저를 통해서 http://(본인 vm 공인 ip):40004로 접속하여 정상적으로 로드 된걸 확인 할 수 있다.
 
 도커 컴포즈 명령어
 - 컨테이너 종료 : docker-compose down
