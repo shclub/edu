@@ -303,8 +303,11 @@ $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev
 
 ### 도커를 설치합니다.
 ```bash
-apt-get update && apt-get install docker-ce docker-ce-cli containerd.io
+apt-get update && apt-get install docker-ce docker-ce-cli containerd.io gnupg2 pass
 ```
+
+* Ubuntu 에서 도커 로그인 버그가 있어 gnupg2 pass 라이브러리를 추가 했음.
+
 <br/>
 
 ### 도커 버전을 확인합니다.

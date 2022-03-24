@@ -386,9 +386,12 @@ kubelet ?
 
 <br/>
 
-POD란 ?
-Replica 란 ? 
+하나의 k8s cluster는 여러 개의 namespace로 나눠서 각 namespace 별로 독립적인 서비스 환경을 갖출 수 있습니다.   
+전형적인 예로 dev, qa, stage, prod 같은 환경을 하나의 k8s cluster에 각각의 namespace로 구분하여 만들 수 있습니다.  
 
+k8s를 사용하다 보면 RBAC 같은 리소스에서 cluster scope 인가 namespace scope 인가를 구분해야 하는 경우가 있습니다.  
+cluster scope 경우에는 전체 cluster에 영향을 미치는 scope이고 namespace scope 경우는 해당 namespace 안에서만 영향을 주는 scope라 보면 됩니다.
+  
 <br/>
 
 
@@ -396,8 +399,130 @@ Replica 란 ?
 
 <br/>
 
-POD란 ?
+POD는 k8s에서 다루는 가장 기본이 되는 단위 리소스 object입니다.  
+
+<br/>
+
+간단한 샘플 pod template yaml를 작성하면 다음과 같습니다. (출처: https://kubernetes.io/docs/concepts/workloads/pods/pod-overview/)
+
+전통적인 명령적인(imperative) 방법에서는 terminal 열어 ‘A 만들고, B 만들고, A와 B 연결하고’ 하는 식의 작업을 한 줄 한 줄 명령을 입력해서 서비스를 구성하였습니다. 그러나, k8s에서는 선언적인(declarative) 방법으로 하는 것을 Recommand 한다.  
+
+본 예제에서는 두가지 방식을 같이 사용한다.    
+
+기본 적인 yaml 사용법.  
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+ name: myapp-pod
+ labels:
+   app: myapp
+spec:
+ containers:
+ - name: myapp-container
+   image: busybox
+   command: ['sh', '-c', 'echo Hello Kubernetes! && sleep 3600']
+```
+
+yaml 에서는 indentation(들어쓰기)이 중요하니 작성 시 유의해야 합니다. 가끔 *.yaml 이라는 확장자를 사용하지 않고 *.yml 확장자를 사용하기도 하는데 가급적이면 공식사이트는 *.yaml의 사용을 권장하고 있습니다.  
+
+위와 같이 모든 k8s resource들은 template yaml 파일로 정의할 수 있습니다. 즉, 여러분이 목적으로 하는 서비스를 여러 개의 k8s resource template yaml 파일로 나눠서 표현할 수 있는 것이죠. 심지어 하나의 전체 yaml 파일 안에 여러 개의 resource template을 정의해 넣어도 됩니다.  
+
+그럼, 다시 위의 yaml 파일 내용을 좀 더 자세히 살펴보도록 하겠습니다.
+
+```yaml
+apiVersion: v1
+```
+
+이것은 사용할 k8s API의 버전 명세입니다. 단순히 v1 이런 것도 있지만 apps/v1 이런 식으로 API 그룹명(여기서는 apps)을 명세해야 하는 경우도 있습니다. k8s에서는 k8s 리소스를 생성할 때 연관된 k8s API를 기본적으로 호출해 사용하게 됩니다.
+
+```yaml
+kind: Pod
+```
+
+생성할 k8s 리소스 타입을 지정합니다. 우리는 지금 Pod를 정의하고 있습니다.  
+
+```yaml
+metadata:
+ name: myapp-pod
+ labels:
+   app: myapp
+```
+
+Pod의 metadata로 name과 label을 정의합니다. 생성할 pod의 이름은 myapp-pod이며, label은 app: myapp으로 세팅했습니다. 모든 k8s object나 controller들은 기본적으로 name을 갖고 일반적으로 label도 갖게 됩니다.  
+
+name은 동일한 namespace 상에서는 유일한 값을 이름으로 가져야 합니다. label은 특정 k8s object만을 나열한다거나 검색할 때 유용하게 쓰일 수 있는 key-value 쌍입니다.
+
+```yaml
+spec:
+ containers:
+ - name: myapp-container
+   image: busybox
+   command: ['sh', '-c', 'echo Hello Kubernetes! && sleep 3600']
+```
+
+생성할 pod의 구체적 내용을 정의하는 spec 부분을 확인할 수 있습니다.  
+spec 하위로 여러 가지 항목들을 나열할 수 있는데 여기서는 containers라는 container 리스트 한가지 항목만 보입니다.  
+
+<br/>
+
+이 글 서두에서 얘기했듯이 하나의 pod에는 1개 이상의 container를 포함할 수 있습니다. 바로 이 containers에 원하는 만큼의 container를 정의해 넣으면 됩니다. 여기서는 하나의 container만 정의했습니다.  
+
+<br/>
+
+container name은 myapp-container이고, 동일한 pod 내에서 유일한 이름을 가져야 합니다.
+docker image는 busybox로 지정되어 있습니다. docker image는 docker registry에서 pull을 받아 오게 되는데, docker registry가 명시되어 있지 않다면 docker 공식 public registry인 docker hub(https://hub.docker.com)에서 해당 image를 가져오게 됩니다.   
+
+<br/>
+
+만약 private docker registry를 사용한다면 docker image 이름 앞에 해당 url을 명시해 줘야 하며 k8s에서는 remote docker registry와 통신은 http가 아닌 https로만 하게 되어 있어서 private docker registry에 반드시 TLS 인증서를 설치해둬야 합니다.  
+
+<br/>
+
+command 항목은 container가 생성된 초기에 실행되는 명령이나 스크립트를 수록하게 됩니다. dockerfile에서 ENTRYPOINT, CMD의 역할을 한다고 보면 됩니다. 관련된 비교 설명은 이 문서에 자세히 나와 있습니다.  
+
+<br/>  
+
+여기서 container 생성 초기에 실행하는 내용은 단순히 ‘Hello Kubernetes!’ 문자열을 화면(stdout)에 출력하고 1시간 동안 sleep 하라는 명령입니다. 실행 이후를 예상해보면 화면에 문자열 출력한 뒤 1시간 동안 container 실행 상태를 유지하다가 container를 종료하게 됩니다. 만약 이 container가 실행 종료되면 해당 pod도 실행이 종료되어 아마도 상태(status)가 Completed로 변경될 것입니다.
+
+위 내용을 다 작성했다면 sample-pod.yaml이라는 파일명으로 저장한 뒤, 해당 pod를 다음 명령으로 미리 준비된 k8s cluster에 배포할 수 있습니다.
+
+```bash
+kubectl apply -f sample-pod.yaml
+```  
+
+POD 생성 배포 결과 확인
+이제 kubectl get pods 명령으로 현재 namespace에 배포된 pod 목록을 살펴보겠습니다.  
+
+```bash
+kubectl get pods
+```
+
+위의 결과 화면처럼 myapp-pod가 15초 전에 잘 생성되어 Running 하는 것을 확인할 수 있습니다.
+해당 pod의 stdout 내용도 kubectl logs pod/{pod name} 명령으로 살펴볼 수 있습니다.  
+
+```bash
+$ kubectl logs pod/myapp-pod
+Hello Kubernetes!  
+```
+
+의도한대로 Hello Kubernetes! 가 보입니다.
+pod의 해당 container 안으로 ssh 접속해 들어가 보고 싶으면 docker exec 명령과 유사한 kubectl exec -it 명령을 사용하면 됩니다.  
+
+```bash
+kubectl exec -it myapp-pod  /bin/sh
+/ # echo $HOSTNAME
+myapp-pod
+```
+
+위 kubectl exec 명령을 내릴 때 주의해야 할 점은 만약 해당 pod 안에 여러 개의 container가 존재한다면 pod 명 뒤에 -c 옵션으로 container 명도 지정해 줘야 합니다.   
+본 예제에서는 다행히 pod에 하나의 container만 존재하기 때문에 굳이 -c 옵션을 줄 필요가 없습니다.   
+여기서 한가지 발견한 것은 환경변수 $HOSTNAME이 기본적으로 pod 이름으로 설정된다는 점입니다.  
+
+
 Replica 란 ? 
+Deployment ?
 
 <br/>
 
@@ -436,5 +561,14 @@ Role/RoleBinding 란 ?
 
 <br/>
 
+##  kubernetes 실습
+
+###  scale 조정  
+
+<br/>
+
+
+
+scale Up...
 
 * 과제 1 : 미정
