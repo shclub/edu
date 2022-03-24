@@ -149,14 +149,31 @@ Enter new UNIX password:
 
 현재 VM은  java가 설치되지 않아 openjdk 도 추가적으로 설치한다.
    ```bash
-   apt-get install jenkins openjdk-8-jdk
+   apt-get install jenkins 
    ```
-   
-   일반 계정이면 앞에 sudo 명령어를 반드시 붙여준다
+
+ jenkins 설치 완료 후 jdk 설치한다.
+
+   ```bash
+   apt-get install  openjdk-8-jdk
+   ```
+
+일반 계정이면 앞에 sudo 명령어를 반드시 붙여준다
    ```bash
    sudo apt-get install jenkins openjdk-8-jdk
    ```
-   
+
+일반 계정이면 앞에 sudo 명령어를 반드시 붙여준다  
+
+   ```bash
+   sudo apt-get install jenkins 
+   ```
+
+   ```bash
+   sudo apt-get install openjdk-8-jdk 
+   ```
+
+
 ### Jenkins 서비스 포트를 변경한다.  
 
    아래 화일을 vi 에디터를 사용하여 포트를 변경 ( 8080 ->  9000 )
@@ -604,6 +621,7 @@ Python Flask 가 정상적으로 로드가 된걸 확인 할 수 있다.
 <img src="./assets/flask_web_edu1.png" style="width: 60%; height: auto;"/>  
 
 - 과제 : github webhook를 통한 빌드 자동화
+- 답안 : https://github.com/namjunemy/TIL/blob/master/Tools/jenkins_github_hook_trigger_for_gitscm_polling.md    
 
 <br/>
 
