@@ -458,7 +458,7 @@ Swagger의 기능
 
 생성된 이미지는 간단한 계산을 하는 기능으로  swagger 를 내장하고 있다.
 
-브라우저에서 (본인 VM 공인 IP ):40003를 호출하면 아래 화면을 볼 수 있다.
+브라우저에서 (본인 VM IP ):40003를 호출하면 아래 화면을 볼 수 있다.
 <img src="./assets/swagger_first.png" style="width: 60%; height: auto;">   
 
 GET을 클릭하고 오른쪽에 try it out를 클릭하면 API를 테스트 할 수 있다.

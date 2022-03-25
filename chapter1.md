@@ -323,7 +323,14 @@ $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev
 apt-get update && apt-get install docker-ce docker-ce-cli containerd.io gnupg2 pass
 ```
 
-* Ubuntu 에서 도커 로그인 버그가 있어 gnupg2 pass 라이브러리를 추가 했음.
+
+* Ubuntu 에서 도커 로그인 버그가 있어 아래 처럼 에러가 발생하기 때문에 gnupg2 pass 라이브러리를 추가 했음.  
+
+```bash
+$ docker login -u shclub -p ******** https://index.docker.io/v1/
+WARNING! Using --password via the CLI is insecure. Use --password-stdin.
+Error saving credentials: error storing credentials - err: exit status 1, out: `Cannot autolaunch D-Bus without X11 $DISPLAY`
+```
 
 <br/>
 
@@ -432,15 +439,18 @@ setting 으로 이동하여 Make public 클릭후 repository 이름을 입력후
 
 ### 일반 사용자 계정을 생성한다  
 
+admin 계정으로 테스트 할 예정 으로  skip.  
+
 Manage Jenkins -> Manage Users  로 이동한다. 사용자 생성 버튼 클릭 후 사용자 생성.  
 <img src="./assets/jenkins_user.png" style="width: 80%; height: auto;"/>
 
-이미 생성했으면 skip.
 
 <br/>
 
 ### 계정 별 권한 부여방법 
-Configure Global Security로 이동
+Configure Global Security로 이동  
+
+admin 계정으로 테스트 할 예정 으로  skip.
     
 <img src="./assets/configure_global_security.png" style="width: 80%; height: auto;"/>
 
@@ -538,9 +548,31 @@ item 이름을 입력하고 Pipeline 을 선택 후에 OK
 
 <img src="./assets/pipeline_main.png" style="width: 60%; height: auto;"/>
 
-로그 Rotation을 5로 설정한다.  
+로그 Rotation을 5로 설정한다. 5개의 History 를 저장한다. 
 
 <img src="./assets/pipeline_log_rotation.png" style="width: 80%; height: auto;"/>
+
+Jenkins 홈 폴더로 이동하고 아래 명령어를 실행한다.
+
+- 홈 폴더 확인은  대쉬보드에서 Manage Jenkins -> Configure System으로 이동하여 보면 상단에 표시  
+
+<img src="./assets/jenkins_home_folder.png" style="width: 60%; height: auto;"/>  
+
+
+```bash
+cd /var/lib/jenkins
+ls ./jobs/edu1/builds
+```    
+
+7개의 History중  3,4,5,6,7  5개만 저장된것을 확인 할 수있다.    
+
+<img src="./assets/jenkins_build_folder.png" style="width: 40%; height: auto;"/>  
+
+
+대쉬보드에서도 History를 확인 할 수 있다.  
+
+<img src="./assets/jenkins_build_history.png" style="width: 40%; height: auto;"/>  
+
 
 Github Project URL을 설정하고 Git Parameter 를 체크하고 Parameter Type은 교육을 위한 용도 임으로 Branch를 선택한다. ( Tag는 배포를 위한 snapshot 설정 )   
 Branch의 default는 orgin/master를 설정한다.  
@@ -597,6 +629,10 @@ Docker Hub에서 정상적으로 생성된 이미지를 확인 할수 있다.
 
 <img src="./assets/build_dockerhub_check.png" style="width: 60%; height: auto;"/>
 
+* Docker build에 에러가 발생하는 경우가 있는데 Jenkins plugins가 정상적을
+  설치가 안되어 있을수 있다.   
+  docker 검색하여 제대로 설치가 되어 있는지 확인 하고 없으면 재 설치 한다.
+
 <br/>
 
 ### Docker pull 및 실행 테스트  
@@ -625,7 +661,8 @@ Python Flask 가 정상적으로 로드가 된걸 확인 할 수 있다.
 
 <br/>
 
-### Jenkinsfile 설명
+### Jenkinsfile 설명  
+
 Jenkins 화일에서 github와 docker credential 은  Jenkins 설정에서 Credential을 생성한
 id를 입력하면 된다.  
 
@@ -635,3 +672,39 @@ Jenkins에 설정된 credential
 
 <img src="./assets/jenkins_github_dockerhub_credential.png" style="width: 80%; height: auto;"/>  
 
+
+Jenkins Stage View 를 통해 Step별 진행 사항을 볼수 있다.  
+
+
+<img src="./assets/jenkins_stage_view.png" style="width: 60%; height: auto;"/>  
+
+### Jenkins 환경변수
+
+<br/>
+
+env 환경변수는 다음과 같은 형식 env.VARNAME으로 참조될 수 있다. 대표적인 env의 property는 아래와 같다. 
+
+<img src="./assets/jenkins_env_variable.png" style="width: 80%; height: auto;"/>  
+
+<br/>
+
+currentBuild 환경변수는 현재 빌드되고 있는 정보를 담고있다. 보통 readonly 옵션인데 일부 writable한 옵션이 존재한다. 대표적인 currentBuild의 property는 아래와 같다.
+
+
+<img src="./assets/jenkins_current_variable.png" style="width: 80%; height: auto;"/>    
+
+
+환경 변수 사용 예제.
+
+```bash
+pipeline {
+    agent any
+    stages {
+        stage('Example') {
+            steps {
+                echo "Running ${env.BUILD_ID} on ${env.JENKINS_URL}"
+            }
+        }
+    }
+}
+```
