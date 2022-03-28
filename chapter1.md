@@ -147,32 +147,30 @@ Enter new UNIX password:
 
 ### root 계정으로 Jenkins 를 설치한다.  
 
-현재 VM은  java가 설치되지 않아 openjdk 도 추가적으로 설치한다.
+
+현재 VM은  java가 설치되지 않아 openjdk 를 먼저 설치한다.  
+
+openjdk-8-jdk 과 openjdk-11-jdk  설치 가능 ( jdk 11 추천 )  
+
+   ```bash
+   apt-get install  openjdk-11-jdk
+   ```
+
+jenkins를 설치한다.  
+
    ```bash
    apt-get install jenkins 
-   ```
-
- jenkins 설치 완료 후 jdk 설치한다.
-
-   ```bash
-   apt-get install  openjdk-8-jdk
-   ```
-
-일반 계정이면 앞에 sudo 명령어를 반드시 붙여준다
-   ```bash
-   sudo apt-get install jenkins openjdk-8-jdk
    ```
 
 일반 계정이면 앞에 sudo 명령어를 반드시 붙여준다  
 
    ```bash
-   sudo apt-get install jenkins 
-   ```
+   sudo apt-get install openjdk-11-jdk  
+   ```  
 
    ```bash
-   sudo apt-get install openjdk-8-jdk 
+   sudo apt-get install jenkins 
    ```
-
 
 ### Jenkins 서비스 포트를 변경한다.  
 
@@ -677,6 +675,8 @@ Jenkins Stage View 를 통해 Step별 진행 사항을 볼수 있다.
 
 
 <img src="./assets/jenkins_stage_view.png" style="width: 60%; height: auto;"/>  
+
+<br/>
 
 ### Jenkins 환경변수
 

@@ -369,7 +369,7 @@ docker stop (컨테이너id)
 <img src="./assets/docker_ps_stop.png" style="width: 60%; height: auto;"/>
 
 도커 이미지를 실행한다.
-- -d : 데몬모드(백그라운드)
+- -d : Detached 모드(백그라운드)
 - --name : 컨테이너에 이름을 부여한다.
 - -p : 포트 ( 외부접속포트 : 컨테이너 포트)
 - 맨 마지막에 도커 이미지 이름  
@@ -572,7 +572,7 @@ docker-compose up -d
 ```  
 
 - 현재 디렉토리에 있는 docker-compose 파일을 실행하여, docker-compose 파일에 정의된 컨테이너를 실행한다.
-- -d 옵션을 주면 daemon(백그라운드)으로 실행한다.
+- -d 옵션을 주면 detached(백그라운드)으로 실행한다.
 - –force-recreate 옵션으로 컨테이너를 새로 만들 수 있다.
 - –build 옵션으로 도커 이미지를 다시 빌드한다. (build로 선언했을 때만)  
 
