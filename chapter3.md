@@ -124,8 +124,9 @@ k3s는 가벼운 Kubernetes로 Rancher에서 개발되었으며 쉬운 설치로
 ssh root@(본인 VM 공인 ip) -p 22222
 ``` 
 
-root 계정으로 진행시 아래와 같이 입력하고 패키지를 업그레이드 한다.  
-일반 계정인 경우는 앞에 sudo를 붙인다.
+root 계정으로 진행시 아래와 같이 입력하고 패키지를 업그레이드 한다.    
+멈추어 있는 듯 하면 Enter를 입력한다.  
+일반 계정인 경우는 앞에 sudo를 붙인다. 
 
 ```bash
 apt update & apt upgrade
@@ -172,7 +173,7 @@ kubectl get pod --namespace=kube-system
 
 <img src="./assets/k3s_nodes.png" style="width: 60%; height: auto;"/>  
 
-k3s는 metric-server가 설치 되어 있어 노드의 리소르를 확인 할 수 있다.
+k3s는 metric-server가 설치 되어 있어 노드의 리소스를 확인 할 수 있다.
 
 ```bash
 kubectl top nodes
@@ -233,9 +234,9 @@ users:
 <img src="./assets/k3s_config_modify.png" style="width: 60%; height: auto;"/> 
 
 변경된 값을 로컬 특정 폴더에  config-k3stest 이름으로 저장한다.  
-.kube 폴더가 없으면 생성한다.
+.kube 폴더가 없으면 생성한다. ( config 화일은 확장자가 없이 만든다 )  
 
-- Windows : /Users/본인계정/.kube/config-k3stest
+- Windows : c:\Users\본인계정\.kube\config-k3stest
 - Mac : ~/.kube/config-k3stest
 
 
@@ -388,7 +389,7 @@ helm install prometheus --namespace monitoring prometheus-community/kube-prometh
 Error: INSTALLATION FAILED: Kubernetes cluster unreachable: Get "http://localhost:8080/version": dial tcp [::1]:8080: connect: connection refused
 ```
 
-다음 명렁어를 실행하고 다시 prometheus를 설치 한다.
+다음 명렁어를 실행하고 다시 prometheus를 설치 한다. 위 명령어 실행.
 
 ```bash
 export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
@@ -460,6 +461,28 @@ lens 화면 구성
 <br/>
 
 
+나의 config 파일
+```bash
+apiVersion: v1
+clusters:
+- cluster:
+    certificate-authority-data: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUJkekNDQVIyZ0F3SUJBZ0lCQURBS0JnZ3Foa2pPUFFRREFqQWpNU0V3SHdZRFZRUUREQmhyTTNNdGMyVnkKZG1WeUxXTmhRREUyTkRjNU16VXpOalV3SGhjTk1qSXdNekl5TURjME9USTFXaGNOTXpJd016RTVNRGMwT1RJMQpXakFqTVNFd0h3WURWUVFEREJock0zTXRjMlZ5ZG1WeUxXTmhRREUyTkRjNU16VXpOalV3V1RBVEJnY3Foa2pPClBRSUJCZ2dxaGtqT1BRTUJCd05DQUFUNjlSOVc5SFNYU2dubzJhZmFnM3hxcktoNHZOampkTHFtNWFSS0Rwb2QKcVZtT1hoVU04dEJkaHJzZ0lnQXYxdkUxbUgzZ0ZLVUYwdXNacUVHQ2tyeGJvMEl3UURBT0JnTlZIUThCQWY4RQpCQU1DQXFRd0R3WURWUjBUQVFIL0JBVXdBd0VCL3pBZEJnTlZIUTRFRmdRVUVlczlQTVppVnVoWkRpN2lOeVVZCit0TjNUS3N3Q2dZSUtvWkl6ajBFQXdJRFNBQXdSUUloQUpKQXJpaUdVc2Nrbm8rZDk5bDdZYW1rb3pZdHo5ejIKYy8zS2YvRitFcHV1QWlBdG9ZOFJzRDh0YmdjM2FkM2RVOWw4NzE1R3ByNzBOK2NoQTJqWjN3YnNzUT09Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K
+    server: https://210.106.105.76:6443
+  name: k3s-test 
+contexts:
+- context:
+    cluster: k3s-test
+    user: default 
+  name: k3s-test 
+current-context: k3s-test
+kind: Config
+preferences: {}
+users:
+- name: default
+  user:
+    client-certificate-data: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUJrVENDQVRlZ0F3SUJBZ0lJUlVoT3dWaG5vZ1F3Q2dZSUtvWkl6ajBFQXdJd0l6RWhNQjhHQTFVRUF3d1kKYXpOekxXTnNhV1Z1ZEMxallVQXhOalEzT1RNMU16WTFNQjRYRFRJeU1ETXlNakEzTkRreU5Wb1hEVEl6TURNeQpNakEzTkRreU5Wb3dNREVYTUJVR0ExVUVDaE1PYzNsemRHVnRPbTFoYzNSbGNuTXhGVEFUQmdOVkJBTVRESE41CmMzUmxiVHBoWkcxcGJqQlpNQk1HQnlxR1NNNDlBZ0VHQ0NxR1NNNDlBd0VIQTBJQUJNQUhjUnRwMWhtSzEzNXMKTVh6b0FHNkVwRWVESUw0N2ZuTXFoUWR0TVRuUGJJc2xTMjRZZHY0dFVCSG83ZmpuTDk4NEt2S2VLZTFlZkpTSQpjY2F6VWZ5alNEQkdNQTRHQTFVZER3RUIvd1FFQXdJRm9EQVRCZ05WSFNVRUREQUtCZ2dyQmdFRkJRY0RBakFmCkJnTlZIU01FR0RBV2dCVHNTQURpR3hmN0tOTWdKa05kU1ZpSXBnbjF0akFLQmdncWhrak9QUVFEQWdOSUFEQkYKQWlFQWdXc01sT1gzSlg3V3I1V2k0S3ArYThxeTFjNWNsQld4R29hazNHdW1GdVlDSUNaSmNvY21MbVFRRFBtWgpvMS9WczFoemlDS0VRMjA3ZGJpU01SRXRtSGJnCi0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0KLS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUJkekNDQVIyZ0F3SUJBZ0lCQURBS0JnZ3Foa2pPUFFRREFqQWpNU0V3SHdZRFZRUUREQmhyTTNNdFkyeHAKWlc1MExXTmhRREUyTkRjNU16VXpOalV3SGhjTk1qSXdNekl5TURjME9USTFXaGNOTXpJd016RTVNRGMwT1RJMQpXakFqTVNFd0h3WURWUVFEREJock0zTXRZMnhwWlc1MExXTmhRREUyTkRjNU16VXpOalV3V1RBVEJnY3Foa2pPClBRSUJCZ2dxaGtqT1BRTUJCd05DQUFUZ3lPQUdJeFJ5UXN6UXdZRUNQeU5IS3BzbXZaTEcvQVp2SkUwbmxjYVYKaDVodGpXb0hxQmJ1K1JTREYrM2dGdk1HVGZUa3BTamM3NUhOYnB1N3psY0FvMEl3UURBT0JnTlZIUThCQWY4RQpCQU1DQXFRd0R3WURWUjBUQVFIL0JBVXdBd0VCL3pBZEJnTlZIUTRFRmdRVTdFZ0E0aHNYK3lqVElDWkRYVWxZCmlLWUo5Yll3Q2dZSUtvWkl6ajBFQXdJRFNBQXdSUUloQUpiSnhadFVJUWV2Wnhtc254Mk0vbkQ2SWRtUEVCNXoKMnhtd2ZQbnB5dzBtQWlCYlZOa0hYTWVsVVoyWWg3V3I5ZTlWdURLakVYcUlkMDk4UjBWL1pybmo2dz09Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K
+    client-key-data: LS0tLS1CRUdJTiBFQyBQUklWQVRFIEtFWS0tLS0tCk1IY0NBUUVFSU5lbHd2cW11TWlTUGdpeHBldEZqRTFWQWU1dGpGM1RmMEpjNmdPT0tjZ3RvQW9HQ0NxR1NNNDkKQXdFSG9VUURRZ0FFd0FkeEcybldHWXJYZm13eGZPZ0Fib1NrUjRNZ3ZqdCtjeXFGQjIweE9jOXNpeVZMYmhoMgovaTFRRWVqdCtPY3YzemdxOHA0cDdWNThsSWh4eHJOUi9BPT0KLS0tLS1FTkQgRUMgUFJJVkFURSBLRVktLS0tLQo=
+```
 
 ##  kubernetes 기능
 

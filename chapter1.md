@@ -655,7 +655,6 @@ Python Flask 가 정상적으로 로드가 된걸 확인 할 수 있다.
 <img src="./assets/flask_web_edu1.png" style="width: 60%; height: auto;"/>  
 
 - 과제 : github webhook를 통한 빌드 자동화
-- 답안 : https://github.com/namjunemy/TIL/blob/master/Tools/jenkins_github_hook_trigger_for_gitscm_polling.md    
 
 <br/>
 
