@@ -137,10 +137,13 @@ apt update & apt upgrade
 k3s를 설치한다. 몇 초 안에 설치가 된다.  
 - kubernetes full version 은 1시간 정도, Openshift는 2시간 정도 설치 시간 소요
 
+<br/>
+--tls-san 다음의 IP는 본인의 VM Public IP를 입력한다.
 
 ```bash
-curl -sfL https://get.k3s.io | sh -
+curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--tls-san 210.106.105.68" sh -s -
 ```
+
 
 <img src="./assets/install_k3s.png" style="width: 60%; height: auto;"/>  
 
@@ -240,6 +243,8 @@ users:
 - Mac : ~/.kube/config-k3stest
 
 
+설치시에 INSTALL_K3S_EXEC="--tls-san 구문을 추가했다면 아래 과정은 skip.  
+
 Kubernetes API 서버의 인증서가 내부 IP만 접속하도록 설정이되어 있어
 외부에서 접속 가능하도록  k3s를 설치한 서버의 systemd 설정을 바꿔줍시다.  
 
@@ -284,6 +289,88 @@ kubectl get nodes
 
 재기동시 시간이 걸릴 수가 있으며 STATUS가 Ready 이면 재기동 성공.  
 
+
+<br/>
+
+```bash
+k3s 삭제방법 
+/usr/local/bin/k3s-uninstall.sh
+```
+
+<br/>
+### kubernetes IDE lens 설치
+
+<br/>
+
+Lens는 쿠버네티스를 모니터링 및 관리 개발할 수 있은 IDE이다.  
+기존의 쿠버네티스 대시보드가 localhost만 가능한 반면 LENS는 연결만 하면 원격의 K8S 클러스터도 같이 모니터링 할 수 있다.
+
+특징
+
+- pod 목록 조회 (이제 더이상 terminal에서 kubectl get pods --watch를 입력할 필요없다)
+- pod describe 결과를 편하게 볼 수 있음
+- pod의 terminal에 쉽게 접근
+- pod의 log도 쉽게 볼 수 있고 편하게 검색할 수 있다  
+
+<br/>
+
+웹 브라우저에서 https://k8slens.dev/index.html 에 접속한다.
+
+본인 로컬 PC의 os를 선택하고 파일을 다운로드 받고 설치를 한다.   
+
+<img src="./assets/lens_web.png" style="width: 60%; height: auto;"/>  
+
+
+설치된 lens 프로그램을 실행하면 welcome 화면이 나오고 하단에 skip 버튼을 눌러 이동한다.
+
+<img src="./assets/lens_welcome_0.png" style="width: 40%; height: auto;"/>  
+
+
+welcome 화면 다음에  Browse Clusters in catalog를 클릭한다. 
+
+<img src="./assets/lens_welcome.png" style="width: 40%; height: auto;"/>  
+
+Lens가 .kube 폴더 밑의 config 화일들을 자동으로 읽어 온다.  
+k3s-test 라는 이름으로 클러스터 이름이 생성 된것 확인 할 수 있다.
+
+<img src="./assets/lens_cluster_list.png" style="width: 60%; height: auto;"/>  
+
+
+k3s-test 를 클릭하고 왼쪽 메뉴 Cluster 클릭하면 메트릭 정보를 볼 수 있다.
+- helm으로 prometheus 설치 하여 가능 
+
+<img src="./assets/lens_metric_install.png" style="width: 80%; height: auto;"/>  
+
+<br/>
+lens 화면 구성 
+
+<img src="./assets/lens_preview.png" style="width: 80%; height: auto;"/>
+
+<br/>
+
+
+나의 config 파일
+```bash
+apiVersion: v1
+clusters:
+- cluster:
+    certificate-authority-data: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUJkekNDQVIyZ0F3SUJBZ0lCQURBS0JnZ3Foa2pPUFFRREFqQWpNU0V3SHdZRFZRUUREQmhyTTNNdGMyVnkKZG1WeUxXTmhRREUyTkRjNU16VXpOalV3SGhjTk1qSXdNekl5TURjME9USTFXaGNOTXpJd016RTVNRGMwT1RJMQpXakFqTVNFd0h3WURWUVFEREJock0zTXRjMlZ5ZG1WeUxXTmhRREUyTkRjNU16VXpOalV3V1RBVEJnY3Foa2pPClBRSUJCZ2dxaGtqT1BRTUJCd05DQUFUNjlSOVc5SFNYU2dubzJhZmFnM3hxcktoNHZOampkTHFtNWFSS0Rwb2QKcVZtT1hoVU04dEJkaHJzZ0lnQXYxdkUxbUgzZ0ZLVUYwdXNacUVHQ2tyeGJvMEl3UURBT0JnTlZIUThCQWY4RQpCQU1DQXFRd0R3WURWUjBUQVFIL0JBVXdBd0VCL3pBZEJnTlZIUTRFRmdRVUVlczlQTVppVnVoWkRpN2lOeVVZCit0TjNUS3N3Q2dZSUtvWkl6ajBFQXdJRFNBQXdSUUloQUpKQXJpaUdVc2Nrbm8rZDk5bDdZYW1rb3pZdHo5ejIKYy8zS2YvRitFcHV1QWlBdG9ZOFJzRDh0YmdjM2FkM2RVOWw4NzE1R3ByNzBOK2NoQTJqWjN3YnNzUT09Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K
+    server: https://210.106.105.76:6443
+  name: k3s-test 
+contexts:
+- context:
+    cluster: k3s-test
+    user: default 
+  name: k3s-test 
+current-context: k3s-test
+kind: Config
+preferences: {}
+users:
+- name: default
+  user:
+    client-certificate-data: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUJrVENDQVRlZ0F3SUJBZ0lJUlVoT3dWaG5vZ1F3Q2dZSUtvWkl6ajBFQXdJd0l6RWhNQjhHQTFVRUF3d1kKYXpOekxXTnNhV1Z1ZEMxallVQXhOalEzT1RNMU16WTFNQjRYRFRJeU1ETXlNakEzTkRreU5Wb1hEVEl6TURNeQpNakEzTkRreU5Wb3dNREVYTUJVR0ExVUVDaE1PYzNsemRHVnRPbTFoYzNSbGNuTXhGVEFUQmdOVkJBTVRESE41CmMzUmxiVHBoWkcxcGJqQlpNQk1HQnlxR1NNNDlBZ0VHQ0NxR1NNNDlBd0VIQTBJQUJNQUhjUnRwMWhtSzEzNXMKTVh6b0FHNkVwRWVESUw0N2ZuTXFoUWR0TVRuUGJJc2xTMjRZZHY0dFVCSG83ZmpuTDk4NEt2S2VLZTFlZkpTSQpjY2F6VWZ5alNEQkdNQTRHQTFVZER3RUIvd1FFQXdJRm9EQVRCZ05WSFNVRUREQUtCZ2dyQmdFRkJRY0RBakFmCkJnTlZIU01FR0RBV2dCVHNTQURpR3hmN0tOTWdKa05kU1ZpSXBnbjF0akFLQmdncWhrak9QUVFEQWdOSUFEQkYKQWlFQWdXc01sT1gzSlg3V3I1V2k0S3ArYThxeTFjNWNsQld4R29hazNHdW1GdVlDSUNaSmNvY21MbVFRRFBtWgpvMS9WczFoemlDS0VRMjA3ZGJpU01SRXRtSGJnCi0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0KLS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUJkekNDQVIyZ0F3SUJBZ0lCQURBS0JnZ3Foa2pPUFFRREFqQWpNU0V3SHdZRFZRUUREQmhyTTNNdFkyeHAKWlc1MExXTmhRREUyTkRjNU16VXpOalV3SGhjTk1qSXdNekl5TURjME9USTFXaGNOTXpJd016RTVNRGMwT1RJMQpXakFqTVNFd0h3WURWUVFEREJock0zTXRZMnhwWlc1MExXTmhRREUyTkRjNU16VXpOalV3V1RBVEJnY3Foa2pPClBRSUJCZ2dxaGtqT1BRTUJCd05DQUFUZ3lPQUdJeFJ5UXN6UXdZRUNQeU5IS3BzbXZaTEcvQVp2SkUwbmxjYVYKaDVodGpXb0hxQmJ1K1JTREYrM2dGdk1HVGZUa3BTamM3NUhOYnB1N3psY0FvMEl3UURBT0JnTlZIUThCQWY4RQpCQU1DQXFRd0R3WURWUjBUQVFIL0JBVXdBd0VCL3pBZEJnTlZIUTRFRmdRVTdFZ0E0aHNYK3lqVElDWkRYVWxZCmlLWUo5Yll3Q2dZSUtvWkl6ajBFQXdJRFNBQXdSUUloQUpiSnhadFVJUWV2Wnhtc254Mk0vbkQ2SWRtUEVCNXoKMnhtd2ZQbnB5dzBtQWlCYlZOa0hYTWVsVVoyWWg3V3I5ZTlWdURLakVYcUlkMDk4UjBWL1pybmo2dz09Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K
+    client-key-data: LS0tLS1CRUdJTiBFQyBQUklWQVRFIEtFWS0tLS0tCk1IY0NBUUVFSU5lbHd2cW11TWlTUGdpeHBldEZqRTFWQWU1dGpGM1RmMEpjNmdPT0tjZ3RvQW9HQ0NxR1NNNDkKQXdFSG9VUURRZ0FFd0FkeEcybldHWXJYZm13eGZPZ0Fib1NrUjRNZ3ZqdCtjeXFGQjIweE9jOXNpeVZMYmhoMgovaTFRRWVqdCtPY3YzemdxOHA0cDdWNThsSWh4eHJOUi9BPT0KLS0tLS1FTkQgRUMgUFJJVkFURSBLRVktLS0tLQo=
+```
 
 <br/>
 
@@ -380,7 +467,7 @@ kubectl create namespace monitoring
 helm 으로 prometheus를 설치합니다.  
 
 ```bash
-helm install prometheus --namespace monitoring prometheus-community/kube-prometheus-stack
+helm install prometheus -n monitoring prometheus-community/kube-prometheus-stack
 ```  
 
 설치시 아래와 같은  에러가 발생 하면 
@@ -405,84 +492,11 @@ kubectl get deployments -n monitoring
 
 <br/>
 
-뒤에서 k8s IDE인 lens 를 확인하면 메트릭 정보를 볼수 있고 
+k8s IDE인 lens 를 확인하면 메트릭 정보를 볼수 있고 
 명령어를 통해서도 확인할 수 있다.
 
 <br/>
 
-### kubernetes IDE lens 설치
-
-<br/>
-
-Lens는 쿠버네티스를 모니터링 및 관리 개발할 수 있은 IDE이다.  
-기존의 쿠버네티스 대시보드가 localhost만 가능한 반면 LENS는 연결만 하면 원격의 K8S 클러스터도 같이 모니터링 할 수 있다.
-
-특징
-
-- pod 목록 조회 (이제 더이상 terminal에서 kubectl get pods --watch를 입력할 필요없다)
-- pod describe 결과를 편하게 볼 수 있음
-- pod의 terminal에 쉽게 접근
-- pod의 log도 쉽게 볼 수 있고 편하게 검색할 수 있다  
-
-<br/>
-
-웹 브라우저에서 https://k8slens.dev/index.html 에 접속한다.
-
-본인 로컬 PC의 os를 선택하고 파일을 다운로드 받고 설치를 한다.   
-
-<img src="./assets/lens_web.png" style="width: 60%; height: auto;"/>  
-
-
-설치된 lens 프로그램을 실행하면 welcome 화면이 나오고 하단에 skip 버튼을 눌러 이동한다.
-
-<img src="./assets/lens_welcome_0.png" style="width: 40%; height: auto;"/>  
-
-
-welcome 화면 다음에  Browse Clusters in catalog를 클릭한다. 
-
-<img src="./assets/lens_welcome.png" style="width: 40%; height: auto;"/>  
-
-Lens가 .kube 폴더 밑의 config 화일들을 자동으로 읽어 온다.  
-k3s-test 라는 이름으로 클러스터 이름이 생성 된것 확인 할 수 있다.
-
-<img src="./assets/lens_cluster_list.png" style="width: 60%; height: auto;"/>  
-
-
-k3s-test 를 클릭하고 왼쪽 메뉴 Cluster 클릭하면 메트릭 정보를 볼 수 있다.
-- helm으로 prometheus 설치 하여 가능 
-
-<img src="./assets/lens_metric_install.png" style="width: 80%; height: auto;"/>  
-
-<br/>
-lens 화면 구성 
-
-<img src="./assets/lens_preview.png" style="width: 80%; height: auto;"/>
-
-<br/>
-
-
-나의 config 파일
-```bash
-apiVersion: v1
-clusters:
-- cluster:
-    certificate-authority-data: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUJkekNDQVIyZ0F3SUJBZ0lCQURBS0JnZ3Foa2pPUFFRREFqQWpNU0V3SHdZRFZRUUREQmhyTTNNdGMyVnkKZG1WeUxXTmhRREUyTkRjNU16VXpOalV3SGhjTk1qSXdNekl5TURjME9USTFXaGNOTXpJd016RTVNRGMwT1RJMQpXakFqTVNFd0h3WURWUVFEREJock0zTXRjMlZ5ZG1WeUxXTmhRREUyTkRjNU16VXpOalV3V1RBVEJnY3Foa2pPClBRSUJCZ2dxaGtqT1BRTUJCd05DQUFUNjlSOVc5SFNYU2dubzJhZmFnM3hxcktoNHZOampkTHFtNWFSS0Rwb2QKcVZtT1hoVU04dEJkaHJzZ0lnQXYxdkUxbUgzZ0ZLVUYwdXNacUVHQ2tyeGJvMEl3UURBT0JnTlZIUThCQWY4RQpCQU1DQXFRd0R3WURWUjBUQVFIL0JBVXdBd0VCL3pBZEJnTlZIUTRFRmdRVUVlczlQTVppVnVoWkRpN2lOeVVZCit0TjNUS3N3Q2dZSUtvWkl6ajBFQXdJRFNBQXdSUUloQUpKQXJpaUdVc2Nrbm8rZDk5bDdZYW1rb3pZdHo5ejIKYy8zS2YvRitFcHV1QWlBdG9ZOFJzRDh0YmdjM2FkM2RVOWw4NzE1R3ByNzBOK2NoQTJqWjN3YnNzUT09Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K
-    server: https://210.106.105.76:6443
-  name: k3s-test 
-contexts:
-- context:
-    cluster: k3s-test
-    user: default 
-  name: k3s-test 
-current-context: k3s-test
-kind: Config
-preferences: {}
-users:
-- name: default
-  user:
-    client-certificate-data: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUJrVENDQVRlZ0F3SUJBZ0lJUlVoT3dWaG5vZ1F3Q2dZSUtvWkl6ajBFQXdJd0l6RWhNQjhHQTFVRUF3d1kKYXpOekxXTnNhV1Z1ZEMxallVQXhOalEzT1RNMU16WTFNQjRYRFRJeU1ETXlNakEzTkRreU5Wb1hEVEl6TURNeQpNakEzTkRreU5Wb3dNREVYTUJVR0ExVUVDaE1PYzNsemRHVnRPbTFoYzNSbGNuTXhGVEFUQmdOVkJBTVRESE41CmMzUmxiVHBoWkcxcGJqQlpNQk1HQnlxR1NNNDlBZ0VHQ0NxR1NNNDlBd0VIQTBJQUJNQUhjUnRwMWhtSzEzNXMKTVh6b0FHNkVwRWVESUw0N2ZuTXFoUWR0TVRuUGJJc2xTMjRZZHY0dFVCSG83ZmpuTDk4NEt2S2VLZTFlZkpTSQpjY2F6VWZ5alNEQkdNQTRHQTFVZER3RUIvd1FFQXdJRm9EQVRCZ05WSFNVRUREQUtCZ2dyQmdFRkJRY0RBakFmCkJnTlZIU01FR0RBV2dCVHNTQURpR3hmN0tOTWdKa05kU1ZpSXBnbjF0akFLQmdncWhrak9QUVFEQWdOSUFEQkYKQWlFQWdXc01sT1gzSlg3V3I1V2k0S3ArYThxeTFjNWNsQld4R29hazNHdW1GdVlDSUNaSmNvY21MbVFRRFBtWgpvMS9WczFoemlDS0VRMjA3ZGJpU01SRXRtSGJnCi0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0KLS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUJkekNDQVIyZ0F3SUJBZ0lCQURBS0JnZ3Foa2pPUFFRREFqQWpNU0V3SHdZRFZRUUREQmhyTTNNdFkyeHAKWlc1MExXTmhRREUyTkRjNU16VXpOalV3SGhjTk1qSXdNekl5TURjME9USTFXaGNOTXpJd016RTVNRGMwT1RJMQpXakFqTVNFd0h3WURWUVFEREJock0zTXRZMnhwWlc1MExXTmhRREUyTkRjNU16VXpOalV3V1RBVEJnY3Foa2pPClBRSUJCZ2dxaGtqT1BRTUJCd05DQUFUZ3lPQUdJeFJ5UXN6UXdZRUNQeU5IS3BzbXZaTEcvQVp2SkUwbmxjYVYKaDVodGpXb0hxQmJ1K1JTREYrM2dGdk1HVGZUa3BTamM3NUhOYnB1N3psY0FvMEl3UURBT0JnTlZIUThCQWY4RQpCQU1DQXFRd0R3WURWUjBUQVFIL0JBVXdBd0VCL3pBZEJnTlZIUTRFRmdRVTdFZ0E0aHNYK3lqVElDWkRYVWxZCmlLWUo5Yll3Q2dZSUtvWkl6ajBFQXdJRFNBQXdSUUloQUpiSnhadFVJUWV2Wnhtc254Mk0vbkQ2SWRtUEVCNXoKMnhtd2ZQbnB5dzBtQWlCYlZOa0hYTWVsVVoyWWg3V3I5ZTlWdURLakVYcUlkMDk4UjBWL1pybmo2dz09Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K
-    client-key-data: LS0tLS1CRUdJTiBFQyBQUklWQVRFIEtFWS0tLS0tCk1IY0NBUUVFSU5lbHd2cW11TWlTUGdpeHBldEZqRTFWQWU1dGpGM1RmMEpjNmdPT0tjZ3RvQW9HQ0NxR1NNNDkKQXdFSG9VUURRZ0FFd0FkeEcybldHWXJYZm13eGZPZ0Fib1NrUjRNZ3ZqdCtjeXFGQjIweE9jOXNpeVZMYmhoMgovaTFRRWVqdCtPY3YzemdxOHA0cDdWNThsSWh4eHJOUi9BPT0KLS0tLS1FTkQgRUMgUFJJVkFURSBLRVktLS0tLQo=
-```
 
 ##  kubernetes 기능
 
