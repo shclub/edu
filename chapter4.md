@@ -91,16 +91,30 @@ kubectl get po -n argocd
 
 <br/>
 
+k8s에 argo-rollouts을 설치 합니다.  
+argo-rollouts 은 blue/green 과 canary 배포 방식을 지원합니다.  
 
-정상적으로 설치가 되면 아래 명령어를 사용하여 생성된 서비스를 확인한다.
+먼저 argo-rollouts namespace 를 생성 합니다.
 
 ```bash
-kubectl get svc -n argocd
-kubectl get po -n argocd
+kubectl create namespace argo-rollouts
+```  
+
+argo-rollouts 을 설치합니다.
+
+```bash
+kubectl apply -f https://github.com/argoproj/argo-rollouts/releases/latest/download/install.yaml -n argo-rollouts
 ```
 
-<img src="./assets/argocd_install4.png" style="width: 60%; height: auto;"/>  
+<img src="./assets/argo_rollouts_install.png" style="width: 60%; height: auto;"/>  
 
+```bash
+kubectl get all -n argo-rollouts
+```  
+
+<img src="./assets/argo_rollouts_all.png" style="width: 60%; height: auto;"/>  
+
+<br/>
 
 k8s는 kt cloud의 VM 위에 구축되었기 때문에, 외부에서 접속하기 위해서 NodePort를 사용하여 서비스를 오픈한다.   
 
@@ -155,7 +169,8 @@ NodePort Traffic 설명
 <img src="./assets/nodeport_traffic.png" style="width: 60%; height: auto;"/>  
 
 <br/> 
-이제 브라우저에서 argocd를 접속해 봅니다. http://(본인 VM Public IP):30000      
+이제 브라우저에서 argocd를 접속해 봅니다. http://(본인 VM Public IP):30000 로 접속하면 https로 Redirect됩니다.  
+
 아래와 같은 화면이 나오면 정상이고 admin과 비밀번호로 로그인 한다.  
 
 
