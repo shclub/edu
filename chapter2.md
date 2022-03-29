@@ -615,4 +615,24 @@ docker compose 기동시에 volumes 설정이 로컬 폴더와 컨테이너 폴�
 
 * 과제 1 : docker compose로 구성한 mysql container  접속하여 로그인 한 후 wordpress db에 customer 테이블을 생성해 본다.  
 
-* 과제 2 : 금일 실습한 Dockerfile과 docker-compose.yml 화일을 git 명령어를 사용하여 edu2에 push 한다.
+* 과제 2 : 금일 실습한 Dockerfile과 docker-compose.yml 화일을 git 명령어를 사용하여 edu2에 push 한다.  
+
+* 과제 3 : docker 컨테이너 GUI 관리 툴인 portainer를 설치하고 웹에서 접속하여
+          모니터링한다.
+   - url  참고 :  https://docs.portainer.io/v/ce-2.11/start/install/server/docker/linux
+   - 웹 포트는 40005로 expose 한다.
+   - 웹브라우저 접속은 https://(본인VM Public IP):40005  
+     admin 비밀번호 신규로 생성 (8자리 이상) 한다.
+     
+      <img src="./assets/portainer_admin.png" style="width: 60%; height: auto;">
+   - Getting Start를 선택하고 로컬 도커를 클릭한다.  
+     
+      <img src="./assets/portainer_local.png" style="width: 60%; height: auto;">
+
+   - 도커에서 관리하는 리소스 대쉬보드를 볼수 있다.   
+     
+      <img src="./assets/portainer_dashboard.png" style="width: 60%; height: auto;">
+
+   - 컨테이너 항목을 선택하면 자세한 컨테이너 현황을 볼수 있다.   
+     
+      <img src="./assets/portainer_container.png" style="width: 60%; height: auto;">

@@ -171,7 +171,7 @@ kubectl get nodes
 ```bash  
 
 # Kubernetes 시스템 Pod 상태 확인
-kubectl get pod --namespace=kube-system
+kubectl get pod -n kube-system
 ```  
 
 <img src="./assets/k3s_nodes.png" style="width: 60%; height: auto;"/>  
@@ -192,7 +192,10 @@ kubectl top nodes
 
 <br/>
 
-k3s를 설치하면, 클러스터의 인증서와 사용자 비밀번호 등 인증하는데 필요한 정보가 /etc/rancher/k3s/k3s.yaml에 저장됩니다.  
+k3s를 설치하면, 클러스터의 인증서와 사용자 비밀번호 등 인증하는데 필요한 정보가 /etc/rancher/k3s/k3s.yaml에 저장됩니다.    
+
+외부에서 Kubernetes API server 에 접속하기 위해서 token을 사용한다고 이해 하면 된다.  
+
 
 ```bash
 cat /etc/rancher/k3s/k3s.yaml
@@ -204,10 +207,25 @@ cat /etc/rancher/k3s/k3s.yaml
 
 서버 주소가 127.0.0.1로 되어있거나, 이름의 대부분이 default로 되어 있습니다. 하나의 Kubernetes 클러스터만 관리한다면 이름은 문제가 되지 않겠지만, 여러 개의 클러스터에 하나의 컴퓨터에서 접속한다면 이름을 반드시 바꿔주어야 합니다.
 
-2개의 값을 일관변경 한다.  
+2개의 값을 일괄 변경 한다.  
 
 - default ->  k3s-test ( 총 6개 ) 
 - ip는  127.0.0.1 ->  본인 VM서버 공인 ip
+
+<br/>
+vi 에디터에서 esc 키를 클릭한 후 아래 와 같이 사용하면 일괄 변경 가능하다.  
+
+```bash
+:%s/127.0.0.1/(본인 VM Public IP)/g
+:%s/default/(본인 생성하고 싶은 k3s 이름)/g
+```  
+
+```bash
+:%s/127.0.0.1/210.106.105.76/g
+:%s/default/k3s-test/g
+```
+
+<br/>
 
 ```bash
 apiVersion: v1
@@ -289,11 +307,11 @@ kubectl get nodes
 
 재기동시 시간이 걸릴 수가 있으며 STATUS가 Ready 이면 재기동 성공.  
 
-
 <br/>
 
+k3s 삭제방법  
+ 
 ```bash
-k3s 삭제방법 
 /usr/local/bin/k3s-uninstall.sh
 ```
 
@@ -348,29 +366,68 @@ lens 화면 구성
 
 <br/>
 
+현재 Disk 상태를 보면 사용률이 높을것을 확인 할 수 있다.    
 
-나의 config 파일
+<img src="./assets/k3s_disk.png" style="width: 80%; height: auto;"/>  
+
+<br/>
+
+도커 루트 디렉토리를 확인하면 /var/lib/docker 폴더를 확인 할 수 있다.  
+
 ```bash
-apiVersion: v1
-clusters:
-- cluster:
-    certificate-authority-data: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUJkekNDQVIyZ0F3SUJBZ0lCQURBS0JnZ3Foa2pPUFFRREFqQWpNU0V3SHdZRFZRUUREQmhyTTNNdGMyVnkKZG1WeUxXTmhRREUyTkRjNU16VXpOalV3SGhjTk1qSXdNekl5TURjME9USTFXaGNOTXpJd016RTVNRGMwT1RJMQpXakFqTVNFd0h3WURWUVFEREJock0zTXRjMlZ5ZG1WeUxXTmhRREUyTkRjNU16VXpOalV3V1RBVEJnY3Foa2pPClBRSUJCZ2dxaGtqT1BRTUJCd05DQUFUNjlSOVc5SFNYU2dubzJhZmFnM3hxcktoNHZOampkTHFtNWFSS0Rwb2QKcVZtT1hoVU04dEJkaHJzZ0lnQXYxdkUxbUgzZ0ZLVUYwdXNacUVHQ2tyeGJvMEl3UURBT0JnTlZIUThCQWY4RQpCQU1DQXFRd0R3WURWUjBUQVFIL0JBVXdBd0VCL3pBZEJnTlZIUTRFRmdRVUVlczlQTVppVnVoWkRpN2lOeVVZCit0TjNUS3N3Q2dZSUtvWkl6ajBFQXdJRFNBQXdSUUloQUpKQXJpaUdVc2Nrbm8rZDk5bDdZYW1rb3pZdHo5ejIKYy8zS2YvRitFcHV1QWlBdG9ZOFJzRDh0YmdjM2FkM2RVOWw4NzE1R3ByNzBOK2NoQTJqWjN3YnNzUT09Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K
-    server: https://210.106.105.76:6443
-  name: k3s-test 
-contexts:
-- context:
-    cluster: k3s-test
-    user: default 
-  name: k3s-test 
-current-context: k3s-test
-kind: Config
-preferences: {}
-users:
-- name: default
-  user:
-    client-certificate-data: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUJrVENDQVRlZ0F3SUJBZ0lJUlVoT3dWaG5vZ1F3Q2dZSUtvWkl6ajBFQXdJd0l6RWhNQjhHQTFVRUF3d1kKYXpOekxXTnNhV1Z1ZEMxallVQXhOalEzT1RNMU16WTFNQjRYRFRJeU1ETXlNakEzTkRreU5Wb1hEVEl6TURNeQpNakEzTkRreU5Wb3dNREVYTUJVR0ExVUVDaE1PYzNsemRHVnRPbTFoYzNSbGNuTXhGVEFUQmdOVkJBTVRESE41CmMzUmxiVHBoWkcxcGJqQlpNQk1HQnlxR1NNNDlBZ0VHQ0NxR1NNNDlBd0VIQTBJQUJNQUhjUnRwMWhtSzEzNXMKTVh6b0FHNkVwRWVESUw0N2ZuTXFoUWR0TVRuUGJJc2xTMjRZZHY0dFVCSG83ZmpuTDk4NEt2S2VLZTFlZkpTSQpjY2F6VWZ5alNEQkdNQTRHQTFVZER3RUIvd1FFQXdJRm9EQVRCZ05WSFNVRUREQUtCZ2dyQmdFRkJRY0RBakFmCkJnTlZIU01FR0RBV2dCVHNTQURpR3hmN0tOTWdKa05kU1ZpSXBnbjF0akFLQmdncWhrak9QUVFEQWdOSUFEQkYKQWlFQWdXc01sT1gzSlg3V3I1V2k0S3ArYThxeTFjNWNsQld4R29hazNHdW1GdVlDSUNaSmNvY21MbVFRRFBtWgpvMS9WczFoemlDS0VRMjA3ZGJpU01SRXRtSGJnCi0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0KLS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUJkekNDQVIyZ0F3SUJBZ0lCQURBS0JnZ3Foa2pPUFFRREFqQWpNU0V3SHdZRFZRUUREQmhyTTNNdFkyeHAKWlc1MExXTmhRREUyTkRjNU16VXpOalV3SGhjTk1qSXdNekl5TURjME9USTFXaGNOTXpJd016RTVNRGMwT1RJMQpXakFqTVNFd0h3WURWUVFEREJock0zTXRZMnhwWlc1MExXTmhRREUyTkRjNU16VXpOalV3V1RBVEJnY3Foa2pPClBRSUJCZ2dxaGtqT1BRTUJCd05DQUFUZ3lPQUdJeFJ5UXN6UXdZRUNQeU5IS3BzbXZaTEcvQVp2SkUwbmxjYVYKaDVodGpXb0hxQmJ1K1JTREYrM2dGdk1HVGZUa3BTamM3NUhOYnB1N3psY0FvMEl3UURBT0JnTlZIUThCQWY4RQpCQU1DQXFRd0R3WURWUjBUQVFIL0JBVXdBd0VCL3pBZEJnTlZIUTRFRmdRVTdFZ0E0aHNYK3lqVElDWkRYVWxZCmlLWUo5Yll3Q2dZSUtvWkl6ajBFQXdJRFNBQXdSUUloQUpiSnhadFVJUWV2Wnhtc254Mk0vbkQ2SWRtUEVCNXoKMnhtd2ZQbnB5dzBtQWlCYlZOa0hYTWVsVVoyWWg3V3I5ZTlWdURLakVYcUlkMDk4UjBWL1pybmo2dz09Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K
-    client-key-data: LS0tLS1CRUdJTiBFQyBQUklWQVRFIEtFWS0tLS0tCk1IY0NBUUVFSU5lbHd2cW11TWlTUGdpeHBldEZqRTFWQWU1dGpGM1RmMEpjNmdPT0tjZ3RvQW9HQ0NxR1NNNDkKQXdFSG9VUURRZ0FFd0FkeEcybldHWXJYZm13eGZPZ0Fib1NrUjRNZ3ZqdCtjeXFGQjIweE9jOXNpeVZMYmhoMgovaTFRRWVqdCtPY3YzemdxOHA0cDdWNThsSWh4eHJOUi9BPT0KLS0tLS1FTkQgRUMgUFJJVkFURSBLRVktLS0tLQo=
-```
+docker info | grep "Docker Root Dir"
+```  
+
+<img src="./assets/docker_root_dir.png" style="width: 60%; height: auto;"/>  
+
+<br/>
+
+루트 폴더에서 디스크 사용량을 조회해 보면 사용량이 적은것 을 볼수 있다.  
+
+```bash
+du -h --max-depth=1
+```  
+
+<img src="./assets/root_du_h..png" style="width: 60%; height: auto;"/>  
+
+<br/>
+
+도커 루트 디렉토리인 /var/lib/docker 폴더로 이동하여 디스크 사용량을 조회해 본다.   
+overlay2 폴더가 3.2기가로 대부분의 용량을 사용하는 것을 확인 할 수 있다.  
+
+
+```bash
+cd /var/lib/docker
+du -h --max-depth=1
+```  
+
+<img src="./assets/du_h_overlay.png" style="width: 60%; height: auto;"/>    
+
+<br/>
+
+아래 명령어를 사용하면 도커 이미지와 컨테이너에서 사용하는 디스크 사이즈를 볼 수 있다.  
+도커 이미지가 상당히 많은 용량을 차지하고 있음을 확인 할 수 있다.  
+
+```bash
+docker system df -v
+```  
+
+<img src="./assets/docker_system_df_v.png" style="width: 60%; height: auto;"/> 
+
+<br/>
+
+Docker image와 container 용량이 큰 경우 아래 명령어를 사용하여 사용하지 않는 컨테이너와 이미지 정보를 정리할 수 있다.  
+
+```bash
+docker image prune -all
+```    
+
+<br/>
+하나씩 확인하고 삭제하려고 하면 아래 명령어를 사용한다.
+
+```bash
+docker rmi 이미지이름 또는 image id
+```   
 
 <br/>
 

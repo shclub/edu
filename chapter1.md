@@ -572,10 +572,16 @@ ls ./jobs/edu1/builds
 <img src="./assets/jenkins_build_history.png" style="width: 40%; height: auto;"/>  
 
 
-Github Project URL을 설정하고 Git Parameter 를 체크하고 Parameter Type은 교육을 위한 용도 임으로 Branch를 선택한다. ( Tag는 배포를 위한 snapshot 설정 )   
+Github Project URL을 설정하고 Git Parameter 를 체크하고 Parameter Type은 교육을 위한 용도 임으로 Branch를 선택한다. ( Tag는 Release를 위한 빌드 방식으로 그 당시 snapshot 이다. )   
 Branch의 default는 orgin/master를 설정한다.  
 
 <img src="./assets/pipeline_git.png" style="width: 80%; height: auto;"/>
+
+<br/> 
+
+* Tag 를 사용한 빌드는 맨 아래 부분을 참고한다.
+
+<br/>
 
 Build Triggers - GitHub hook trigger for GITScm polling 선택  
 Repository 에 Git Url을 입력한다.  
@@ -654,8 +660,10 @@ Python Flask 가 정상적으로 로드가 된걸 확인 할 수 있다.
  
 <img src="./assets/flask_web_edu1.png" style="width: 60%; height: auto;"/>  
 
-- 과제 : github webhook를 통한 빌드 자동화
+<br/>  
 
+- 과제 : github webhook를 통한 빌드 자동화   ( git push  하면 자동 빌드 )        
+    
 <br/>
 
 ### Jenkinsfile 설명  
@@ -707,3 +715,52 @@ pipeline {
     }
 }
 ```
+
+
+
+<br/>
+
+### Tag를 사용한 Jenkins 빌드
+
+<br/>
+
+Tag를 사용한 빌드는 운영(Release)를 위해 주로 사용하며 Tagging하는 순간의 snapshot 이다.  
+
+Git Parameter에서 Tag를 선택하고의 default는 RB.0.1 을 임으로 설정한다.  
+
+<img src="./assets/jenkins_tag.png" style="width: 60%; height: auto;"/>  
+
+<br/>
+
+GitHub 로 이동 한후 Repository를 선택 한 후 code Tab 으로 들어간다.  
+Tags 아이콘을 클릭한다.
+
+<img src="./assets/github_tag1.png" style="width: 60%; height: auto;"/>  
+
+Tags를 선택하고 Create new release 버튼을 클릭한다.  
+
+<img src="./assets/github_tag2.png" style="width: 60%; height: auto;"/>  
+
+Choose a tag를 클릭하면 tag이름을 입력하는 text 박스가 나온다.
+
+<img src="./assets/github_tag4.png" style="width: 60%; height: auto;"/>  
+
+생성하고 싶은 Tag 이름을 입력한다.  
+jenkins pipeline에서 RB.0.1을 기본값으로 설정을 해서 같은 이름으로 입력한다.  
+입력창 아래 생성된 + Create new tag : RB.0.1 클릭
+
+<img src="./assets/github_tag5.png" style="width: 60%; height: auto;"/>  
+
+Title 값을 입력 ( 원하는 이름 아무거나 입력 ) 하고 Publish release 버튼을 클릭한다
+
+<img src="./assets/github_tag6.png" style="width: 60%; height: auto;"/>
+
+<br/>
+
+Jenkins 대쉬보드에서 Build with Parameters 선택하면 Tag이름이 RB.0.1로 기본값이 설정된다.  
+
+Tag를 선택하고 Build 버튼을 클릭하면 해당 Tag의 소스로 빌드가 된다.
+
+<img src="./assets/jenkins_tag_build.png" style="width: 60%; height: auto;"/>  
+
+<br/>
