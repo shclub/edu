@@ -194,6 +194,6 @@ kubectl get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" -n
 
 ###  GitHub 배포 설정. 
 
-ArgoCD 란....   
+GitHub에
 
 * 과제 1 : 미정

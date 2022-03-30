@@ -22,12 +22,13 @@
      <br/>
 3. Chapter 3 : 3주차   ( [가이드 문서보기](./chapter3.md) )    
      - kubernetes 설치 (k3s) 및 설정 , k8s 이해 및 활용
-     - Helm 설치 및 helm으로 prometheus 설치 활용
      - kubernetes IDE 인 Lens 설치 및 사용법 실습   
+     - Helm 설치 및 helm으로 prometheus 설치 활용
+     - k8s hands-on Basic  
 
      <br/>
 
-4. Chapter 4 : 4주차  
+4. Chapter 4 : 4주차   ( [가이드 문서보기](./chapter4.md) ) 
      - GitOps 설명 
      - ArgoCD 설치 및 설정 
      - kustomize 설명 및 실습 
