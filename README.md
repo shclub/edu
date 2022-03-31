@@ -50,15 +50,12 @@
 7. Chapter 7 : 7주차  
      - 모니터링 솔루션 설치 ( pinpoint ) 
      - Prometheus 소개  
-     - lens 설치 (로컬)
  
      <br/>
 
 8. Chapter 8 : 8주차  
      - Summary
 
-
-     <br/>
 
      <br/>
 

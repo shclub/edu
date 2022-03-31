@@ -152,25 +152,30 @@ Enter new UNIX password:
 
 openjdk-8-jdk 과 openjdk-11-jdk  설치 가능 ( jdk 11 추천 )  
 
-   ```bash
-   apt-get install  openjdk-11-jdk
-   ```
-
 jenkins를 설치한다.  
 
    ```bash
    apt-get install jenkins 
    ```
 
+jdk도 추가로 설치한다.   
+
+   ```bash
+   apt-get install  openjdk-11-jdk
+   ```
+
+
 일반 계정이면 앞에 sudo 명령어를 반드시 붙여준다  
+
+   ```bash
+   sudo apt-get install jenkins 
+   ```  
+
+jdk도 추가로 설치한다.  
 
    ```bash
    sudo apt-get install openjdk-11-jdk  
    ```  
-
-   ```bash
-   sudo apt-get install jenkins 
-   ```
 
 ### Jenkins 서비스 포트를 변경한다.  
 
@@ -207,7 +212,7 @@ service jenkins restart
 ```bash
 systemctl status jenkins
 ```
-아래와 같이 active(running) 이면 정상  
+아래와 같이 active(running) 이면 정상이고 http포트가 9000으로 되어 있는지 확인한다.    
 
 <img src="./assets/jenkins_status.png" style="width: 80%; height: auto;"/>  
 
