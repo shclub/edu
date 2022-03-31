@@ -148,18 +148,37 @@ kubectl exec -it  [PO 이름] /bin/sh
 
 - 선언 
 
-    ```yaml
+    ```yaml  
     apiVersion: apps/v1
     kind: ReplicaSet
     metadata:
-    name: nginx
+    name: frontend
+    labels:
+        app: guestbook
+        tier: frontend
     spec:
+    # modify replicas according to your case
     replicas: 3
-    ```  
+    selector:
+        matchLabels:
+        tier: frontend
+    template:
+        metadata:
+        labels:
+            tier: frontend
+        spec:
+        containers:
+        - name: php-redis
+            image: nginx
+    ```    
 
     ```bash
     kubectl apply -f [화일명]
     ```  
+
+    <img src="./assets/demo_replica.png" style="width: 80%; height: auto;"/>  
+
+    <img src="./assets/demo_replica2.png" style="width: 80%; height: auto;"/>  
 
 <br/>
 
@@ -167,7 +186,6 @@ kubectl exec -it  [PO 이름] /bin/sh
 
 <br/>
 
-명령보다는 선언하여 사용하는 것을 권장.  
-
+계속
 
 

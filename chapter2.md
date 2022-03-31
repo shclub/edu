@@ -48,7 +48,7 @@ git --version
 git이 없으면 설치 한다.  
 
 ```bash
-apt-update && apt-get intsall git
+apt-update && apt-get install git
 ```
 
 ### Git Clone 하여 github 소스 가져오기.  
@@ -183,9 +183,9 @@ https://backlog.com/git-tutorial/kr/stepup/stepup1_1.html
 - 전통적인 서버관리 방식은 아래와 같이 각 단계별로 흐름이 있었고, 각 단계가
   업데이트 되거나 어떤 문제가 발생하면 전체 흐름이 중단되는 문제가 있었다.
 - 도커 등장 이후 어떠한 프로그램도 컨테이너로 만들 수 있다.
-- 서로 다른 프로그램이더라도 컨테이너로 규격화되었음
-- AWS, Azure, Google cloud 등 어떤 환경에서도 돌아간다.
-    <img src="./assets/docker_overview.png" style="width: 60%; height: auto;"/>  
+- 서로 다른 프로그램이더라도 컨테이너로 규격화 되었음  
+- AWS, Azure, Google cloud 등 어떤 환경에서도 돌아간다.  
+  <img src="./assets/docker_overview.png" style="width: 60%; height: auto;"/>  
 - 가상머신과 비슷하게 생각할 수 있지만 비슷한점과 다른점이 있다.
 - 가상머신처럼 독립적으로 실행되지만, 가상머신보다 빠르고 쉽고 효율적이다.
 - 도커는 컴퓨터 자원을 그대로 사용한다. 
@@ -620,7 +620,7 @@ docker compose 기동시에 volumes 설정이 로컬 폴더와 컨테이너 폴�
 * 과제 3 : docker 컨테이너 GUI 관리 툴인 portainer를 설치하고 웹에서 접속하여
           모니터링한다.
    - url  참고 :  https://docs.portainer.io/v/ce-2.11/start/install/server/docker/linux
-   - 웹 포트는 40005로 expose 한다.
+   - 웹 포트는 40005로 expose 한다 ( https 포트 변경 필요 ).
    - 웹브라우저 접속은 https://(본인VM Public IP):40005  
      admin 비밀번호 신규로 생성 (8자리 이상) 한다.
      
