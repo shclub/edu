@@ -899,12 +899,11 @@ ClusterRole은 네임스페이스와 연관 없는 리소스나 네임스페이�
 
 ##  kubernetes 실습
 
-###  scale 조정  
+###   Basic Hands-On  
 
 <br/>
 
+아래 세션에서 별도로 진행한다.
 
+[ Hands-On 문서보기 ](./k8s_basic_hands_on.md)  
 
-scale Up...
-
-* 과제 1 : 미정
