@@ -620,7 +620,7 @@ docker compose 기동시에 volumes 설정이 로컬 폴더와 컨테이너 폴�
 * 과제 3 : docker 컨테이너 GUI 관리 툴인 portainer를 설치하고 웹에서 접속하여
           모니터링한다.
    - url  참고 :  https://docs.portainer.io/v/ce-2.11/start/install/server/docker/linux
-   - 웹 포트는 40005로 expose 한다 ( https 포트 변경 필요 ).
+   - 웹 포트는 40005로 expose 한다 ( https 9443 포트 변경 필요 ).
    - 웹브라우저 접속은 https://(본인VM Public IP):40005  
      admin 비밀번호 신규로 생성 (8자리 이상) 한다.
      
