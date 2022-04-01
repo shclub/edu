@@ -621,7 +621,7 @@ docker compose 기동시에 volumes 설정이 로컬 폴더와 컨테이너 폴�
 * 과제 2 : mysql container  접속하여 로그인 한 후 wordpress db에 
   아래 테이블 script를  로컬에 저장된 화일을 사용하여 test 테이블을 생성해 본다.  
 
-  https://github.com/shclub/edu1/test.sql 화일을 다운 받는다.  
+  https://github.com/shclub/edu1/blob/master/test.sql 화일을 다운 받는다.  
 
    
   - TIP : 화일 이동 방법은 cp 명령어 사용.  
@@ -634,10 +634,7 @@ docker compose 기동시에 volumes 설정이 로컬 폴더와 컨테이너 폴�
 
     ```bash
     docker cp [container name]:[container 내부 경로] [host 파일경로]
-    ```
-
-
-  
+    ```  
 
 * 과제 3 : 금일 실습한 Dockerfile과 docker-compose.yml 화일을 git 명령어를 사용하여 edu2에 push 한다.  
 
