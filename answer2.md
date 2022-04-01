@@ -73,3 +73,61 @@ select * from test;
 
 <img src="./assets/chapter2-2-answer2.png" style="width: 80%; height: auto;">
 
+
+
+## 과제4
+
+<br/>
+
+docker 컨테이너 GUI 관리 툴인 portainer를 설치하고 웹에서 접속하여
+          모니터링한다.
+   - url  참고 :  https://docs.portainer.io/v/ce-2.11/start/install/server/docker/linux
+   - 웹 포트는 40005로 expose 한다 ( https 9443 포트 변경 필요 ).
+   - 웹브라우저 접속은 https://(본인VM Public IP):40005  
+     admin 비밀번호 신규로 생성 (8자리 이상) 한다.
+<br/>
+
+###  < 답안 >
+
+<br/>
+
+데이터를 저장하기 위해 도커 볼륨을 생성한다. 향후에 컨테이너의 폴더와 연결한다.  
+
+```bash
+docker volume create portainer_data
+```  
+
+로컬에 도커 볼륨이 생성되어 있는지 확인한다.  
+
+```bash
+docker volume ls
+```  
+
+https 포트인 9443만 40005로 변경한다.  
+
+```bash
+docker run -d -p 8000:8000 -p 40005:9443 --name portainer --restart=always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer-ce:2.11.1
+```  
+
+<img src="./assets/portainer_docker_volume.png" style="width: 60%; height: auto;">  
+
+<img src="./assets/portainer_admin.png" style="width: 60%; height: auto;">  
+
+Getting Start를 선택하고 로컬 도커를 클릭한다.  
+     
+<img src="./assets/portainer_local.png" style="width: 60%; height: auto;">
+
+도커에서 관리하는 리소스 대쉬보드를 볼수 있다.   
+     
+<img src="./assets/portainer_dashboard.png" style="width: 60%; height: auto;">  
+
+컨테이너 항목을 선택하면 자세한 컨테이너 현황을 볼수 있다.   
+     
+<img src="./assets/portainer_container.png" style="width: 60%; height: auto;">  
+
+도커 볼륨은 아래 명령어로 삭제 할 수 있다.   
+ 
+```bash
+docker volume prune
+```
+

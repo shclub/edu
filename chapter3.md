@@ -141,9 +141,8 @@ k3s를 설치한다. 몇 초 안에 설치가 된다.
 --tls-san 다음의 IP는 본인의 VM Public IP를 입력한다.
 
 ```bash
-curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--tls-san 210.106.105.68" sh -s -
+curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--tls-san (본인 VM Public IP)" sh -s -
 ```
-
 
 <img src="./assets/install_k3s.png" style="width: 60%; height: auto;"/>  
 
@@ -168,8 +167,9 @@ kubernetes 버전은 현재 기준 최신인 1.22 이다.
 kubectl get nodes
 ```  
 
-```bash  
+서비스가 정상으로 running 및 Completed 되는지 아래 명령어를 통해서 확인한다.  
 
+```bash  
 # Kubernetes 시스템 Pod 상태 확인
 kubectl get pod -n kube-system
 ```  
@@ -388,7 +388,7 @@ docker info | grep "Docker Root Dir"
 du -h --max-depth=1
 ```  
 
-<img src="./assets/root_du_h..png" style="width: 60%; height: auto;"/>  
+<img src="./assets/root_du_h.png" style="width: 60%; height: auto;"/>  
 
 <br/>
 

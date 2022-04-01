@@ -644,16 +644,3 @@ docker compose 기동시에 volumes 설정이 로컬 폴더와 컨테이너 폴�
    - 웹 포트는 40005로 expose 한다 ( https 9443 포트 변경 필요 ).
    - 웹브라우저 접속은 https://(본인VM Public IP):40005  
      admin 비밀번호 신규로 생성 (8자리 이상) 한다.
-     
-      <img src="./assets/portainer_admin.png" style="width: 60%; height: auto;">
-   - Getting Start를 선택하고 로컬 도커를 클릭한다.  
-     
-      <img src="./assets/portainer_local.png" style="width: 60%; height: auto;">
-
-   - 도커에서 관리하는 리소스 대쉬보드를 볼수 있다.   
-     
-      <img src="./assets/portainer_dashboard.png" style="width: 60%; height: auto;">
-
-   - 컨테이너 항목을 선택하면 자세한 컨테이너 현황을 볼수 있다.   
-     
-      <img src="./assets/portainer_container.png" style="width: 60%; height: auto;">
