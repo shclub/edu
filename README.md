@@ -88,13 +88,16 @@
      <br/>
 
 12. Chapter 12 : 12주차 
-     - kafka 설치 및 활용 
+     - redis/kafka 설치 및 활용 
      - Storage 설정 방법 ( PV/PVC ) 실습 
 
      <br/>
 
 13. Chapter 13 : 13주차
-     - SpringBoot 심화 학습 
+     - SpringBoot 심화 학습  
+
+          : Spring Cloud Stream
+          
 
      <br/>
 

@@ -1,3 +1,55 @@
+<!-- vscode-markdown-toc -->
+* [ VM 생성](#VM)
+	* [kt cloud 에서 VM ( Ubuntu 18.04 ) 을 생성한다.](#ktcloudVMUbuntu18.04.)
+	* [Private IP를 생성 한다.](#PrivateIP.)
+	* [Port Forwarding을 설정한다.](#PortForwarding.)
+	* [터미널 프로그램으로 서버에 접속하고 비밀번호를 변경한다.](#.)
+* [Jenkins를 설치한다.](#Jenkins.)
+	* [저장소 키 다운로드](#)
+	* [패키지 인덱스를 업데이트 하고 라이브러를 최신 버전으로 올려준다.](#.-1)
+	* [root 계정으로 Jenkins 를 설치한다.](#rootJenkins.)
+	* [Jenkins 서비스 포트를 변경한다.](#Jenkins.-1)
+	* [서비스 재시작 및 상태 확인](#-1)
+	* [Jenkins Admin 초기 패스워드 확인 및 복사](#JenkinsAdmin)
+	* [젠킨스 서버 접속](#-1)
+	* [추가 플러그인 설치](#-1)
+* [Docker 를 설치한다](#Docker)
+	* [패키지 인덱스 업데이트](#-1)
+	* [HTTPS를 통해 repository 를 이용하기 위해 package 들을 설치](#HTTPSrepositorypackage)
+	* [Docker의 Official GPG Key 를 등록합니다.](#DockerOfficialGPGKey.)
+	* [stable repository를 등록합니다.](#stablerepository.)
+	* [도커를 설치합니다.](#.-1)
+	* [도커 버전을 확인합니다.](#.-1)
+	* [도커 이미지 다운로드 및 실행하기](#-1)
+	* [젠킨스의 pipeline 으로 docker 를 실행하기 위해 권한을 부여한다.](#pipelinedocker.)
+* [GitHub 계정을 생성](#GitHub)
+	* [https://github.com/ 접속하고 계정 생성](#https:github.com)
+	* [계정 생성 후에 Repository를  생성한다.](#Repository.)
+	* [교육용 repository인 https://github.com/shclub/edu1 폴더의 파일을 복사하여 본인이 생성한 Repository에 신규 화일을 생성한다.](#repositoryhttps:github.comshclubedu1Repository.)
+* [ Docker Hub 계정을 생성](#DockerHub)
+	* [https://hub.docker.com/ 접속하고 계정 생성(향후 사내에서 개발시는 d-space Nexus 사용)](#https:hub.docker.comd-spaceNexus)
+	* [Docker 연동 테스트를 한다.](#Docker.)
+* [Jenkins 설정](#Jenkins)
+	* [일반 사용자 계정을 생성한다](#-1)
+	* [계정 별 권한 부여방법](#-1)
+	* [Github token 생성하기](#Githubtoken)
+	* [GitHub Credential을 생성한다.](#GitHubCredential.)
+	* [Docker Hub Credential을 생성한다.](#DockerHubCredential.)
+	* [파이프 라인을 구성한다.](#.-1)
+	* [빌드 실행](#-1)
+	* [Docker pull 및 실행 테스트](#Dockerpull)
+	* [Jenkinsfile 설명](#Jenkinsfile)
+	* [Jenkins 환경변수](#Jenkins-1)
+	* [Tag를 사용한 Jenkins 빌드](#TagJenkins)
+
+<!-- vscode-markdown-toc-config
+	numbering=false
+	autoSave=true
+	/vscode-markdown-toc-config -->
+<!-- /vscode-markdown-toc -->
+
+<br/>
+
 # Chapter 1 
  
 CI 구성을 위해 Jenkins와 GitHub 그리고 Docker Hub를 연계하는 방법에 대해 설명한다.   
@@ -15,9 +67,9 @@ CI 구성을 위해 Jenkins와 GitHub 그리고 Docker Hub를 연계하는 방�
 
 <br/>
 
-##  VM 생성  
+## <a name='VM'></a> VM 생성  
 
-### kt cloud 에서 VM ( Ubuntu 18.04 ) 을 생성한다. 
+### <a name='ktcloudVMUbuntu18.04.'></a>kt cloud 에서 VM ( Ubuntu 18.04 ) 을 생성한다. 
   
 <br/>
 
@@ -45,7 +97,7 @@ zone은 KOR-Seoul M2 선택 후 서버 이름을 입력하고 사양을 선택�
 
 <br/><br/>
 
-### Private IP를 생성 한다.
+### <a name='PrivateIP.'></a>Private IP를 생성 한다.
    
 zone은  VM 생성 했던 존을 선택한다. ( KOR-Seoul M2 )
 
@@ -65,7 +117,7 @@ Launch 를 클릭하면 IP가 생성이 된다.
 
 <br/><br/>
 
-### Port Forwarding을 설정한다.
+### <a name='PortForwarding.'></a>Port Forwarding을 설정한다.
 
 VM 과 Private IP를 매핑하면 외부에서 접속 가능 하다.  
 
@@ -90,7 +142,7 @@ k8s  : 6443 -> 6443
 ```
 <br/><br/>
 
-### 터미널 프로그램으로 서버에 접속하고 비밀번호를 변경한다.
+### <a name='.'></a>터미널 프로그램으로 서버에 접속하고 비밀번호를 변경한다.
 
    - Mac 에서는 Iterm2, 윈도우는 Putty 추천  
 
@@ -121,9 +173,9 @@ Enter new UNIX password:
 <br/><br/>
 
 
-## Jenkins를 설치한다.
+## <a name='Jenkins.'></a>Jenkins를 설치한다.
 
-### 저장소 키 다운로드
+### <a name=''></a>저장소 키 다운로드
 <br/>
 
    ```bash
@@ -134,7 +186,7 @@ Enter new UNIX password:
    ```bash
    echo deb http://pkg.jenkins.io/debian-stable binary/ | sudo tee /etc/apt/sources.list.d/jenkins.list
    ```
-### 패키지 인덱스를 업데이트 하고 라이브러를 최신 버전으로 올려준다.
+### <a name='.-1'></a>패키지 인덱스를 업데이트 하고 라이브러를 최신 버전으로 올려준다.
 
    ```bash
    apt-get update && apt-get upgrade
@@ -145,7 +197,7 @@ Enter new UNIX password:
 
 <br/><br/>
 
-### root 계정으로 Jenkins 를 설치한다.  
+### <a name='rootJenkins.'></a>root 계정으로 Jenkins 를 설치한다.  
 
 
 현재 VM은  java가 설치되지 않아 openjdk-8-jdk를 설치 해야 한다.  
@@ -175,7 +227,7 @@ jdk도 추가로 설치한다.
    sudo apt-get install openjdk-8-jdk  
    ```  
 
-### Jenkins 서비스 포트를 변경한다.  
+### <a name='Jenkins.-1'></a>Jenkins 서비스 포트를 변경한다.  
 
    아래 화일을 vi 에디터를 사용하여 포트를 변경 ( 8080 ->  9000 )
 
@@ -202,7 +254,7 @@ jdk도 추가로 설치한다.
      :set nocp : 라인 밀리는 현상 방지
    ``` 
     
-### 서비스 재시작 및 상태 확인
+### <a name='-1'></a>서비스 재시작 및 상태 확인
 ```bash
 service jenkins restart
 ```
@@ -218,7 +270,7 @@ systemctl status jenkins
 
 <br/><br/>  
 
-### Jenkins Admin 초기 패스워드 확인 및 복사
+### <a name='JenkinsAdmin'></a>Jenkins Admin 초기 패스워드 확인 및 복사
  아래 명령어를 사용하여 password 를 복사하고 저장해 놓는다.
 
 ```bash
@@ -226,7 +278,7 @@ cat /var/lib/jenkins/secrets/initialAdminPassword
 ```
 <br/><br/> 
 
-### 젠킨스 서버 접속
+### <a name='-1'></a>젠킨스 서버 접속
 브라우져로 http://(본인서버ip):9000으로  접속하면 아래와 같은 화면이 나온다.  
 패스워드에 위 명령으로 확인한 문자열을 입력한다.  
 
@@ -262,7 +314,7 @@ save and Finished 버튼을 클릭한다.
 
 <br/><br/>
 
-### 추가 플러그인 설치
+### <a name='-1'></a>추가 플러그인 설치
 
 Manage Jenkins 메뉴 선택  
 
@@ -289,29 +341,29 @@ Jenkins restarting이 되고 다시 로그인을 한다.
 
 <br/><br/>
 
-## Docker 를 설치한다 
+## <a name='Docker'></a>Docker 를 설치한다 
 
 
-### 패키지 인덱스 업데이트
+### <a name='-1'></a>패키지 인덱스 업데이트
 ```bash
 apt-get update
 ```
 <br/>
 
-### HTTPS를 통해 repository 를 이용하기 위해 package 들을 설치
+### <a name='HTTPSrepositorypackage'></a>HTTPS를 통해 repository 를 이용하기 위해 package 들을 설치
 ```bash
 apt-get -y install  apt-transport-https ca-certificates curl gnupg lsb-release
 ```
 <br/>
 
-### Docker의 Official GPG Key 를 등록합니다.
+### <a name='DockerOfficialGPGKey.'></a>Docker의 Official GPG Key 를 등록합니다.
 ```bash
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
 ```
 
 <br/>
 
-### stable repository를 등록합니다.
+### <a name='stablerepository.'></a>stable repository를 등록합니다.
 ```bash
 echo \
 "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \
@@ -319,7 +371,7 @@ $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev
 ```  
 <br/>
 
-### 도커를 설치합니다.
+### <a name='.-1'></a>도커를 설치합니다.
 ```bash
 apt-get update && apt-get install docker-ce docker-ce-cli containerd.io gnupg2 pass
 ```
@@ -335,7 +387,7 @@ Error saving credentials: error storing credentials - err: exit status 1, out: `
 
 <br/>
 
-### 도커 버전을 확인합니다.
+### <a name='.-1'></a>도커 버전을 확인합니다.
 ```bash
 docker --version
 ```
@@ -343,7 +395,7 @@ docker --version
 
 <br/>
 
-### 도커 이미지 다운로드 및 실행하기
+### <a name='-1'></a>도커 이미지 다운로드 및 실행하기
 
 ```bash
 docker run hello-world
@@ -353,7 +405,7 @@ docker run hello-world
 
 <br/>
 
-### 젠킨스의 pipeline 으로 docker 를 실행하기 위해 권한을 부여한다.
+### <a name='pipelinedocker.'></a>젠킨스의 pipeline 으로 docker 를 실행하기 위해 권한을 부여한다.
 
 /usr/bin/docker 의 사용자그룹을 jenkins 에 추가해준다  
 
@@ -368,13 +420,13 @@ service jenkins restart
 <br/><br/>
 
 
-## GitHub 계정을 생성
+## <a name='GitHub'></a>GitHub 계정을 생성
 
-### https://github.com/ 접속하고 계정 생성  
+### <a name='https:github.com'></a>https://github.com/ 접속하고 계정 생성  
 
 <br/>
 
-### 계정 생성 후에 Repository를  생성한다.
+### <a name='Repository.'></a>계정 생성 후에 Repository를  생성한다.
 아래와 같이 이름 입력를 하고 README file check 를 한다
 <img src="./assets/repository_create.png" style="width: 80%; height: auto;"/>
 
@@ -384,7 +436,7 @@ default 브랜치를 main에서 master로 변경한다. ( 맨 하단 setting 클
 
 <br/>
 
-### 교육용 repository인 https://github.com/shclub/edu1 폴더의 파일을 복사하여 본인이 생성한 Repository에 신규 화일을 생성한다. 
+### <a name='repositoryhttps:github.comshclubedu1Repository.'></a>교육용 repository인 https://github.com/shclub/edu1 폴더의 파일을 복사하여 본인이 생성한 Repository에 신규 화일을 생성한다. 
 
 총 4개 화일을 만들고 내용을 복사한다.  ( 향후 Git 사용법 교육 후 Git Clone 사용 )
 
@@ -394,13 +446,13 @@ default 브랜치를 main에서 master로 변경한다. ( 맨 하단 setting 클
 
 <br/><br/>
 
-##  Docker Hub 계정을 생성 
+## <a name='DockerHub'></a> Docker Hub 계정을 생성 
 
-### https://hub.docker.com/ 접속하고 계정 생성(향후 사내에서 개발시는 d-space Nexus 사용)  
+### <a name='https:hub.docker.comd-spaceNexus'></a>https://hub.docker.com/ 접속하고 계정 생성(향후 사내에서 개발시는 d-space Nexus 사용)  
 
 <br/>
 
-### Docker 연동 테스트를 한다.
+### <a name='Docker.'></a>Docker 연동 테스트를 한다.
 
 ```bash
 docker tag hello-world (본인id)/hello-world
@@ -436,9 +488,9 @@ setting 으로 이동하여 Make public 클릭후 repository 이름을 입력후
 
 <br/><br/>
 
-## Jenkins 설정
+## <a name='Jenkins'></a>Jenkins 설정
 
-### 일반 사용자 계정을 생성한다  
+### <a name='-1'></a>일반 사용자 계정을 생성한다  
 
 admin 계정으로 테스트 할 예정 으로  skip.  
 
@@ -448,7 +500,7 @@ Manage Jenkins -> Manage Users  로 이동한다. 사용자 생성 버튼 클릭
 
 <br/>
 
-### 계정 별 권한 부여방법 
+### <a name='-1'></a>계정 별 권한 부여방법 
 Configure Global Security로 이동  
 
 admin 계정으로 테스트 할 예정 으로  skip.
@@ -463,7 +515,7 @@ Project-based Matrix Authorization Strategy 체크 후 권한 설정
 
 <br/>
 
-### Github token 생성하기
+### <a name='Githubtoken'></a>Github token 생성하기
 
 Jenkins 에서 github repository 인증을 위해 사용할 token 을 생성한다.  
 
@@ -486,7 +538,7 @@ Expiration 은 No Expiration으로 선택하고 repo, admin:repo_hook 만 체크
 
 <br/>
 
-### GitHub Credential을 생성한다.  
+### <a name='GitHubCredential.'></a>GitHub Credential을 생성한다.  
 
 Jenkins가 GitHub에서 Code를 가져올 수 있도록 Credential을 추가하자
 
@@ -514,7 +566,7 @@ password는 이전에 발급받은 Github Token 값을 입력한다.
 
 <br/>
 
-### Docker Hub Credential을 생성한다.  
+### <a name='DockerHubCredential.'></a>Docker Hub Credential을 생성한다.  
 
 Jenkins가 Docker Hub에 Image를 push 할 수 있도록 Credential을 추가하자
 
@@ -539,7 +591,7 @@ GitHub와 Docker Hub Credential 이 생선된 것을 확인한다.
 
 <br/>
 
-### 파이프 라인을 구성한다.
+### <a name='.-1'></a>파이프 라인을 구성한다.
         
 메인 화면 좌측 메뉴에서 새로운 Item 선택  
 
@@ -601,7 +653,7 @@ Save 버튼을 클릭하여 저장한다.
 
 <br/>
 
-### 빌드 실행
+### <a name='-1'></a>빌드 실행
 
 대쉬보드에서 Build With Parameter를 선택하고 Branch 선택 후 빌드 한다.  
 
@@ -642,7 +694,7 @@ Docker Hub에서 정상적으로 생성된 이미지를 확인 할수 있다.
 
 <br/>
 
-### Docker pull 및 실행 테스트  
+### <a name='Dockerpull'></a>Docker pull 및 실행 테스트  
 
 터미널로 VM 서버에 접속하여 생성된 도커이미지를 다운로드(pull)하고 실행 (run)  
 
@@ -669,7 +721,7 @@ Python Flask 가 정상적으로 로드가 된걸 확인 할 수 있다.
     
 <br/>
 
-### Jenkinsfile 설명  
+### <a name='Jenkinsfile'></a>Jenkinsfile 설명  
 
 Jenkins 화일에서 github와 docker credential 은  Jenkins 설정에서 Credential을 생성한
 id를 입력하면 된다.  
@@ -688,7 +740,7 @@ Jenkins Stage View 를 통해 Step별 진행 사항을 볼수 있다.
 
 <br/>
 
-### Jenkins 환경변수
+### <a name='Jenkins-1'></a>Jenkins 환경변수
 
 <br/>
 
@@ -723,7 +775,7 @@ pipeline {
 
 <br/>
 
-### Tag를 사용한 Jenkins 빌드
+### <a name='TagJenkins'></a>Tag를 사용한 Jenkins 빌드
 
 <br/>
 
