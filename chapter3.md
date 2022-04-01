@@ -1,3 +1,32 @@
+Table of  Contents
+
+<!-- vscode-markdown-toc -->
+* [ kubernetes](#kubernetes)
+	* [kubernetes 개요  (https://kubernetes.io/ko/docs/concepts/overview/what-is-kubernetes/)](#kuberneteshttps:kubernetes.iokodocsconceptsoverviewwhat-is-kubernetes)
+	* [kubernetes 컴포넌트  (https://kubernetes.io/ko/docs/concepts/overview/components/)](#kuberneteshttps:kubernetes.iokodocsconceptsoverviewcomponents)
+	* [k3s를 설치 한다.](#k3s.)
+	* [로컬 컴퓨터에서 원격지 Kubernetes 클러스터 접속 위한 설정](#Kubernetes)
+	* [kubernetes IDE lens 설치](#kubernetesIDElens)
+	* [Helm 설치 ( https://helm.sh/ko/docs/intro/install/ )](#Helmhttps:helm.shkodocsintroinstall)
+* [ kubernetes 기능](#kubernetes-1)
+	* [ k8s Object 개요 () https://awskrug.github.io/eks-workshop/introduction/basics/concepts_objects/ )](#k8sObjecthttps:awskrug.github.ioeks-workshopintroductionbasicsconcepts_objects)
+	* [네임스페이스](#)
+	* [워크로드](#-1)
+	* [네트워크](#-1)
+	* [Storage ( https://arisu1000.tistory.com/27849 )](#Storagehttps:arisu1000.tistory.com27849)
+	* [명령어  ( kubectl )](#kubectl)
+	* [Access Control](#AccessControl)
+* [ kubernetes 실습](#kubernetes-1)
+	* [  Basic Hands-On](#BasicHands-On)
+
+<!-- vscode-markdown-toc-config
+	numbering=false
+	autoSave=true
+	/vscode-markdown-toc-config -->
+<!-- /vscode-markdown-toc -->
+
+<br/>
+
 # Chapter 3 
    
 
@@ -12,9 +41,9 @@ kubernetes 는 light하고 빠른 설치가 가능한 Rancher에서 제공하는
  
 <br/>
 
-##  kubernetes
+## <a name='kubernetes'></a> kubernetes
 
-### kubernetes 개요  (https://kubernetes.io/ko/docs/concepts/overview/what-is-kubernetes/)
+### <a name='kuberneteshttps:kubernetes.iokodocsconceptsoverviewwhat-is-kubernetes'></a>kubernetes 개요  (https://kubernetes.io/ko/docs/concepts/overview/what-is-kubernetes/)
 
 쿠버네티스는 컨테이너화된 워크로드와 서비스를 관리하기 위한 이식성이 있고, 확장가능한 오픈소스 플랫폼이다. 쿠버네티스는 선언적 구성과 자동화를 모두 용이하게 해준다. 쿠버네티스는 크고, 빠르게 성장하는 생태계를 가지고 있다.   
 
@@ -40,7 +69,7 @@ kubernetes 는 light하고 빠른 설치가 가능한 Rancher에서 제공하는
 
 <br/>
 
-### kubernetes 컴포넌트  (https://kubernetes.io/ko/docs/concepts/overview/components/)
+### <a name='kuberneteshttps:kubernetes.iokodocsconceptsoverviewcomponents'></a>kubernetes 컴포넌트  (https://kubernetes.io/ko/docs/concepts/overview/components/)
 
 <br/>  
 
@@ -110,7 +139,7 @@ kube-proxy는 운영 체제에 가용한 패킷 필터링 계층이 있는 경�
 
 
 
-### k3s를 설치 한다.
+### <a name='k3s.'></a>k3s를 설치 한다.
 
 k3s는 가벼운 Kubernetes로 Rancher에서 개발되었으며 쉬운 설치로 적은 메모리/binary 파일을 사용하여 Edge/IoT 환경 혹은 CI/Dev 환경에서 k8s를 쉽게 사용할 수 있도록 도와주는 도구이다.   
 
@@ -188,7 +217,7 @@ kubectl top nodes
 <br/>
 
 
-### 로컬 컴퓨터에서 원격지 Kubernetes 클러스터 접속 위한 설정 
+### <a name='Kubernetes'></a>로컬 컴퓨터에서 원격지 Kubernetes 클러스터 접속 위한 설정 
 
 <br/>
 
@@ -316,7 +345,7 @@ k3s 삭제방법
 ```
 
 <br/>
-### kubernetes IDE lens 설치
+### <a name='kubernetesIDElens'></a>kubernetes IDE lens 설치
 
 <br/>
 
@@ -431,7 +460,7 @@ docker rmi 이미지이름 또는 image id
 
 <br/>
 
-### Helm 설치 ( https://helm.sh/ko/docs/intro/install/ )
+### <a name='Helmhttps:helm.shkodocsintroinstall'></a>Helm 설치 ( https://helm.sh/ko/docs/intro/install/ )
 
 <br/>
 
@@ -555,9 +584,9 @@ k8s IDE인 lens 를 확인하면 메트릭 정보를 볼수 있고
 <br/>
 
 
-##  kubernetes 기능
+## <a name='kubernetes-1'></a> kubernetes 기능
 
-###  k8s Object 개요 () https://awskrug.github.io/eks-workshop/introduction/basics/concepts_objects/ )
+### <a name='k8sObjecthttps:awskrug.github.ioeks-workshopintroductionbasicsconcepts_objects'></a> k8s Object 개요 () https://awskrug.github.io/eks-workshop/introduction/basics/concepts_objects/ )
 
 <br/>
 
@@ -575,7 +604,7 @@ k8s IDE인 lens 를 확인하면 메트릭 정보를 볼수 있고
 
 <br/>
 
-### 네임스페이스
+### <a name=''></a>네임스페이스
 
 <br/>
 
@@ -588,7 +617,7 @@ cluster scope 경우에는 전체 cluster에 영향을 미치는 scope이고 nam
 <br/>
 
 
-### 워크로드
+### <a name='-1'></a>워크로드
 
 <br/>
 
@@ -741,7 +770,7 @@ myapp-pod
 
 <br/>
 
-### 네트워크
+### <a name='-1'></a>네트워크
 
 <br/>
 
@@ -774,7 +803,7 @@ Pod를 외부에서 접속하기 위해서는 서비스가 필요합니다.
 
 <br/>
 
-### Storage ( https://arisu1000.tistory.com/27849 )
+### <a name='Storagehttps:arisu1000.tistory.com27849'></a>Storage ( https://arisu1000.tistory.com/27849 )
 
 <br/>
 
@@ -794,7 +823,7 @@ Pod를 외부에서 접속하기 위해서는 서비스가 필요합니다.
 
 <br/>
 
-### 명령어  ( kubectl )
+### <a name='kubectl'></a>명령어  ( kubectl )
 
 <br/>  
 
@@ -809,7 +838,7 @@ kubectl 명령어는 자신이 접근할 수 있는 클러스터 환경 정보�
 
 <br/>
 
-### Access Control
+### <a name='AccessControl'></a>Access Control
 
 <br/>
 
@@ -897,9 +926,9 @@ ClusterRole은 네임스페이스와 연관 없는 리소스나 네임스페이�
 <br/>
 
 
-##  kubernetes 실습
+## <a name='kubernetes-1'></a> kubernetes 실습
 
-###   Basic Hands-On  
+### <a name='BasicHands-On'></a>  Basic Hands-On  
 
 <br/>
 

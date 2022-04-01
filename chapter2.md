@@ -1,3 +1,31 @@
+Table of  Contents
+
+<!-- vscode-markdown-toc -->
+* [ Git  ( https://backlog.com/git-tutorial/kr/intro/intro1_1.html )](#Githttps:backlog.comgit-tutorialkrintrointro1_1.html)
+	* [Git 개요](#Git)
+	* [GitHub에서 새로운 Repository를 생성한다.](#GitHubRepository.)
+	* [Git 설치.](#Git.)
+	* [Git Clone 하여 github 소스 가져오기.](#GitClonegithub.)
+	* [로컬에서 본인 github에 소스 push.](#githubpush.)
+* [Docker 사용법](#Docker)
+	* [Docker 란 ?](#Docker-1)
+	* [Dockerfile](#Dockerfile)
+	* [Swagger](#Swagger)
+* [Docker Compose](#DockerCompose)
+	* [Docker Compose 개요](#DockerCompose-1)
+	* [Docker Compose를 사용하기까지의 주요한 단계](#DockerCompose-1)
+	* [Docker Compose 설치](#DockerCompose-1)
+	* [Docker Compose yaml](#DockerComposeyaml)
+	* [과제](#)
+
+<!-- vscode-markdown-toc-config
+	numbering=false
+	autoSave=true
+	/vscode-markdown-toc-config -->
+<!-- /vscode-markdown-toc -->
+
+<br/>
+
 # Chapter 2 
  
 Jenkins CI 구성 요소인 Git , Docker에 대해서 자세한 설명과 함께 Docker Compose 에 대해서도 실습을 한다.   
@@ -12,9 +40,9 @@ Jenkins CI 구성 요소인 Git , Docker에 대해서 자세한 설명과 함께
  
 <br/>
 
-##  Git  ( https://backlog.com/git-tutorial/kr/intro/intro1_1.html )
+## <a name='Githttps:backlog.comgit-tutorialkrintrointro1_1.html'></a> Git  ( https://backlog.com/git-tutorial/kr/intro/intro1_1.html )
 
-### Git 개요 
+### <a name='Git'></a>Git 개요 
 
 Git이란 소스코드를 효과적으로 관리하기 위해 개발된 '분산형 버전 관리 시스템'입니다. ( 이전 에는 SVN 많이 사용 )  
 
@@ -22,14 +50,14 @@ Git이란 소스코드를 효과적으로 관리하기 위해 개발된 '분산�
 Private 형태로는 Gitlab을 많이 사용 함.
 
 
-### GitHub에서 새로운 Repository를 생성한다.
+### <a name='GitHubRepository.'></a>GitHub에서 새로운 Repository를 생성한다.
    
 
 (본인계정)/edu2라는 Repository를 생성. ( branch는 master )
 
 <img src="./assets/github_edu2.png" style="width: 60%; height: auto;"/>  
 
-### Git 설치.
+### <a name='Git.'></a>Git 설치.
 
 터미널로 VM에 로그인 하여 Git이 설치되어 있는지 확인하고 없으면 Git을 설치 한다. 
 
@@ -51,7 +79,7 @@ git이 없으면 설치 한다.
 apt-update && apt-get install git
 ```
 
-### Git Clone 하여 github 소스 가져오기.  
+### <a name='GitClonegithub.'></a>Git Clone 하여 github 소스 가져오기.  
 
 github에서  shclub/edu2 를 선택하고 code를 클릭한다.  
 https의 url를 복사한다. 오른쪽 복사 아이콘 클릭  
@@ -68,7 +96,7 @@ git clone https://github.com/shclub/edu2.git
 <img src="./assets/git_clone.png" style="width: 60%; height: auto;"/>  
 
 
-### 로컬에서 본인 github에 소스 push.  
+### <a name='githubpush.'></a>로컬에서 본인 github에 소스 push.  
 
 다운로드 받은 화일을 본인이 생성한 repository에 push를 한다.  
 먼저 repository url을 변경한다.
@@ -160,9 +188,9 @@ https://backlog.com/git-tutorial/kr/stepup/stepup1_1.html
 <br/><br/>
 
 
-## Docker 사용법
+## <a name='Docker'></a>Docker 사용법
 
-### Docker 란 ?
+### <a name='Docker-1'></a>Docker 란 ?
 
 소개 및 배경
 - 도커는 컨테이너 기반의 오픈소스 가상화 플랫폼이다.
@@ -213,7 +241,7 @@ https://backlog.com/git-tutorial/kr/stepup/stepup1_1.html
     2) 그러므로 저장이 필요하다면, 업로드 파일을 외부 스토리지와 링크하여 사용하거나 S3같은 별도의 저장소가 필요하다.
     3) 세션이나 캐시를 memcached나 redis와 같은 외부로 분리한다.
 
-### Dockerfile
+### <a name='Dockerfile'></a>Dockerfile
 
 도커 이미지를 만들기 위해서는 Dockerfile 을 생성 해야 한다.
 
@@ -430,7 +458,7 @@ docker commit -m "new edu2" (컨테이너 이름) (생성하고싶은 이미지 
 - 컨테이너 일시정지 :  docker commit [CONTAINER_ID]
 
 
-### Swagger
+### <a name='Swagger'></a>Swagger
 
 Swagger 란
 - Open Api Specification(OAS)를 위한 프레임워크이다.
@@ -468,17 +496,17 @@ GET을 클릭하고 오른쪽에 try it out를 클릭하면 API를 테스트 할
 
 <br/>
 
-## Docker Compose 
+## <a name='DockerCompose'></a>Docker Compose 
 
 <br/>
 
-### Docker Compose 개요
+### <a name='DockerCompose-1'></a>Docker Compose 개요
 
 Docker compose란, 여러 개의 컨테이너로부터 이루어진 서비스를 구축, 실행하는 순서를 자동으로 하여, 관리를 간단히하는 기능이다.
 
  Docker compose에서는 compose 파일을 준비하여 커맨드를 1회 실행하는 것으로, 그 파일로부터 설정을 읽어들여 모든 컨테이너 서비스를 실행시키는 것이 가능하다.
 
-### Docker Compose를 사용하기까지의 주요한 단계
+### <a name='DockerCompose-1'></a>Docker Compose를 사용하기까지의 주요한 단계
 
 Docker compose를 사용하기 위해서는, 크게 나눠 아래의 세 가지 순서로 이루어진다.
 
@@ -492,7 +520,7 @@ Docker compose를 사용하기 위해서는, 크게 나눠 아래의 세 가지 
 
 <br/>
 
-### Docker Compose 설치
+### <a name='DockerCompose-1'></a>Docker Compose 설치
 
 본인 VM에 터미널로 접속하여 아래 명령어를 입력한다.
 
@@ -510,7 +538,7 @@ docker-compose --version
 ```  
 <img src="./assets/docker_compose_version.png" style="width: 60%; height: auto;">  
 
-### Docker Compose yaml  
+### <a name='DockerComposeyaml'></a>Docker Compose yaml  
 
 도커 실행 명령어를 yml 파일로 스크립트 문서화 하여 관리한다.  
 
@@ -614,7 +642,7 @@ docker compose 기동시에 volumes 설정이 로컬 폴더와 컨테이너 폴�
 
 <br/>
 
-### 과제  
+### <a name=''></a>과제  
 
 * 과제 1 : docker compose로 구성한 mysql container  접속하여 로그인 한 후 wordpress db에 customer 테이블을 생성해 본다.  
     
