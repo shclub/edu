@@ -609,15 +609,40 @@ docker compose 기동시에 volumes 설정이 로컬 폴더와 컨테이너 폴�
 - stop으로 정지 된 컨테이너 시작 : docker-compose start
 - 도커 네트웍 지우기 : docker network prune
 
-<img src="./assets/docker_compose_web.png" style="width: 60%; height: auto;">
+<img src="./assets/docker_compose_web.png" style="width: 60%; height: auto;">  
 
+다른 docker-compse를 테스트 하기 위해서는 폴더를 새로 만든 후 docker-compose.yaml를 만들고 해당 폴더에서 명령어를 수행한다.
 
+<br/>
+
+### 과제  
 
 * 과제 1 : docker compose로 구성한 mysql container  접속하여 로그인 한 후 wordpress db에 customer 테이블을 생성해 본다.  
+    
+* 과제 2 : mysql container  접속하여 로그인 한 후 wordpress db에 
+  아래 테이블 script를  로컬에 저장된 화일을 사용하여 test 테이블을 생성해 본다.  
 
-* 과제 2 : 금일 실습한 Dockerfile과 docker-compose.yml 화일을 git 명령어를 사용하여 edu2에 push 한다.  
+  https://github.com/shclub/edu1/test.sql 화일을 다운 받는다.  
+  
+   
+  - TIP : 화일 이동 방법은 cp 명령어 사용.  
 
-* 과제 3 : docker 컨테이너 GUI 관리 툴인 portainer를 설치하고 웹에서 접속하여
+    호스트 -> 컨테이너
+    ```bash
+    docker cp [host 파일경로] [container name]:[container 내부 경로]
+    ```
+    컨테이너 -> 호스트  
+
+    ```bash
+    docker cp [container name]:[container 내부 경로] [host 파일경로]
+    ```
+
+
+  
+
+* 과제 3 : 금일 실습한 Dockerfile과 docker-compose.yml 화일을 git 명령어를 사용하여 edu2에 push 한다.  
+
+* 과제 4 : docker 컨테이너 GUI 관리 툴인 portainer를 설치하고 웹에서 접속하여
           모니터링한다.
    - url  참고 :  https://docs.portainer.io/v/ce-2.11/start/install/server/docker/linux
    - 웹 포트는 40005로 expose 한다 ( https 9443 포트 변경 필요 ).
