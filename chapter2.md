@@ -235,10 +235,9 @@ ADD . /app
 # RUN pip install -r requirements.txt
 
 # 직접 라이브러리를 추가 할수 있다. 단 라이브러리가 많아지면 불편하다.
-RUN pip3 install flask==1.1.2
-RUN pip3 install flask-cors
-RUN pip3 install flask-restplus
-RUN pip3 install itsdangerous==2.0.1
+RUN pip3 install flask==2.0.3
+RUN pip3 install flask-cors==3.0.10
+RUN pip3 install flask_restx
 RUN pip3 install Werkzeug==2.0.3
 
 # 기본 이미지는 대부분 GMT+0 기준으로 생성되어 한국 시간으로 변경 해준다
@@ -275,7 +274,7 @@ import werkzeug
 werkzeug.cached_property = werkzeug.utils.cached_property
 
 from flask import Flask
-from flask_restplus import Resource, Api, reqparse
+from flask_restx import Resource, Api, reqparse
 
 
 # -----------------------------------------------------
@@ -623,7 +622,7 @@ docker compose 기동시에 volumes 설정이 로컬 폴더와 컨테이너 폴�
   아래 테이블 script를  로컬에 저장된 화일을 사용하여 test 테이블을 생성해 본다.  
 
   https://github.com/shclub/edu1/test.sql 화일을 다운 받는다.  
-  
+
    
   - TIP : 화일 이동 방법은 cp 명령어 사용.  
 
