@@ -47,7 +47,7 @@ ssh root@(본인 VM 공인 ip) -p 22222
 kubectl create namespace argocd
 ``` 
 
-<img src="./assets/login_apt_update.png" style="width: 60%; height: auto;"/>  
+<img src="./assets/login_apt_update.png" style="width: 80%; height: auto;"/>  
 
 ArgoCD Manifest 화일을 다운 받는다. argo-cd.yaml 화일이 다운로드 된 것을 확인 할 수 있다.
 
@@ -55,7 +55,7 @@ ArgoCD Manifest 화일을 다운 받는다. argo-cd.yaml 화일이 다운로드 
 curl https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml -o argo-cd.yaml
 ``` 
 
-<img src="./assets/argocd_install1.png" style="width: 60%; height: auto;"/>   
+<img src="./assets/argocd_install1.png" style="width: 80%; height: auto;"/>   
 
 이번엔 Argo CD CLI 툴을 다운로드하고, PATH 경로에 추가한다.  
 
@@ -70,7 +70,7 @@ curl -sSL -o /usr/local/bin/argocd https://github.com/argoproj/argo-cd/releases/
 chmod +x /usr/local/bin/argocd
 ``` 
 
-<img src="./assets/argocd_install2.png" style="width: 60%; height: auto;"/>  
+<img src="./assets/argocd_install2.png" style="width: 80%; height: auto;"/>  
 
 k8s에 ArgoCD를 설치 합니다.
 
@@ -78,7 +78,7 @@ k8s에 ArgoCD를 설치 합니다.
 kubectl apply -n argocd -f argo-cd.yaml
 ```   
 
-<img src="./assets/argocd_install3.png" style="width: 60%; height: auto;"/>  
+<img src="./assets/argocd_install3.png" style="width: 80%; height: auto;"/>  
 
 정상적으로 설치가 되면 아래 명령어를 사용하여 생성된 서비스를 확인한다.
 
@@ -87,7 +87,7 @@ kubectl get svc -n argocd
 kubectl get po -n argocd
 ```
 
-<img src="./assets/argocd_install4.png" style="width: 60%; height: auto;"/>  
+<img src="./assets/argocd_install4.png" style="width: 80%; height: auto;"/>  
 
 <br/>
 
@@ -106,13 +106,13 @@ argo-rollouts 을 설치합니다.
 kubectl apply -f https://github.com/argoproj/argo-rollouts/releases/latest/download/install.yaml -n argo-rollouts
 ```
 
-<img src="./assets/argo_rollouts_install.png" style="width: 60%; height: auto;"/>  
+<img src="./assets/argo_rollouts_install.png" style="width: 80%; height: auto;"/>  
 
 ```bash
 kubectl get all -n argo-rollouts
 ```  
 
-<img src="./assets/argo_rollouts_all.png" style="width: 60%; height: auto;"/>  
+<img src="./assets/argo_rollouts_all.png" style="width: 80%; height: auto;"/>  
 
 <br/>
 
@@ -127,22 +127,17 @@ k8s는 kt cloud의 VM 위에 구축되었기 때문에, 외부에서 접속하�
 
 argocd-server 서비스를 수정 할수 있는 모드로 변경한다.   
 
-```bash
-kubectl edit svc argocd-server  -n argocd
-```
-
-<img src="./assets/argocd_install5.png" style="width: 60%; height: auto;"/>  
-
-<br/>
-
-argocd-server 서비스를 수정 할수 있는 모드로 변경한다.  
 아래 명령어는 vi 에디터로 오픈이 되고 필요한 값을 수정 하면 된다.   
 
 ```bash
 kubectl edit svc argocd-server  -n argocd
 ```
 
-<img src="./assets/argocd_edit_svc_before.png" style="width: 60%; height: auto;"/>    
+<img src="./assets/argocd_install5.png" style="width: 80%; height: auto;"/>  
+
+<br/>
+
+<img src="./assets/argocd_edit_svc_before.png" style="width: 80%; height: auto;"/>    
 
 NodePort의 범위는 30000 ~ 32768 이고 포트를 직접 입력하지 않으면 자동으로 할당이 된다.  
 우리는 교육을 위해서  포트를 명시한다.  
@@ -151,7 +146,7 @@ NodePort의 범위는 30000 ~ 32768 이고 포트를 직접 입력하지 않으�
 - nodePort 추가 : http와 https에 라인을 추가하여 입력한다.
 - type 변경 : ClusterIP에서 NodePort로 변경  
 
-<img src="./assets/argocd_edit_svc_after.png" style="width: 60%; height: auto;"/>    
+<img src="./assets/argocd_edit_svc_after.png" style="width: 80%; height: auto;"/>    
 
 <br/>
 수정 완료후 서비스를 다시 조회해 보면 type이 아래와 같이 변경되고 포트가 추가된 것을 확인 할 수 있다.  
@@ -160,13 +155,13 @@ NodePort의 범위는 30000 ~ 32768 이고 포트를 직접 입력하지 않으�
 kubectl get svc argocd-server  -n argocd
 ```      
 
-<img src="./assets/argocd_edit_svc_finish.png" style="width: 60%; height: auto;"/>    
+<img src="./assets/argocd_edit_svc_finish.png" style="width: 80%; height: auto;"/>    
 
 <br/>
 NodePort Traffic 설명  
 - Node ( VM ) 으로 직접 트래픽이 들어온다.  
 
-<img src="./assets/nodeport_traffic.png" style="width: 60%; height: auto;"/>  
+<img src="./assets/nodeport_traffic.png" style="width: 80%; height: auto;"/>  
 
 <br/> 
 이제 브라우저에서 argocd를 접속해 봅니다. http://(본인 VM Public IP):30000 로 접속하면 https로 Redirect됩니다.  
@@ -188,7 +183,7 @@ kubectl get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" -n
 
 왼쪽 프레임의 유저 인포를 선택한 후 변경하고 다시 로그인한다.  
 
-<img src="./assets/argocd_update_password.png" style="width: 60%; height: auto;"/>  
+<img src="./assets/argocd_update_password.png" style="width: 80%; height: auto;"/>  
 
 <br/>
 
