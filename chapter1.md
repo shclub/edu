@@ -204,30 +204,35 @@ Enter new UNIX password:
 
 현재 VM은  java가 설치되지 않아 openjdk-8-jdk를 설치 해야 한다.  
 
+jdk를 먼저 설치한다.   
+
+   ```bash
+   apt-get install  openjdk-8-jdk
+   ```  
+
 jenkins를 설치한다.  
 
    ```bash
    apt-get install jenkins 
    ```
 
-jdk도 추가로 설치한다.   
 
-   ```bash
-   apt-get install  openjdk-8-jdk
-   ```
 
 
 일반 계정이면 앞에 sudo 명령어를 반드시 붙여준다  
+
+jdk를  설치한다.  
+
+   ```bash
+   sudo apt-get install openjdk-8-jdk  
+   ```    
+   
+jenkins를 설치한다.  
 
    ```bash
    sudo apt-get install jenkins 
    ```  
 
-jdk도 추가로 설치한다.  
-
-   ```bash
-   sudo apt-get install openjdk-8-jdk  
-   ```  
 
 ### <a name='Jenkins.-1'></a>Jenkins 서비스 포트를 변경한다.  
 

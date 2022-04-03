@@ -1,8 +1,8 @@
 Table of  Contents
 
 <!-- vscode-markdown-toc -->
-* [ Git  ( https://backlog.com/git-tutorial/kr/intro/intro1_1.html )](#Githttps:backlog.comgit-tutorialkrintrointro1_1.html)
-	* [Git 개요](#Git)
+* [ Git](#Git)
+	* [Git 개요](#Git-1)
 	* [GitHub에서 새로운 Repository를 생성한다.](#GitHubRepository.)
 	* [Git 설치.](#Git.)
 	* [Git Clone 하여 github 소스 가져오기.](#GitClonegithub.)
@@ -40,15 +40,20 @@ Jenkins CI 구성 요소인 Git , Docker에 대해서 자세한 설명과 함께
  
 <br/>
 
-## <a name='Githttps:backlog.comgit-tutorialkrintrointro1_1.html'></a> Git  ( https://backlog.com/git-tutorial/kr/intro/intro1_1.html )
+## <a name='Git'></a> Git  
 
-### <a name='Git'></a>Git 개요 
+### <a name='Git-1'></a>Git 개요 
 
 Git이란 소스코드를 효과적으로 관리하기 위해 개발된 '분산형 버전 관리 시스템'입니다. ( 이전 에는 SVN 많이 사용 )  
 
 가장 대중적인 SaaS 형태는 Microsoft에서 제공하는 GitHub 이고
-Private 형태로는 Gitlab을 많이 사용 함.
+Private 형태로는 Gitlab을 많이 사용 함.  
 
+<br/>
+
+참고 사이트 :  https://backlog.com/git-tutorial/kr/intro/intro1_1.html    
+
+<br/>
 
 ### <a name='GitHubRepository.'></a>GitHub에서 새로운 Repository를 생성한다.
    
@@ -221,27 +226,31 @@ https://backlog.com/git-tutorial/kr/stepup/stepup1_1.html
 도커의 특징
 - 도커는 가상머신이 아니고 격리만 해주기 떄문에 성능상 하락이 없다. (성능 하락이 큰 VM과 다르다.)
 - 확장성과 이식성
-    1) 도커가 설치되어 있다면 어디서든 컨테이너를 실행할 수 있다.
-    2) 오픈 소스이기에 특정 회사나 서비스에 종속적이지 않다.
-    3) 쉽게 개발서버를 만들 수 있고 테스트 서버 생성도 가능하다.
+    -  도커가 설치되어 있다면 어디서든 컨테이너를 실행할 수 있다.
+    - 오픈 소스이기에 특정 회사나 서비스에 종속적이지 않다.
+    - 쉽게 개발서버를 만들 수 있고 테스트 서버 생성도 가능하다.
 - 표준성
-    1) 도커를 사용하지 않는 경우, 각각의 언어로 만든 서비스들의 배포 방식은 모두 다르다.
-    2) 도커는 컨테이너라는 표준으로 서버를 배포하므로 모든 서비스들의 배포 과정이 동일해진다.
+    - 도커를 사용하지 않는 경우, 각각의 언어로 만든 서비스들의 배포 방식은 모두 다르다.
+    - 도커는 컨테이너라는 표준으로 서버를 배포하므로 모든 서비스들의 배포 과정이 동일해진다.
 - 이미지
-    1) 컨테이너를 실행하기 위한 압축파일과 같은 개념이다.
-    2) 이미지에서 컨테이너를 생성하기 떄문에 반드시 이미지를 만드는 과정이 필요하다.
-    3) Dockerfile을 이용하여 이미지를 만들고 처음부터 재현 가능하다.
-    4) 빌드 서버에서 이미지를 만들면 해당 이미지를 이미지 저장소(허브)에 저장하고 운영서버에서 이미지를 불러와 사용한다.
+    - 컨테이너를 실행하기 위한 압축파일과 같은 개념이다.
+    - 이미지에서 컨테이너를 생성하기 떄문에 반드시 이미지를 만드는 과정이 필요하다.
+    - Dockerfile을 이용하여 이미지를 만들고 처음부터 재현 가능하다.
+    - 빌드 서버에서 이미지를 만들면 해당 이미지를 이미지 저장소(허브)에 저장하고 운영서버에서 이미지를 불러와 사용한다.
 - 설정관리
-    1) 도커에서 설정은 보통 아래와 같이 환경변수로 제어한다.
-    2) MYSQL_PASS=password와 같이 컨테이너를 띄울 때 환경변수를 같이 지정한다.
-    3) 하나의 이미지가 환경변수에 따라 동적으로 설정파일을 생성하도록 만들어져야한다.
+    - 도커에서 설정은 보통 아래와 같이 환경변수로 제어한다.
+    - MYSQL_PASS=password와 같이 컨테이너를 띄울 때 환경변수를 같이 지정한다.
+    - 하나의 이미지가 환경변수에 따라 동적으로 설정파일을 생성하도록 만들어져야한다.
 - 자원관리
-    1) 컨테이너는 삭제 후 새로 만들면 모든 데이터가 초기화된다. (제거가 쉽다.)
-    2) 그러므로 저장이 필요하다면, 업로드 파일을 외부 스토리지와 링크하여 사용하거나 S3같은 별도의 저장소가 필요하다.
-    3) 세션이나 캐시를 memcached나 redis와 같은 외부로 분리한다.
+    - 컨테이너는 삭제 후 새로 만들면 모든 데이터가 초기화된다. (제거가 쉽다.)
+    - 그러므로 저장이 필요하다면, 업로드 파일을 외부 스토리지와 링크하여 사용하거나 S3같은 별도의 저장소가 필요하다.
+    - 세션이나 캐시를 memcached나 redis와 같은 외부로 분리한다.
+
+<br/>
 
 ### <a name='Dockerfile'></a>Dockerfile
+
+<br/>
 
 도커 이미지를 만들기 위해서는 Dockerfile 을 생성 해야 한다.
 
