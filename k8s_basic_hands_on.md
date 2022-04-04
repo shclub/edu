@@ -180,8 +180,10 @@ flask-edu4-app-74788b6479-rlght   1/1     Running   0          24m   app=flask-e
         spec:
         containers:
         - name: php-redis
-            image: nginx
+          image: gcr.io/google_samples/gb-frontend:v3
     ```    
+    
+    참고 : https://kubernetes.io/docs/concepts/workloads/controllers/replicaset/ 
 
     ```bash
     kubectl apply -f [화일명]
