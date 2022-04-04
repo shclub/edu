@@ -38,6 +38,7 @@ kubernetes 는 light하고 빠른 설치가 가능한 Rancher에서 제공하는
 
 3. kubernetes IDE Lens 설치 및 사용법 실습
 
+참고 : https://subicura.com/k8s/
  
 <br/>
 

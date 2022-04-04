@@ -132,6 +132,17 @@ kubectl  delete  [리소스 타입] [리소스 이름]
 kubectl exec -it  [PO 이름] /bin/sh
 ```  
 
+전체 레이블을 조회한다.
+```bash
+root@jakelee:~# kubectl get pods --show-labels
+NAME                              READY   STATUS    RESTARTS   AGE   LABELS
+flask-edu4-app-74788b6479-qgs2j   1/1     Running   0          24m   app=flask-edu4-app,pod-template-hash=74788b6479
+flask-edu4-app-74788b6479-l7gkx   1/1     Running   0          24m   app=flask-edu4-app,pod-template-hash=74788b6479
+flask-edu4-app-74788b6479-nmcvv   1/1     Running   0          24m   app=flask-edu4-app,pod-template-hash=74788b6479
+flask-edu4-app-74788b6479-f2kcp   1/1     Running   0          24m   app=flask-edu4-app,pod-template-hash=74788b6479
+flask-edu4-app-74788b6479-rlght   1/1     Running   0          24m   app=flask-edu4-app,pod-template-hash=74788b6479
+```  
+
 <br/>
 
 ### 명령 vs 선언
@@ -187,7 +198,7 @@ kubectl exec -it  [PO 이름] /bin/sh
 
 <br/>
 
-<img src="./assets/Node.png" style="width: 80%; height: auto;"/>  
+<img src="./assets/node.png" style="width: 80%; height: auto;"/>  
 
 `Kubernetes Node` 는 최소한 다음과 같이 동작합니다.
 
@@ -966,3 +977,79 @@ Rollback 은 배포된 APP 에 문제가 있을 때, 다시 이전 이미지로 
         kubectl rollout undo deployment flask-edu4-app --to-revision=1
         ```
         
+<br/>
+
+### Ingress
+
+<br/>
+
+<img src="./assets/pod.png" style="width: 80%; height: auto;"/>  
+
+<br/>
+
+Deployment 가 생성이 되고 나면 Kubernetes 는 여러분의 애플리케이션 인스턴스에 Pod 를 생성했습니다.  
+
+Ingress Nginx 를 설치한다.  
+
+```bash      
+root@jakelee:~# kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.0.0/deploy/static/provider/baremetal/deploy.yaml
+```
+
+설치가 완료되면 ingress-nginx namespace가 생기고 서비스는 NodePort로 아래와 같이 자동으로 설정이 되어 있다.  
+
+- http : 31996 , https : 31023
+
+```bash      
+root@jakelee:~# kubectl get all -n ingress-nginx
+NAME                                           READY   STATUS      RESTARTS   AGE
+pod/ingress-nginx-admission-create--1-w9z7x    0/1     Completed   0          11m
+pod/ingress-nginx-admission-patch--1-v9v66     0/1     Completed   1          11m
+pod/ingress-nginx-controller-8cf5559f8-nc96z   1/1     Running     0          11m
+
+NAME                                         TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)                      AGE
+service/ingress-nginx-controller-admission   ClusterIP   10.43.52.204   <none>        443/TCP                      11m
+service/ingress-nginx-controller             NodePort    10.43.27.14    <none>        80:31996/TCP,443:31023/TCP   11m
+
+NAME                                       READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/ingress-nginx-controller   1/1     1            1           11m
+
+NAME                                                 DESIRED   CURRENT   READY   AGE
+replicaset.apps/ingress-nginx-controller-8cf5559f8   1         1         1       11m
+
+NAME                                       COMPLETIONS   DURATION   AGE
+job.batch/ingress-nginx-admission-create   1/1           6s         11m
+job.batch/ingress-nginx-admission-patch    1/1           7s         11m
+```
+
+서비스를 도메인으로 접속하기 위해서 ingress를 설정한다.     
+해당 화일은 https://github.com/shclub/edu4/blob/master/ingress_sample1.yaml 에서 다운 받는다.
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nginx-ingress
+  annotations:
+    ingress.kubernetes.io/rewrite-target: /
+    ingress.kubernetes.io/ssl-redirect: "false"
+spec:
+  rules:
+  - host: 210.106.105.165.nip.io
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: flask-edu4-app
+            port:
+              number: 80
+```
+
+```bash
+root@jakelee:~# kubectl apply -f ingress-sample1.yaml
+ingress.networking.k8s.io/nginx-ingress created
+root@jakelee:~# kubectl get ing
+NAME            CLASS   HOSTS                    ADDRESS        PORTS   AGE
+nginx-ingress   nginx   210.106.105.165.nip.io   172.27.0.134   80      12m
+```
