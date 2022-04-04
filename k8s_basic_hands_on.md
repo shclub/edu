@@ -116,6 +116,8 @@ kubectl apply -f [화일이름]
 kubectl create -f [화일이름]
 # 화일 이름의 리소스를  update  한다.
 kubectl update -f [화일이름]
+# 화일 이름의 리소스를  delete  한다.
+kubectl delete -f [화일이름]
 
 # 해당 리소스 정보를 보여준다
 kubectl  get [리소스 타입] [리소스 이름]
@@ -626,7 +628,7 @@ NodePort 로 변경이 되었는지 확인합니다.
 포트를 명시하지 않으면 아래와 같이 30000 ~ 32767 범위내에서 자동 할당한다.  
 
 ```bash
-root@jakelee:~# kubectl edit service flask-edu4-app
+root@jakelee:~# kubectl edit svc flask-edu4-app
 service/flask-edu4-app edited
 root@jakelee:~# kubectl get svc
 NAME             TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)        AGE
@@ -658,7 +660,7 @@ root@jakelee:~# curl 10.43.30.79:5000
  Container EDU | POD Working : flask-edu4-app-74788b6479-t6rvt | v=1
 ```  
 
-웨브라우저에서도 테스트 할 수 있다.  
+웹브라우저에서도 테스트 할 수 있다.  
 
 <img src="./assets/nodeport_test.png" style="width: 60%; height: auto;"/>  
 
@@ -807,7 +809,7 @@ Events:
   Normal  ScalingReplicaSet  23m (x2 over 80m)  deployment-controller  Scaled up replica set flask-edu4-app-74788b6479 to 5
 ```
 
--  이미지를 변경합니다.  
+-  이미지를 변경합니다. 켠테이너 이름은 describe 에서 containers 밑에 있는 이름  이고 여기에서는 edu4 이다.   
 
 ```bash  
 kubectl set image deployments <deployment 이름> <컨테이너이름>=<변경할 이미지>
@@ -985,11 +987,18 @@ Rollback 은 배포된 APP 에 문제가 있을 때, 다시 이전 이미지로 
 
 <br/>
 
-<img src="./assets/pod.png" style="width: 80%; height: auto;"/>  
+
+Ingress는 도메인으로 서비스를 접속하기위해 필요한 오브젝트입니다.
+
+하나의 클러스터에서 여러 가지 서비스를 운영한다면 외부 연결을 어떻게 할까요? NodePort를 이용하면 서비스 개수만큼 포트를 오픈하고 사용자에게 어떤 포트인지 알려줘야 합니다. 그럴순 없죠!
+
+<img src="./assets/ingress.png" style="width: 80%; height: auto;"/>  
 
 <br/>
 
-Deployment 가 생성이 되고 나면 Kubernetes 는 여러분의 애플리케이션 인스턴스에 Pod 를 생성했습니다.  
+위 샘플은 example.com, subicura.com/blog, subicura.com/help 주소로 서로 다른 서비스에 접근하는 모습입니다.   
+
+80(http) 또는 443(https) 포트로 여러 개의 서비스를 연결해야 하는데 이럴 때 Ingress를 사용합니다.
 
 Ingress Nginx 를 설치한다.  
 
@@ -1023,8 +1032,42 @@ job.batch/ingress-nginx-admission-create   1/1           6s         11m
 job.batch/ingress-nginx-admission-patch    1/1           7s         11m
 ```
 
+서비스와 포트를 확인하고 정상 작동하는지 확인한다.
+```bash      
+root@jakelee:~# kubectl get svc -n ingress-nginx
+NAME                                 TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)                      AGE
+ingress-nginx-controller-admission   ClusterIP   10.43.52.204   <none>        443/TCP                      147m
+ingress-nginx-controller             NodePort    10.43.27.14    <none>        80:31996/TCP,443:31023/TCP   147m
+
+root@jakelee:~# curl -I http://127.0.0.1:31996/healthz
+HTTP/1.1 200 OK
+Date: Mon, 04 Apr 2022 09:07:43 GMT
+Content-Type: text/html
+Content-Length: 0
+Connection: keep-alive
+
+# 본인 VM Public IP 로도 확인 가능하다.
+root@jakelee:~# curl -I http://210.106.105.165:31996/healthz
+HTTP/1.1 200 OK
+Date: Mon, 04 Apr 2022 09:14:52 GMT
+Content-Type: text/html
+Content-Length: 0
+Connection: keep-alive     
+
+# 본인 VM 도메인 으로도  확인 가능하다.
+root@jakelee:~# curl -I http://210.106.105.165.nip.io:31996/healthz
+HTTP/1.1 200 OK
+Date: Mon, 04 Apr 2022 09:46:17 GMT
+Content-Type: text/html
+Content-Length: 0
+Connection: keep-alive
+``` 
+
 서비스를 도메인으로 접속하기 위해서 ingress를 설정한다.     
-해당 화일은 https://github.com/shclub/edu4/blob/master/ingress_sample1.yaml 에서 다운 받는다.
+해당 화일은 https://github.com/shclub/edu4/blob/master/ingress_sample1.yaml 에서 다운 받는다.  
+
+backend.service.port.number는 해당 서비스의 컨테이너 포트를 명시한다.  
+
 
 ```yaml
 apiVersion: networking.k8s.io/v1
@@ -1033,7 +1076,7 @@ metadata:
   name: nginx-ingress
   annotations:
     ingress.kubernetes.io/rewrite-target: /
-    ingress.kubernetes.io/ssl-redirect: "false"
+    ingressclass.kubernetes.io/is-default-class: true
 spec:
   rules:
   - host: 210.106.105.165.nip.io
@@ -1045,7 +1088,7 @@ spec:
           service:
             name: flask-edu4-app
             port:
-              number: 80
+              number: 5000
 ```
 
 ```bash
@@ -1054,4 +1097,34 @@ ingress.networking.k8s.io/nginx-ingress created
 root@jakelee:~# kubectl get ing
 NAME            CLASS   HOSTS                    ADDRESS        PORTS   AGE
 nginx-ingress   nginx   210.106.105.165.nip.io   172.27.0.134   80      12m
+```
+
+ingress를 통하여 서비스를 접속하여 봅니다.
+
+```bash
+root@jakelee:~# curl http://210.106.105.165.nip.io:31996/
+ Container EDU | POD Working : flask-edu4-app-74788b6479-rlght | v=1
+```
+
+웹으로도 서비스를 접속하여 봅니다.  
+
+<img src="./assets/web_ingress.png" style="width: 80%; height: auto;"/>  
+
+<br/>
+
+ingressclass를 ingress 마다 넣어주는 불편은  아래와 같이 변경하면 ingress yaml 생성시 annotation 에서 삭제 가능하다.
+
+```bash
+root@jakelee:~# kubectl get ingressclasses --namespace=ingress-nginx
+NAME    CONTROLLER             PARAMETERS   AGE
+nginx   k8s.io/ingress-nginx   <none>       3h35m
+root@jakelee:~# kubectl edit ingressclasses nginx --namespace=ingress-nginx
+```
+
+아래와 같이 ingressclass를 추가한다.  
+
+```bash
+metadata:
+  annotations:
+    ingressclass.kubernetes.io/is-default-class: "true"  <<추가
 ```
