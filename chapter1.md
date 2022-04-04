@@ -141,6 +141,7 @@ jenkins : 9000 -> 9000
 flask web : 40003 -> 40003
 그외 : 40004 ~ 40010 
 k8s  : 6443 -> 6443
+k8s nodePort  : 30000 -> 32767
 ```
 <br/><br/>
 
@@ -191,7 +192,7 @@ Enter new UNIX password:
 ### <a name='.-1'></a>패키지 인덱스를 업데이트 하고 라이브러를 최신 버전으로 올려준다.
 
    ```bash
-   apt-get update && apt-get upgrade
+   apt update && apt upgrade
    ```
    중간에 계속 진행하는 것을 물어보면 Y 를 입력하여 진행 
 
@@ -207,13 +208,14 @@ Enter new UNIX password:
 jdk를 먼저 설치한다.   
 
    ```bash
-   apt-get install  openjdk-8-jdk
+   apt install  openjdk-8-jdk
+   apt update
    ```  
 
 jenkins를 설치한다.  
 
    ```bash
-   apt-get install jenkins 
+   apt install jenkins 
    ```
 
 
@@ -224,13 +226,14 @@ jenkins를 설치한다.
 jdk를  설치한다.  
 
    ```bash
-   sudo apt-get install openjdk-8-jdk  
+   sudo apt install openjdk-8-jdk  
+   sudo apt update
    ```    
-   
+
 jenkins를 설치한다.  
 
    ```bash
-   sudo apt-get install jenkins 
+   sudo apt install jenkins 
    ```  
 
 
@@ -524,6 +527,7 @@ Project-based Matrix Authorization Strategy 체크 후 권한 설정
 
 ### <a name='Githubtoken'></a>Github token 생성하기
 
+웹브라우저에서 Github 로그인하고 
 Jenkins 에서 github repository 인증을 위해 사용할 token 을 생성한다.  
 
 - Settings - Developer settings - Personal access tokens - Generate token  
@@ -662,6 +666,8 @@ Save 버튼을 클릭하여 저장한다.
 
 ### <a name='-1'></a>빌드 실행
 
+빌드 하기 전에 Jenkins 화일로 이동하여 docker hub 의 repository와 docker credential은 본인의 계정으로 설정한다.  
+
 대쉬보드에서 Build With Parameter를 선택하고 Branch 선택 후 빌드 한다.  
 
 <img src="./assets/jenkins_first_build.png" style="width: 60%; height: auto;"/>
@@ -758,7 +764,6 @@ env 환경변수는 다음과 같은 형식 env.VARNAME으로 참조될 수 있�
 <br/>
 
 currentBuild 환경변수는 현재 빌드되고 있는 정보를 담고있다. 보통 readonly 옵션인데 일부 writable한 옵션이 존재한다. 대표적인 currentBuild의 property는 아래와 같다.
-
 
 <img src="./assets/jenkins_current_variable.png" style="width: 80%; height: auto;"/>    
 
