@@ -937,3 +937,8 @@ ClusterRole은 네임스페이스와 연관 없는 리소스나 네임스페이�
 
 [ Hands-On 문서보기 ](./k8s_basic_hands_on.md)  
 
+
+< 과제 >
+- 과제 1 : kubectl client를 본인 로컬 PC ( 윈도우 / MAC ) 에 설치 한다.
+- 과제 2 : 신규 Jenkins build pipeline을 구성한다. 
+  -  https://github.com/shclub/edu4 사용

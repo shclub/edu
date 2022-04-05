@@ -375,8 +375,7 @@ Pod 는 하나 또는 그 이상의 애플리케이션 컨테이너 (도커 또�
 - Pod 내 Container 에 명령어 수행  
 
     ```bash  
-    root@jakelee:~# kubectl exec -it flask-edu4-app-74788b6479-t6rvt -- pwd /usr/src/app
-    /usr/src/app  
+    root@jakelee:~# kubectl exec -it flask-edu4-app-74788b6479-t6rvt /bin/sh
     ```    
 
 - Pod 상세 정보 확인 - 1  
@@ -1143,4 +1142,158 @@ root@jakelee:~# kubectl edit ingressclasses nginx --namespace=ingress-nginx
 metadata:
   annotations:
     ingressclass.kubernetes.io/is-default-class: "true"  <<추가
+```
+
+<br/>
+
+### Horizontal Pod Autoscaler (hpa)
+
+<br/>
+
+
+이 실습을 진행하기 위해서는 terminal이 2개 이상 열려 있어야 하며 metric server 가 설치가 되어야 합니다.
+
+Metric 서버는 api를 통해서 컨테이너 CPU 및 메모리 사용량과 같은 리소스 사용량 메트릭을 제공하는데요, hpa는 이 api를 호출해서 Metric 서버에서 제공해주는 리소스 사용량을 기준으로 scaling 여부를 판단합니다.  
+
+k3s는 metric server가 설치가 이미되어 있습니다.  
+
+설치 방법 
+-  Mertic-server github에서 제공하는 config 파일을 이용해 간단하게 설치할 수 있습니다. 필요하다면 파일을 내려받은 뒤 config 파일을 수정하고 배포하면 됩니다.
+    ```bash
+    kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/download/v0.4.1/components.yaml
+    ```
+
+<br/>
+
+예제 참고 : https://docs.aws.amazon.com/ko_kr/eks/latest/userguide/horizontal-pod-autoscaler.html
+
+<br/>
+
+현재 Node의 CPU 사용률을 확인합니다.    
+```bash
+root@jakelee:~# kubectl top nodes
+NAME      CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%
+jakelee   488m         6%     8274Mi          51%
+```
+테스트용 php 소스 이미지를 배포합니다.  이 Apache 웹 서버 파드에는 500 millicpu CPU 제한이 지정되며 포트 80에서 제공됩니다.   
+현재 서버는 CPU : 8core   
+- requests : 200m ( 초기 설정 )
+- limits : 500m (제한 )
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: php-apache
+spec:
+  selector:
+    matchLabels:
+      run: php-apache
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        run: php-apache
+    spec:
+      containers:
+      - name: php-apache
+        image: k8s.gcr.io/hpa-example
+        ports:
+        - containerPort: 80
+        resources:
+          limits:
+            cpu: 500m
+          requests:
+            cpu: 200m
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: php-apache
+  labels:
+    run: php-apache
+spec:
+  ports:
+  - port: 80
+  selector:
+    run: php-apache
+```
+
+배포시작.
+
+```bash
+root@jakelee:~# kubectl apply -f https://k8s.io/examples/application/php-apache.yaml
+deployment.apps/php-apache created
+service/php-apache created
+```
+
+Deployment와 service가 생성이 되었고 php-apache 배포를 위해 Horizontal Pod Autoscaler 리소스를 생성합니다.
+
+이 명령을 통해 최소 1개에서 최대 10개의 POD가 배포에 대해 10퍼센트의 CPU 사용률을 달성하려는 자동 조정기가 생성됩니다.   
+평균 CPU 로드가 10퍼센트 이하인 경우 Autoscaler는  Pod 의 수를 최소 1개로 줄이려고 합니다.   
+로드가 50퍼센트보다 큰 경우 포드의 수를 최대 10개로 늘이려고 합니다.  
+
+우리는 빠른 테스트를 위해 10% 로 설정하고 테스트를 한다.  
+터미널 창에서 아래 명령어를 실행한다.  
+
+```bash
+root@jakelee:~# kubectl autoscale deployment php-apache --cpu-percent=10 --min=1 --max=10
+horizontalpodautoscaler.autoscaling/php-apache autoscaled
+root@jakelee:~# kubectl get hpa php-apache
+NAME         REFERENCE               TARGETS         MINPODS   MAXPODS   REPLICAS   AGE
+php-apache   Deployment/php-apache   <unknown>/10%   1         10        0          11s
+```
+
+실시간으로 hpa 상태를 모니터링 한다. 초기에는  Replica 가 minumum 1 로 설정됩니다.
+
+```bash
+root@jakelee:~# kubectl get hpa php-apache -w
+NAME         REFERENCE               TARGETS   MINPODS   MAXPODS   REPLICAS   AGE
+php-apache   Deployment/php-apache   0%/10%    1         10        1          15s
+```
+
+<br/>
+
+새로운 터미널에서 아래와 같이 부하를 줍니다.   
+
+```bash
+root@jakelee:~# kubectl run -i \
+>     --tty load-generator \
+>     --rm --image=busybox \
+>     --restart=Never \
+>     -- /bin/sh -c "while sleep 0.01; do wget -q -O- http://php-apache; done"
+If you don't see a command prompt, try pressing enter.
+OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!
+```
+
+이전 터미널에서 계속 적으로 모니터링 합니다. 부하에 따라 Replica 가 증가하고 최대값인 10으로 증가 된것을 확인 할수 있습니다.  
+
+```bash
+root@jakelee:~# kubectl get hpa php-apache -w
+NAME         REFERENCE               TARGETS   MINPODS   MAXPODS   REPLICAS   AGE
+php-apache   Deployment/php-apache   0%/10%    1         10        1          15s
+php-apache   Deployment/php-apache   141%/10%   1         10        1          60s
+php-apache   Deployment/php-apache   253%/10%   1         10        4          75s
+php-apache   Deployment/php-apache   236%/10%   1         10        8          90s
+```
+
+부하를 주는 화면에서 ctrl+c 를 눌러 부하를 중단합니다.  
+최소값으로 돌아오는데는 5분 이상이 소요가 됩니다.   
+
+```bash
+root@jakelee:~# kubectl get hpa php-apache -w
+NAME         REFERENCE               TARGETS   MINPODS   MAXPODS   REPLICAS   AGE
+php-apache   Deployment/php-apache   0%/10%    1         10        1          15s
+php-apache   Deployment/php-apache   141%/10%   1         10        1          60s
+php-apache   Deployment/php-apache   253%/10%   1         10        4          75s
+php-apache   Deployment/php-apache   236%/10%   1         10        8          90s
+php-apache   Deployment/php-apache   97%/10%    1         10        10         105s
+php-apache   Deployment/php-apache   44%/10%    1         10        10         2m
+php-apache   Deployment/php-apache   39%/10%    1         10        10         2m15s
+php-apache   Deployment/php-apache   18%/10%    1         10        10         2m30s
+php-apache   Deployment/php-apache   2%/10%     1         10        10         2m45s
+php-apache   Deployment/php-apache   0%/10%     1         10        10         3m
+php-apache   Deployment/php-apache   0%/10%     1         10        10         7m31s
+php-apache   Deployment/php-apache   0%/10%     1         10        2          7m46s
+php-apache   Deployment/php-apache   0%/10%     1         10        1          8m1s
 ```
