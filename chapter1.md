@@ -737,7 +737,9 @@ Python Flask 가 정상적으로 로드가 된걸 확인 할 수 있다.
 ### <a name='Jenkinsfile'></a>Jenkinsfile 설명  
 
 Jenkins 화일에서 github와 docker credential 은  Jenkins 설정에서 Credential을 생성한
-id를 입력하면 된다.  
+id를 입력하면 된다.   
+
+반드시 본인이 만든 값으로 Jenkins파일의 수정해야 함.  
 
 <img src="./assets/pipeline_credential.png" style="width: 80%; height: auto;"/>  
 
