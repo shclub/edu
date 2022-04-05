@@ -19,6 +19,45 @@ kubernetes에서 kubectl를 사용하여 cli 실습을 한다.
 
 <br/>
 
+##  실습 전체 개요 
+
+
+### Deployment, Service, Ingress 흐름 설명
+
+
+<img src="./assets/k8s_flow.png" style="width: 100%; height: auto;"/>
+
+<br/>
+
+Ingress : HTTP 나 HTTPS 통신을 클러스터 내부의 서비스에 연결해 주는 도구.  
+쉽게 말해 가정집의 공유기와 비슷한 역할을 한다.  
+Deployment(pod) 는 Service 와 연결된다고 선술한 바 있다. 
+  
+Ingress 는 아래 이미지와 같이 Service 와 연결해주면 된다.   
+
+
+- Deployment 정의 : Deployment는 메타데이터 및 pod 리플리카 개수, 컨테이너 이미지, 이미지 포트 등을 정의한다.
+
+
+- Service 정의 : Service는 아래와 같이 어노테이션 및 서비스 포트 및 타깃 포트 등을 정의한다.
+
+
+- ingress 정의 : 어노테이션 및 ingress의 서비스 name과 port를 정의한다.
+
+<br/>
+
+Deployment 와 Service 그리고 Ingress의 관계가 간단하게 정리된 그림
+
+<img src="./assets/k8s_flow2.png" style="width: 80%; height: auto;"/>
+
+<br/>
+
+위의 예시를 토대로 Deployment와 Service 그리고 Ingress의 관계를 Flow로 표현한 그림
+
+<img src="./assets/k8s_flow3.png" style="width: 80%; height: auto;"/>
+
+<br/>
+
 ##  Kubeconfig 설정 
 
 ### kubectl 설치 ( https://kubernetes.io/ko/docs/tasks/tools/ )
@@ -1306,3 +1345,37 @@ deployment.apps "php-apache" deleted
 service "php-apache" deleted
 horizontalpodautoscaler.autoscaling "php-apache" deleted
 ```
+
+
+
+<br/>
+
+### 참고 자료
+
+<br/>
+
+목록 - blog
+<br/>
+
+- 커피고래 : https://coffeewhale.com/categories/#kubernetes
+
+- 60살까지 개발자로 살기 : https://jerryljh.tistory.com/category/%EC%BF%A0%EB%B2%84%EB%84%A4%ED%8B%B0%EC%8A%A4%20%EA%B5%90%EC%9C%A1
+
+- 민현기 : https://medium.com/dtevangelist
+- subicura : https://subicura.com/k8s/
+- wonizz : https://blog.wonizz.tk/
+- wooody92 블로그 : https://wooody92.github.io/categories/#
+- 아리수 : https://arisu1000.tistory.com/
+- chhanz : https://chhanz.github.io/
+- devops story : https://cwal.tistory.com/21
+- microk8s : https://sarc.io/index.php/cloud/2197-microk8s
+
+<br/>
+
+목록 - youtube
+<br/>
+
+- 악분일상   
+<img src="./assets/youtube_daily.png" style="width: 80%; height: auto;"/>  
+- 인프런 초급 : https://youtu.be/qLlo7MAJvT0
+<br/>
