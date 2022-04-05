@@ -1297,3 +1297,12 @@ php-apache   Deployment/php-apache   0%/10%     1         10        10         7
 php-apache   Deployment/php-apache   0%/10%     1         10        2          7m46s
 php-apache   Deployment/php-apache   0%/10%     1         10        1          8m1s
 ```
+
+테스트가 완료 되면 리소스를 삭제합니다.     
+
+```bash
+root@jakelee:~# kubectl delete deployment.apps/php-apache service/php-apache horizontalpodautoscaler.autoscaling/php-apache
+deployment.apps "php-apache" deleted
+service "php-apache" deleted
+horizontalpodautoscaler.autoscaling "php-apache" deleted
+```
