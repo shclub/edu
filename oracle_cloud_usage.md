@@ -10,7 +10,7 @@ Oracle Cloud의 `평생 무료 계정`을 생성하고 사용해본다.
 
 4. vm에 k3s 설치
 
-5. 외부에서 k3s 접속
+5. 외부에서 k3s 접속
 
 6. 참고 사이트 
     - vm 생성 : https://bonohubby.com/entry/OCI-VM-Instance-%EC%83%9D%EC%84%B1-%EB%B0%8F-%EC%A0%91%EC%86%8D-%EB%B0%A9%EB%B2%95
