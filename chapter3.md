@@ -331,7 +331,7 @@ users:
 변경된 값을 로컬 특정 폴더에  config-k3stest 이름으로 저장한다.  
 .kube 폴더가 없으면 생성한다. ( config 화일은 확장자가 없이 만든다 )  
 
-- Windows : c:\Users\본인계정\.kube\config-k3stest
+- Windows : c:\Users\본인계정\\.kube\config-k3stest
 - Mac : ~/.kube/config-k3stest
 
 
@@ -390,6 +390,7 @@ k3s 삭제방법
 ```
 
 <br/>
+
 ### <a name='kubernetesIDElens'></a>kubernetes IDE lens 설치
 
 <br/>

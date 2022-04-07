@@ -224,6 +224,8 @@ flask-edu4-app-74788b6479-rlght   1/1     Running   0          24m   app=flask-e
           image: gcr.io/google_samples/gb-frontend:v3
     ```    
     
+    위의 화일은 에러가 나기 때문에 아래 사이트에서 복사해서 사용한다.  
+
     참고 : https://kubernetes.io/docs/concepts/workloads/controllers/replicaset/ 
 
     ```bash
