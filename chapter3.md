@@ -628,3 +628,10 @@ k8s IDE인 lens 를 확인하면 메트릭 정보를 볼수 있고
 명령어를 통해서도 확인할 수 있다.
 
 <br/>
+
+
+### 과제  
+
+* 과제 1 : oralce cloud에 가입하고 cloud shell 과 vm을 생성하고 k3s를 설치해 본다.    
+    - 문서를 참고한다. [oracle cloud 가이드 ](./oracle_cloud_usage.md.md)
+
