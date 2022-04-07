@@ -390,6 +390,14 @@ Pod 는 하나 또는 그 이상의 애플리케이션 컨테이너 (도커 또�
     NAME                              CPU(cores)   MEMORY(bytes)
     flask-edu4-app-74788b6479-t6rvt   1m           17Mi
     ```    
+    컨테이너 이름까지 같이 보기.  
+
+    ```bash  
+    root@jakelee:~# kubectl top pod --containers
+    POD                                   NAME          CPU(cores)   MEMORY(bytes)
+    flask-edu4-app-74788b6479-f2kcp       edu4          1m           18Mi
+    ```    
+
 
 - Pod 내 Container 의 log 확인  
 
@@ -416,7 +424,30 @@ Pod 는 하나 또는 그 이상의 애플리케이션 컨테이너 (도커 또�
     ```bash  
     root@jakelee:~# kubectl exec -it flask-edu4-app-74788b6479-t6rvt /bin/sh
     ```    
+    하나의 pod에 여러 container가 있는 경우.
 
+    ```bash 
+    root@jakelee:~# kubectl top po --containers -n monitoring
+    POD                                                      NAME                     CPU(cores)   MEMORY(bytes)
+    alertmanager-prometheus-kube-prometheus-alertmanager-0   alertmanager             1m           21Mi
+    alertmanager-prometheus-kube-prometheus-alertmanager-0   config-reloader          0m           4Mi
+    prometheus-grafana-75898f6f7b-mm6zx                      grafana                  4m           44Mi
+    prometheus-grafana-75898f6f7b-mm6zx                      grafana-sc-dashboard     3m           61Mi
+    prometheus-grafana-75898f6f7b-mm6zx                      grafana-sc-datasources   1m           60Mi
+    prometheus-kube-prometheus-operator-85bcb96fcb-ct7pj     kube-prometheus-stack    1m           35Mi
+    prometheus-kube-state-metrics-77698656df-82g44           kube-state-metrics       1m           15Mi
+    prometheus-prometheus-kube-prometheus-prometheus-0       config-reloader          0m           7Mi
+    prometheus-prometheus-kube-prometheus-prometheus-0       prometheus               112m         548Mi
+    prometheus-prometheus-node-exporter-5t2jt                node-exporter            1m           12Mi
+    ```  
+    
+    -c 옵션과 컨테이너 이름을 입력하면 해당 컨테이너로 진입한다.  
+
+    ```
+    root@jakelee:~# kubectl exec -it prometheus-prometheus-kube-prometheus-prometheus-0 -c prometheus /bin/sh -n monitoring
+    kubectl exec [POD] [COMMAND] is DEPRECATED and will be removed in a future version. Use kubectl exec [POD] -- [COMMAND] instead.
+    /prometheus $
+    ```
 - Pod 상세 정보 확인 - 1  
 
     ```bash  
@@ -1369,7 +1400,8 @@ horizontalpodautoscaler.autoscaling "php-apache" deleted
 - chhanz : https://chhanz.github.io/
 - devops story : https://cwal.tistory.com/21
 - microk8s : https://sarc.io/index.php/cloud/2197-microk8s
-
+- alice : https://m.blog.naver.com/PostList.naver?blogId=alice_k106
+- d4v1d : https://velog.io/@rhee519
 <br/>
 
 목록 - youtube
