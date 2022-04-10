@@ -204,24 +204,24 @@ flask-edu4-app-74788b6479-rlght   1/1     Running   0          24m   app=flask-e
     apiVersion: apps/v1
     kind: ReplicaSet
     metadata:
-    name: frontend
-    labels:
+      name: frontend
+      labels:
         app: guestbook
         tier: frontend
     spec:
     # modify replicas according to your case
-    replicas: 3
-    selector:
+      replicas: 3
+      selector:
         matchLabels:
         tier: frontend
-    template:
+      template:
         metadata:
         labels:
-            tier: frontend
+          tier: frontend
         spec:
-        containers:
-        - name: php-redis
-          image: gcr.io/google_samples/gb-frontend:v3
+          containers:
+          - name: php-redis
+            image: gcr.io/google_samples/gb-frontend:v3
     ```    
     
     위의 화일은 에러가 나기 때문에 아래 사이트에서 복사해서 사용한다.  
@@ -1217,6 +1217,180 @@ metadata:
 ```
 
 <br/>
+
+<br/>
+
+### Ingress - Traefik
+
+<br/>
+
+
+k3s 에는 default 로 Traefik 이라는 Ingress Controller가 설치가 되어 있다.  
+
+Traefik을 사용하여 80/443 포트로 접속하는 방법에 대해서 실습을 한다.   
+
+traefik pod를 확인한다.  
+
+```bash
+root@jakelee:~# kubectl get po -n kube-system
+NAME                                      READY   STATUS      RESTARTS     AGE
+local-path-provisioner-84bb864455-pkktg   1/1     Running     0            9d
+helm-install-traefik-crd--1-2l5b9         0/1     Completed   0            9d
+svclb-traefik-xst65                       2/2     Running     1 (9d ago)   9d
+coredns-96cc4f57d-f87gg                   1/1     Running     0            9d
+metrics-server-ff9dbcb6c-h9tv2            1/1     Running     0            9d
+helm-install-traefik--1-5g9lq             0/1     Completed   0            36m
+traefik-747c4ffbd6-q6hpd                  1/1     Running     0            36m
+```  
+
+traefik service를 확인한다.  
+
+```bash
+root@jakelee:~# kubectl get svc traefik -n kube-system
+NAME      TYPE           CLUSTER-IP      EXTERNAL-IP    PORT(S)                      AGE
+traefik   LoadBalancer   10.43.167.187   172.27.0.134   80:30622/TCP,443:31534/TCP   9d
+```  
+
+Ingress를 생성하기 전에 inspekt라는 pod를 inspect하는 서비스를 생성한다.  
+
+```bash
+root@jakelee:~# kubectl apply -k github.com/shclub/inspekt
+```  
+
+Pod와 서비스가 생성된 것을 확인한다.  
+
+<img src="./assets/inspekt_deploy.png" style="width: 100%; height: auto;"/>  
+
+ingress를 생성하기 위해 vi 에디터로 inspekt_ingress.yaml 화일을 생성한다.    
+- 여기에서도 다운 가능 : https://github.com/shclub/edu4/blob/master/inspekt_ingress.yaml
+
+아래에 kubernetes.io/ingress.class: traefik 의미는 traefik의 ingress controller를 사용하겠다는 의미이다.  
+
+서비스 포트는 컨테이너 포트이다.  
+
+```bash
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: inspekt-traefik-ingress
+  annotations:
+    ingress.kubernetes.io/rewrite-target: "/"
+    kubernetes.io/ingress.class: traefik
+spec:
+  rules:
+  - host: inspekt.210.106.105.165.sslip.io
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: inspekt
+            port:
+              number: 80
+
+```  
+
+해당 화일을 적용하고 ingress가 신규로 생성된 것을 확인 할 수 있다.  
+
+```bash
+root@jakelee:~# kubectl apply -f inspekt_ingress.yaml
+ingress.networking.k8s.io/inspekt-traefik-ingress created
+root@jakelee:~# kubectl get ing
+NAME                      CLASS    HOSTS                              ADDRESS        PORTS   AGE
+flask-edu4-app-v1         nginx    210.106.105.165.nip.io             172.27.0.134   80      3d12h
+inspekt-traefik-ingress   <none>   inspekt.210.106.105.165.sslip.io   172.27.0.134   80      5s
+```  
+
+hosts 의 값을 복사하여 web browser 에서 실행한다.  
+80번 포트로 접속이 된것을 확인 할 수 있다.  
+
+<img src="./assets/inspekt_traefik_ingress.png" style="width: 80%; height: auto;"/>  
+
+<br/>
+
+http (80) 포트인 경우는 위와 같이 가능하지만 https (443) 인 경우는 서비스 마다 인증서를 만들어 추가 해야한다.  
+
+우리는 교육용이기 때문에 ssl을 적용하지 않고 테스트를 진행힌다.  
+
+/var/lib/rancher/k3s/server/manifests/traefik.yaml 화일을 수정한다.   
+
+```bash
+root@jakelee:~# vi /var/lib/rancher/k3s/server/manifests/traefik.yaml
+```    
+
+valuesContent 밑에 2개의 라인을 추가한다. ssl verify를 skip 한다는 의미이다.  
+
+```bash
+valuesContent: |-
+  globalArguments:                               << 추가
+  - "--serversTransport.insecureSkipVerify=true" << 추가
+```  
+
+이제 https(443) 포트 케이스는 ingress로 생성할 준비가 되어 있다.    
+
+ingress를 생성하기 위해 vi 에디터로 argocd_ingress.yaml 화일을 생성한다.    
+- 여기에서도 다운 가능 : https://github.com/shclub/edu4/blob/master/argocd_ingress.yaml
+
+argocd는 4주차에 설치 실습이 있어 4주차 설치 이후 아래 내용을 따라 하면 된다.    
+
+argocd 서비스를 확인힌다.  
+
+```bash
+root@jakelee:~# kubectl get svc -n argocd
+NAME                                      TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)                      AGE
+argocd-applicationset-controller          ClusterIP   10.43.26.65     <none>        7000/TCP                     9d
+argocd-dex-server                         ClusterIP   10.43.239.221   <none>        5556/TCP,5557/TCP,5558/TCP   9d
+argocd-metrics                            ClusterIP   10.43.251.44    <none>        8082/TCP                     9d
+argocd-notifications-controller-metrics   ClusterIP   10.43.214.197   <none>        9001/TCP                     9d
+argocd-redis                              ClusterIP   10.43.12.131    <none>        6379/TCP                     9d
+argocd-repo-server                        ClusterIP   10.43.132.197   <none>        8081/TCP,8084/TCP            9d
+argocd-server-metrics                     ClusterIP   10.43.200.82    <none>        8083/TCP                     9d
+argocd-server                             NodePort    10.43.247.167   <none>        80:30000/TCP,443:30001/TCP   9d
+```
+
+우리가 ingress 설정을 할 서비스는 argocd-server 이다.
+
+
+```bash
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: argocd-ingress
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  rules:
+  - host: argocd.210.106.105.165.sslip.io
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: argocd-server 
+            port:
+              number: 443 
+```  
+
+argocd namespace에 ingress를 적용하고 ingress를 확인한다.  
+
+```bash
+oot@jakelee:~# kubectl apply -f argocd_ingress.yaml -n argocd
+ingress.networking.k8s.io/argocd-ingress unchanged
+root@jakelee:~# kubectl get ing -n argocd
+NAME             CLASS    HOSTS                             ADDRESS        PORTS   AGE
+argocd-ingress   <none>   argocd.210.106.105.165.sslip.io   172.27.0.134   80      65m
+```  
+
+hosts 의 값을 복사하여 web browser 에서 실행한다.  
+https (443) 로 접속이 된것을 확인 할 수 있다.  
+
+<img src="./assets/argocd_ingress.png" style="width: 100%; height: auto;"/>  
+
+<br/>
+
 
 ### Horizontal Pod Autoscaler (hpa)
 
