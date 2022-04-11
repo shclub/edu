@@ -17,13 +17,15 @@ Table of  Contents
 # Chapter 4 
    
 
-ArgoCD는 GitOps를 구현하기 위한 컨테이너에 최적화된 CD 툴로서 
+ArgoCD는 GitOps를 구현하기 위한 컨테이너에 최적화된 CD 툴
 
-1. GitOps 설치 및 기능 설명
+1. GitOps 란 : https://coffeewhale.com/kubernetes/gitops/argocd/2020/02/10/gitops-argocd/
 
-2. Github에 배포 설정
+2. ArgoCD 설치 및 기능 설명
 
-3. 배포 실습 ( Blue/Green , Canary , Rollback )
+3. Github에 배포 설정
+
+4. 배포 실습 ( Blue/Green , Canary , Rollback )
 
  
 <br/>
@@ -260,8 +262,205 @@ kubectl get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" -n
 
 <br/>
 
-### <a name='GitHub.'></a> GitHub 배포 설정. 
 
-GitHub에
+### ArgoCD 둘러보기
 
-* 과제 1 : 미정
+<br/>
+
+ArgoCD를 설치하여 로그인하면 가장 먼저 볼 수 있는 화면은 아래와 같습니다.  
+
+지금까지 생성한 배포 App의 리스트를 보여주는 화면입니다.   새로운 배포를 관장하는 App을 생성해 보기 위해 New App 버튼을 눌러보겠습니다.  
+
+<img src="./assets/argocd_newapp1.png" style="width: 80%; height: auto;"/>  
+
+새로운 배포을 책임지는 App을 생성하는 화면입니다.    
+
+<img src="./assets/argocd_newapp2.png" style="width: 80%; height: auto;"/>  
+
+- Application Name: App의 이름을 적습니다.  
+- Project: 프로젝트를 선택하는 필드입니다. 쿠버네티스의 namespace와 비슷한 개념으로 여러 App을 논리적인 project로 구분하여 관리할 수 있습니다.  
+- Sync Policy: Git 저장소의 변경 사항을 어떻게 sync할지 결정합니다. Auto는 자동으로 Git 저장소의 변경사항을 운영에 반영하고 Manual은 사용자가 버튼 클릭을 통해 직접 운영 반영을 해줘야 합니다.
+- Repository URL: ArgoCD가 바라볼 Git 저장소를 의미합니다.  
+- Revision: Git의 어떤 revision (HEAD, master branch 등)을 바라 볼지 결정합니다.
+- Path: Git 저장소에서 어떤 디렉토리를 바라 볼지 결정합니다. (dot(.)인 경우 root path를, 디렉토리 이름을 적으면 해당 디렉토리의 배포 정의서만 tracking 합니다.)
+- Cluster: 쿠버네티스의 어느 클러스터에 배포할지를 결정합니다.
+- Namespace: 쿠버네티스 클러스터의 어느 네임스페이스에 배포할지를 결정합니다.
+- Directory Recurse: path아래의 디렉토리를 재귀적으로 모니터링하여 변경 사항을 반영합니다.  
+
+<br/>
+
+아래의 깃헙 레포지토리를 예시로 배포해 보겠습니다. 간단하게 nginx 컨테이너를 생성하고 서비스를 붙여주는 앱입니다.  
+
+GitOps repository 예시: https://github.com/shclub/edu5.git  
+
+본인의 github에서 위 repository를 fork 합니다. 
+
+아래 처럼 deployment.yaml , service.yaml , ingress.yaml이 생성된걸 확인 할 수 있습니다.  
+
+ingress.yaml 화일의 host 정보는 본인 VM Public IP로 변경 합니다.  
+
+```bash
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mynginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      run: mynginx
+  template:
+    metadata:
+      labels:
+        run: mynginx
+    spec:
+      containers:
+      - image: nginx
+        name: mynginx
+        ports:
+        - containerPort: 80
+```  
+  
+
+```bash
+apiVersion: v1
+kind: Service
+metadata:
+  name: mynginx
+spec:
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 80
+  selector:
+    run: mynginx
+```  
+
+
+```bash
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: mynginx-traefik-ingress
+  annotations:
+    ingress.kubernetes.io/rewrite-target: "/"
+    kubernetes.io/ingress.class: traefik
+spec:
+  rules:
+  - host: mynginx.210.106.105.165.sslip.io
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: mynginx
+            port:
+              number: 80
+```  
+
+
+- Application Name: caravan
+- Project: default
+- Sync Policy: manual
+- Repository URL: https://github.com/shclub/edu5.git
+- Revision: HEAD
+- Path: .
+- Cluster: in-cluster
+- Namespace: default
+- Directory Recurse: Unchecked
+
+<br/>
+
+우리는 아래와 같이 설정을 한다.  
+
+
+<img src="./assets/argocd_practice1.png" style="width: 80%; height: auto;"/>  
+<img src="./assets/argocd_practice2.png" style="width: 80%; height: auto;"/>   
+
+
+위와 같이 값을 설정해주고 `Create` 버튼을 클릭합니다.  
+
+`SYNC` 버튼을 눌러 ArgoCD가 변경 사항을 확인하여 단일원천의 진실에 따라 운영 환경을 그에 맞게 변경하도록 하겠습니다.    
+
+<img src="./assets/argocd_practice3.png" style="width: 80%; height: auto;"/>   
+
+App을 클릭하면 아래와 같이 Ingress, Service 리소스와 nginx pod가 생성된 것을 UI로 확인하실 수 있습니다.  
+
+<img src="./assets/argocd_practice4.png" style="width: 80%; height: auto;"/>   
+
+파란색 아이콘이 보이면 정상적으로 수행이 된것 있고 mynginx pod 가 정상적으로 생성 되었는지 확인합니다.    
+
+```bash
+root@jakelee:~# kubectl get po
+NAME                                  READY   STATUS    RESTARTS   AGE
+flask-edu4-app-74788b6479-qgs2j       1/1     Running   0          6d21h
+flask-edu4-app-74788b6479-l7gkx       1/1     Running   0          6d21h
+flask-edu4-app-74788b6479-nmcvv       1/1     Running   0          6d21h
+flask-edu4-app-74788b6479-f2kcp       1/1     Running   0          6d21h
+flask-edu4-app-74788b6479-rlght       1/1     Running   0          6d21h
+hpa-example-deploy-59bf97fcc6-6nxjs   1/1     Running   0          6d1h
+inspekt-deployment-c8d9f5dcf-2slpx    1/1     Running   0          23h
+mynginx-69d586ff67-bmh6m              1/1     Running   0          6m23s
+```  
+
+Ingress를 설정 했기 때문에 web browser 에서 도메인으로 접속해봅니다.      
+정상이면 아래와 같이 nginx welcome 화면이 보입니다.  
+
+<img src="./assets/argocd_practice5.png" style="width: 80%; height: auto;"/>   
+
+<br/>
+
+앞에 App을 설정할때 sync-policy를 manual 설정하였습니다. 
+
+아래에 Auto-Sync 버튼을 활성화하게 되면 Automatic이 되어 매번 사람이 직접 변경사항을 ArgoCD에게 알릴 필요 없이 ArgoCD가 주기적으로 Git 레포지터리의 변경사항을 확인하여 변경된 부분을 적용하게 됩니다.   
+
+이때 두가지 옵션을 추가적으로 줄 수 있습니다.
+
+- Prune Resources: 변경 사항에 따라 리소스를 업데이터할 때, 기존의 리소스를 삭제하고 새로운 리소스를 생성합니다. Job 리소스처럼 매번 새로운 작업을 실행해야 하는 경우 이 옵션을 사용합니다.  
+
+- Self Heal: 해당 옵션을 활성화 시키면 ArgoCD가 지속적으로 git repository의 설정값과 운영 환경의 값의 싱크를 맞출려고 합니다. 기본적으로 5초마다 계속해서 sync를 시도하게 됩니다. (default timeout)  
+
+해당 예시에서는 Auto-sync만 활성화 시켜보겠습니다.   그런 다음, 이제 git repository의 deployment replica 값을 2로 고쳐서 ArgoCD가 자동으로 변경한 값을 운영 환경에 반영하는지 확인해 보겠습니다.  
+
+<img src="./assets/argocd_practice6.png" style="width: 80%; height: auto;"/> 
+
+AppDetail을 클릭하면 하단에 enable auto sync 버튼을 클릭합니다.  
+
+<img src="./assets/argocd_practice7.png" style="width: 80%; height: auto;"/>   
+
+신규로 pod가 하나 생성되어 2개의 pod가 존재하는 것을 확인 할수 있습니다.  
+
+<img src="./assets/argocd_practice8.png" style="width: 80%; height: auto;"/>   
+
+traffic 흐름을 볼수 도 있고  
+
+<img src="./assets/argocd_practice9.png" style="width: 80%; height: auto;"/>   
+
+각 node의 resource  들을 볼 수 있고 pod의 리소스도 확인 가능 하다.    
+
+<img src="./assets/argocd_practice10.png" style="width: 80%; height: auto;"/>   
+
+<br/>
+
+기본 사용법   
+ - https://argo-cd.readthedocs.io/en/stable/getting_started/#creating-apps-via-ui
+
+<br/>
+
+추가 배포 관련  Hands-on은 아래 문서를 참고 한다.
+
+- 문서를 참고한다. [ArgoCD Hands-On ](./argocd_hands_on.md.md)  
+
+<br/>
+
+### 과제
+
+<br/>
+
+과제 1 : argocd를 ingress 로 노출시켜  https(443) 으로 접속 될 수 있게 설정한다.  ( k8s hands-on 참고)
+
+
+
+
+

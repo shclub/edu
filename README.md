@@ -32,8 +32,9 @@
 4. Chapter 4 : 4주차   ( [가이드 문서보기](./chapter4.md) ) 
      - GitOps 설명 
      - ArgoCD 설치 및 설정 
-     - kustomize 설명 및 실습 
+     - kustomize 설명 및 실습 ( 향후 추가 )
      - k8s에 배포 실습 ( Blue/Green , Canary )  
+     - ArgoCD hands-on [ Hands-On 문서보기](./argocd_hands_on.md)  
 
      <br/>
 
