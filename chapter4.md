@@ -334,8 +334,7 @@ spec:
     targetPort: 80
   selector:
     run: mynginx
-```  
-
+```   
 
 ```bash
 apiVersion: networking.k8s.io/v1
@@ -359,6 +358,7 @@ spec:
               number: 80
 ```  
 
+url은 본인의 url로 설정한다.  
 
 - Application Name: caravan
 - Project: default

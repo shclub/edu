@@ -1163,7 +1163,7 @@ metadata:
   name: nginx-ingress
   annotations:
     ingress.kubernetes.io/rewrite-target: /
-    ingressclass.kubernetes.io/is-default-class: true
+    ingressclass.kubernetes.io/is-default-class: "true"
 spec:
   rules:
   - host: 210.106.105.165.nip.io
@@ -1438,7 +1438,7 @@ Metric 서버는 api를 통해서 컨테이너 CPU 및 메모리 사용량과 �
 k3s는 metric server가 설치가 이미되어 있습니다.  
 
 설치 방법 
--  Mertic-server github에서 제공하는 config 파일을 이용해 간단하게 설치할 수 있습니다. 필요하다면 파일을 내려받은 뒤 config 파일을 수정하고 배포하면 됩니다.
+-  Metric-server github에서 제공하는 config 파일을 이용해 간단하게 설치할 수 있습니다. 필요하다면 파일을 내려받은 뒤 config 파일을 수정하고 배포하면 됩니다.
     ```bash
     kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/download/v0.4.1/components.yaml
     ```
@@ -1537,11 +1537,12 @@ php-apache   Deployment/php-apache   0%/10%    1         10        1          15
 새로운 터미널에서 아래와 같이 부하를 줍니다.   
 
 ```bash
-root@jakelee:~# kubectl run -i \
->     --tty load-generator \
->     --rm --image=busybox \
->     --restart=Never \
->     -- /bin/sh -c "while sleep 0.01; do wget -q -O- http://php-apache; done"
+root@jakelee:~# kubectl run -i  --tty load-generator      --rm --image=busybox --restart=Never -- /bin/sh -c "while sleep 0.01; do wget -q -O- http://php-apache; done"
+```  
+
+아래에 ok가 나오면 부하가 들어간다는 의미.  
+
+```bash
 If you don't see a command prompt, try pressing enter.
 OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!OK!
 ```

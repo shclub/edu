@@ -51,14 +51,21 @@ Account info를 입력한다.
 
 빌링 정보를 위하여 카드번호를 넣으면 되고 plan을 업그레이드 하지 않는한 과금이 되지 않는다.  
 
-기본적으로 평생 무료 3개의 VM 이 할당 된다고 볼 수 있다.   
+기본적으로 평생 무료 3개의 VM 이 할당 된다고 볼 수 있다.  
+
+VM 의 Disk는 Block Storage로 최대 200G이고 VM 1당 기본 50G 할당.
+향후 조정하여 VM당 100G까지 할당 가능.  
+
+네트웍 트래픽은 Inboud는 무제한, Outbound는 월 10TB.  
+
+네트워크 대역폭이 최대 480Mbps.  
 
 - VM 1: Oracle Cloud Shell ( 메모리 공유 , DISK : 5G )
     - http://taewan.kim/cloud/oci_cloud_shell/
     - 기본 설치 : ssh , docker , ansible , git , kubectl , helm ,
        python , maven , java 
-- VM 2: 직접 생성 (  메모리 1G , DISK : 50G ) 
-- VM 3: 직접 생성 (  메모리 1G , DISK : 50G )
+- VM 2: 직접 생성 ( CPU 1/4 Core , 메모리 1G , DISK : 50G ) 
+- VM 3: 직접 생성 ( CPU 1/4 Core , 메모리 1G , DISK : 50G )
 
 <br/>
 
