@@ -1162,6 +1162,7 @@ kind: Ingress
 metadata:
   name: nginx-ingress
   annotations:
+    kubernetes.io/ingress.class: "nginx"
     ingress.kubernetes.io/rewrite-target: /
     ingressclass.kubernetes.io/is-default-class: "true"
 spec:
@@ -1274,7 +1275,6 @@ kind: Ingress
 metadata:
   name: inspekt-traefik-ingress
   annotations:
-    kubernetes.io/ingress.class: "nginx"
     ingress.kubernetes.io/rewrite-target: "/"
     kubernetes.io/ingress.class: traefik
 spec:
