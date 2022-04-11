@@ -1360,6 +1360,8 @@ metadata:
   annotations:
     kubernetes.io/ingress.class: traefik
     ingress.kubernetes.io/ssl-redirect: "true"
+    ingress.kubernetes.io/force-ssl-redirect: "true"
+    ingress.kubernetes.io/ssl-passthrough: "true"
 spec:
   rules:
   - host: argocd.210.106.105.165.sslip.io
@@ -1371,7 +1373,7 @@ spec:
           service:
             name: argocd-server 
             port:
-              number: 443 
+              number: 80 
 ```  
 
 argocd namespace에 ingress를 적용하고 ingress를 확인한다.  
@@ -1391,6 +1393,38 @@ https (443) 로 접속이 된것을 확인 할 수 있다.
 
 <br/>
 
+Too many redirect 오류가 발생하거나 로그인이 안되는 경우는 argocd에서 직접
+인증서를 처리하려고 하기 때문에 에러가 발생한다.   
+deployment에 insecure 옵션을 추가 하면 에러가 발생하지 않는다.  
+
+```bash
+root@jakelee:~# kubectl get deploy -n argocd
+NAME                               READY   UP-TO-DATE   AVAILABLE   AGE
+argocd-redis                       1/1     1            1           9d
+argocd-applicationset-controller   1/1     1            1           9d
+argocd-notifications-controller    1/1     1            1           9d
+argocd-dex-server                  1/1     1            1           9d
+argocd-repo-server                 1/1     1            1           9d
+inspekt-deployment                 1/1     1            1           13h
+argocd-server                      1/1     1            1           9d
+root@jakelee:~# kubectl edit deploy argocd-server  -n argocd
+```  
+
+command 의 argocd-server 밑에 -- insecure를 추가하고 저장하고 나온다.  
+
+argocd-server pod가 자동으로 재 실행 된다.  
+
+```bash
+      containers:
+      - command:
+        - argocd-server
+        - --insecure  << 추가
+        env:
+```  
+
+이제 웹에서 다시 로그인을 수행한다.  
+
+<br/>
 
 ### Horizontal Pod Autoscaler (hpa)
 
