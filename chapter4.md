@@ -441,6 +441,13 @@ traffic 흐름을 볼수 도 있고
 
 <img src="./assets/argocd_practice10.png" style="width: 80%; height: auto;"/>   
 
+
+기본적으로 swagger를 제공하고 있어 ArgoCD 의 API를 사용 할 수 있다.    
+- 사용법 : < 본인의 argocd URL > : swagger-ui    
+
+<img src="./assets/argocd_swagger.png" style="width: 100%; height: auto;"/>   
+
+
 <br/>
 
 기본 사용법   

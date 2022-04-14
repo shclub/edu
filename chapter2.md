@@ -454,7 +454,15 @@ exit 명령어를 사용하여 컨테이너 내부에서 나올수 있다.
 docker commit -m "new edu2" (컨테이너 이름) (생성하고싶은 이미지 이름):(버전)
 ```  
 
-<img src="./assets/docker_commit.png" style="width: 60%; height: auto;">
+<img src="./assets/docker_commit.png" style="width: 60%; height: auto;">  
+
+docker stats 명령어를 사용하면 컨테이너별로 CPU/MEM을 볼 수 있다.  
+
+```bash
+root@jakelee:~# docker stats
+```  
+
+<img src="./assets/docker_stats.png" style="width: 80%; height: auto;">
 
 <br/>
 

@@ -71,19 +71,20 @@
 
 9. Chapter 9 : 9주차  
      - k8s에 Jenkins 설치 및 설정 
-     - Jenkins Master/Slave 구현, GitHub , Docker 연동 
+     - Jenkins Master/Slave 구현, GitHub , Podman 연동 
      - skaffold를 사용한 Jenkins 빌드 Pipeline 생성하여 CI 실습 
      - RBAC 실습 
-
+ 
      <br/>
 
 10. Chapter 10 : 10주차 
-     - EFK 설치 및 실습 ( fluentdbit )
+     - EFK 설치 및 실습 ( OpenSearch 로 대체)
      - kibana 화면 구성
 
      <br/>
 
 11. Chapter 11 : 11주차 
+     - keycloak 설치 및 인증 실습
      - HashiCorp Consul 설치 및 실습
 
      <br/>

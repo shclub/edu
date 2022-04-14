@@ -8,9 +8,11 @@ ArgoCD 활용 방법에 대해서 실습한다.
 
 3. Canary 배포
 
-4. kustomize 사용법 
+4. kustomize 사용법 ( 향후 추가 )  
 
-5. 참고 사이트 
+5. ArgoCD 계정 추가   
+
+6. 참고 사이트 
     - https://potato-yong.tistory.com/138
     - https://teichae.tistory.com/entry/Argo-CD%EB%A5%BC-%EC%9D%B4%EC%9A%A9%ED%95%9C-BlueGreen-%EB%B0%B0%ED%8F%AC-3
     - canary : https://teichae.tistory.com/entry/Argo-CD%EB%A5%BC-%EC%9D%B4%EC%9A%A9%ED%95%9C-Canary-%EB%B0%B0%ED%8F%AC-4
@@ -19,6 +21,8 @@ ArgoCD 활용 방법에 대해서 실습한다.
 
 ##  실습 전체 개요 
 
+
+<br/>
 
 ### kubectl plugin 설치  
 
@@ -462,3 +466,155 @@ root@jakelee:~# while true; do curl http://210.106.105.165:30083 | jq .color; sl
 
 
 <img src="./assets/argocd_canary7.png" style="width: 80%; height: auto;"/>  
+
+
+<br/>
+
+### ArgoCD 계정 추가    
+
+<br/>
+
+ArgoCD 신규 계정을 생성한다. GUI에서는 불가능하고 argocd cli를 사용한다.   
+
+argocd-server의 서비스 IP를 확인한다.  
+
+```bash 
+oot@jakelee:~# kubectl get svc -n argocd
+NAME                                      TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)                      AGE
+argocd-applicationset-controller          ClusterIP   10.43.26.65     <none>        7000/TCP                     12d
+argocd-dex-server                         ClusterIP   10.43.239.221   <none>        5556/TCP,5557/TCP,5558/TCP   12d
+argocd-metrics                            ClusterIP   10.43.251.44    <none>        8082/TCP                     12d
+argocd-notifications-controller-metrics   ClusterIP   10.43.214.197   <none>        9001/TCP                     12d
+argocd-redis                              ClusterIP   10.43.12.131    <none>        6379/TCP                     12d
+argocd-repo-server                        ClusterIP   10.43.132.197   <none>        8081/TCP,8084/TCP            12d
+argocd-server-metrics                     ClusterIP   10.43.200.82    <none>        8083/TCP                     12d
+argocd-server                             NodePort    10.43.247.167   <none>        80:30000/TCP,443:30001/TCP   12d
+inspekt                                   ClusterIP   10.43.156.159   <none>        80/TCP                       3d17h
+```   
+
+cluster ip로 로그인 한다.  
+
+```bash 
+root@jakelee:~# argocd login 10.43.247.167
+WARNING: server is not configured with TLS. Proceed (y/n)? y
+Username: admin
+Password:
+'admin:login' logged in successfully
+Context '10.43.247.167' updated
+```  
+
+새로운 account 는 shclub 입니다.  
+
+ArgoCD 의 account 추가는 ArgoCD의 Configmap을 통해서 가능합니다.  
+
+아래 명령을 실행 합니다.    
+
+
+```bash 
+root@jakelee:~# kubectl -n argocd edit configmap argocd-cm -o yaml
+apiVersion: v1
+data:
+  accounts.shclub: apiKey,login
+kind: ConfigMap
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"v1","kind":"ConfigMap","metadata":{"annotations":{},"labels":{"app.kubernetes.io/name":"argocd-cm","app.kubernetes.io/part-of":"argocd"},"name":"argocd-cm","namespace":"argocd"}}
+  creationTimestamp: "2022-04-01T08:31:45Z"
+  labels:
+    app.kubernetes.io/name: argocd-cm
+    app.kubernetes.io/part-of: argocd
+  name: argocd-cm
+  namespace: argocd
+  resourceVersion: "903340"
+  uid: 1ea9382d-052b-43e9-b1b4-6d212efee1ec
+```  
+계정을 생성하기 위해 2개 라인을 추가합니다.  
+
+```bash
+data:
+  accounts.shclub: apiKey,login
+```  
+
+계정 리스트를 통해 신규 계정 생성을 확인합니다.  
+
+```bash   
+root@jakelee:~# argocd account list
+NAME    ENABLED  CAPABILITIES
+admin   true     login
+shclub  true     apiKey, login
+root@jakelee:~# argocd account get --account shclub
+Name:               shclub
+Enabled:            true
+Capabilities:       apiKey, login
+
+Tokens:
+NONE
+```  
+
+비밀번호를 변경합니다. 8자리 이상으로 설정.  
+
+```bash   
+root@jakelee:~# argocd account update-password --account shclub
+*** Enter password of currently logged in user (admin):
+*** Enter new password for user shclub:
+*** Confirm new password for user shclub:
+Password updated
+```  
+
+해당 계정으로 로그인 하면 admin 계정으로 생성한 배포 pipeline을 볼 수 없습니다.  
+
+<img src="./assets/argocd_new_account.png" style="width: 80%; height: auto;"/>  
+
+
+ArgoCD가 사용하는 RBAC 규칙에 맞게 새롭게 permission 을 할당해주어야 합니다.  
+
+ArgoCD RBAC 을 추가하려면 ArgoCD Confimap 인 argocd-rbac-cm 을 수정해야 합니다. 다음 명령을 실행 하여 수정을 시작 합니다.  
+
+
+```bash
+root@jakelee:~# kubectl -n argocd edit configmap argocd-rbac-cm -o yaml
+apiVersion: v1
+data:
+  policy.csv: |
+    p, role:shclub, applications, *, */*, allow
+    p, role:shclub, clusters, get, *, allow
+    p, role:shclub, repositories, get, *, allow
+    p, role:shclub, repositories, create, *, allow
+    p, role:shclub, repositories, update, *, allow
+    p, role:shclub, repositories, delete, *, allow
+    g, shclub, role:shclub
+  policy.default: role:readonly
+kind: ConfigMap
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"v1","kind":"ConfigMap","metadata":{"annotations":{},"labels":{"app.kubernetes.io/name":"argocd-rbac-cm","app.kubernetes.io/part-of":"argocd"},"name":"argocd-rbac-cm","namespace":"argocd"}}
+  creationTimestamp: "2022-04-01T08:31:45Z"
+  labels:
+    app.kubernetes.io/name: argocd-rbac-cm
+    app.kubernetes.io/part-of: argocd
+  name: argocd-rbac-cm
+  namespace: argocd
+  resourceVersion: "904712"
+  uid: 5493d81d-74a4-4f55-830b-919a924d7440
+```  
+
+ 권한 할당을 위해 아래 라인을 추가합니다. 향후에 좀더 detail 하게 설정 할 수 있습니다.
+
+```bash
+data:
+  policy.csv: |
+    p, role:shclub, applications, *, */*, allow
+    p, role:shclub, clusters, get, *, allow
+    p, role:shclub, repositories, get, *, allow
+    p, role:shclub, repositories, create, *, allow
+    p, role:shclub, repositories, update, *, allow
+    p, role:shclub, repositories, delete, *, allow
+    g, shclub, role:shclub
+  policy.default: role:readonly
+```  
+
+ArgoCD 화면에 admin 계정으로 생성한 pipeline 을 볼수 있습니다.  
+
+<img src="./assets/argocd_new_account_role.png" style="width: 80%; height: auto;"/>  
