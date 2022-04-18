@@ -829,10 +829,42 @@ kustomize 적용
 
 ```bash
 kubectl apply -k https://github.com/shclub/edu6/overlays/development/
-```
+```  
+
+<br/> 
+
+### 참고
+
+<br/>
+
+참고사이트
+-  https://tech.kakao.com/2021/07/16/devops-for-msa/
+- https://velog.io/@wlgns5376/GitOps-ArgoCD와-Kustomize를-이용해-kubernetes에-배포하기
+- https://github.com/wlgns5376/example-app-kustomize/
+- https://asuraiv.tistory.com/22?category=877062
+- argocd 권한 : https://intrepidgeeks.com/tutorial/argocd-users-access-and-rbac
+- k8s 전체 개념 :https://www.slideshare.net/gamzabaw/kubernetes-walkthrough
+
+
+<br/>
+
+Helm -> Kustomize 전환: Replicated의 쉽(Ship)  사용  
+
+이제, Helm을 Kustomize 형태로 변환하는 작업이 필요합니다. 이를 도와주는 도구가 쉽(Ship)입니다.  
+
+https://www.replicated.com/ship/oss/  
+https://github.com/replicatedhq/ship  
+
+
+- 먼저 쉽을 사용해 Helm을 템플릿화된 쿠버네티스 리소스 형태로 변경합니다.
+- 이후 쿠버네티스 리소스에서 필요한 부분만 Kustomize 패치를 사용해 변경하고   변경한 부분은 GitOps 리포지토리에 넣어서 관리합니다.
+
+- GitOps 리포지토리에 git push origin HEAD:install/ ${cluster}/${namespace}/${app_name}과 같은 Git CLI 명령을 통해 install 브랜치가 생성이 되면 해당 브랜치의 ${app_name} 인프라를 배포하는 CI/CD 파이프라인이 실행됩니다. 
+- 배포의 형상은 마찬가지로 Argo CD를 통해 GitOps로 관리합니다.
 
 ### 과제
 
 <br/>
 
-과제 1 :  kustomize를 production 에서 argocd로 배포 한다. ( shclub/edu6/overlays/production 참고)
+과제 1 :  kustomize를 production 에서 argocd로 배포 한다.  
+         ( shclub/edu6/overlays/production 참고)
