@@ -582,7 +582,7 @@ Password updated
 ArgoCD가 사용하는 RBAC 규칙에 맞게 새롭게 permission 을 할당해주어야 합니다.  
 
 ArgoCD RBAC 을 추가하려면 ArgoCD Confimap 인 argocd-rbac-cm 을 수정해야 합니다. 다음 명령을 실행 하여 수정을 시작 합니다.  
-
+shclub는 신규 생성한 계정이고 여러번의 계정으로 변경하여 저장하시면 됩니다.  
 
 ```bash
 root@jakelee:~# kubectl -n argocd edit configmap argocd-rbac-cm -o yaml
