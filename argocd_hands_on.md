@@ -121,7 +121,7 @@ blue_green_test 라는 이름으로 yaml 파일이 저장된 레포지토리를 
 # ArgoCD Blue/Green 배포 예제
 
 apiVersion: argoproj.io/v1alpha1     # apps/v1 대신 argoproj.io/v1alpha1을 사용한다
-kind: Rollout  # Deplyment 대신 Rollout을 사용한다
+kind: Rollout  # Deployment 대신 Rollout을 사용한다
 metadata:
   name: rollout-bluegreen
 spec:
@@ -154,11 +154,11 @@ spec:
       autoPromotionEnabled: false
 ```  
 
-New App를 클릭하고 아래와 같이 설정하고 Create 한다.  
+ArgoCD에서 New App를 클릭하고 아래와 같이 설정하고 Create 한다.  
 namespace 는 rollout-demo로 자동 생성되게 설정한다.  
 
-<img src="./assets/argocd_bluegreen1.png" style="width: 80%; height: auto;"/>
-<img src="./assets/argocd_bluegreen2.png" style="width: 80%; height: auto;"/>    
+<img src="./assets/argocd_bluegreen1.png" style="width: 100%; height: auto;"/>
+<img src="./assets/argocd_bluegreen2.png" style="width: 100%; height: auto;"/>    
 
 배포가 정상적으로 되었는지 확인한다.  
 
@@ -180,10 +180,10 @@ NAME                                           DESIRED   CURRENT   READY   AGE
 replicaset.apps/rollout-bluegreen-5ffd47b8d4   2         2         2       16s
 ```  
 
-Blue Green이 배포되었으니 확인하기 위해서 active와 preview 서비스의 노드포트를 통해서 접속해보자.  
+Blue Green이 배포되었으니 확인하기 위해서 active와 preview 서비스의 노드 포트를 통해서 접속해보자.  
 
-- active 접속 : <server ip>:30081
-- preview 접속 : <server ip>:30082  
+- active 접속 : ( 서버 IP ) :30081
+- preview 접속 : ( 서버 IP ) :30082  
 
 배포를 진행하고 active 서비스로 접속을 해보면 Blue 페이지가 표시되는 것을 확인할 수 있다.  
 
@@ -365,7 +365,12 @@ pause는 Blue/Green 때처럼 AutoPromotion Time을 뜻합니다.
         - pause: {}                # Auto Promotion 옵션 비활성화
 ```  
 
-New App으로 새로운 배포 구성을 합니다.  pod가 8개가 생성됩니다.  
+New App으로 새로운 배포 구성을 합니다. 설정은 Blue/Green을 참고하고 path는 ./canary로 설정한다.  
+
+
+<img src="./assets/canary_config.png" style="width: 80%; height: auto;"/>  
+
+실행을 하면 pod가 8개가 생성된것을 확인 할 수 있다.    
 
 <img src="./assets/argocd_canary1.png" style="width: 80%; height: auto;"/>
 
@@ -374,7 +379,7 @@ Red라는 응답값이 나오게 됩니다.
 
 <img src="./assets/argocd_canary2.png" style="width: 80%; height: auto;"/>
 
-이제 Blue라는 이미지를 배포하여, 25%의 배포 및 트래픽 인가를 해보겠습니다.  
+이제 2.0 버전의 이미지를 배포하여, 25%의 배포 및 트래픽 인가를 해보겠습니다.  
 
 코드는 아래처럼 배포할 이미지 태그를 수정하면 됩니다.  
 
@@ -384,7 +389,7 @@ Red라는 응답값이 나오게 됩니다.
 
 <img src="./assets/argocd_canary4.png" style="width: 80%; height: auto;"/>  
 
-원활한 테스트를 진행하기 위해 jq 라이브러리를 설치합니다.  
+원활한 테스트를 진행하기 위해 커맨드라인 JSON 파서인 jq 라이브러리를 설치합니다.  
 
 ```bash
 root@jakelee:~# apt install jq
@@ -420,7 +425,9 @@ Processing triggers for man-db (2.8.3-2ubuntu0.1) ...
 Processing triggers for libc-bin (2.27-3ubuntu1.5) ...
 ```  
 
-0.5초마다 curl을 실행하여 테스트할 때, 정상적으로 Canary 배포가 되어 있는 점을 확인할 수 있습니다.
+0.5초마다 curl을 실행하여 테스트할 때, 정상적으로 Canary 배포가 되어 있는 점을 확인할 수 있습니다.  
+
+아래 구문에서 ip는 본인 VM Public IP를 사용합니다.  
 
 ```bash
 root@jakelee:~# while true; do curl http://210.106.105.165:30083 | jq .color; sleep 0.5; done
@@ -534,6 +541,7 @@ metadata:
   uid: 1ea9382d-052b-43e9-b1b4-6d212efee1ec
 ```  
 계정을 생성하기 위해 2개 라인을 추가합니다.  
+아래에서 shclub는 추가할 계정이름이다. 본인의 계정으로 설정.  
 
 ```bash
 data:
