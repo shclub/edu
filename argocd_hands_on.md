@@ -8,9 +8,9 @@ ArgoCD 활용 방법에 대해서 실습한다.
 
 3. Canary 배포
 
-4. kustomize 사용법 ( 향후 추가 )  
+4. ArgoCD 계정 추가  
 
-5. ArgoCD 계정 추가   
+5. kustomize 사용법   
 
 6. 참고 사이트 
     - https://potato-yong.tistory.com/138
@@ -618,3 +618,221 @@ data:
 ArgoCD 화면에 admin 계정으로 생성한 pipeline 을 볼수 있습니다.  
 
 <img src="./assets/argocd_new_account_role.png" style="width: 80%; height: auto;"/>  
+
+
+<br/>
+
+### kustomize    
+
+<br/>
+
+kustomize란? 
+- https://kubernetes.io/ko/docs/tasks/manage-kubernetes-objects/kustomization/
+
+<br/>
+
+kubernetes의 배포 도구 중 하나로, kubectl v1.14에 통합되었음  
+
+기존에 helm chart를 통해 application 배포를 수행하였으나, helm value를 추가 하기 위해서는 heml template chart의 수정이 필요했음.  
+
+kustomize는 기본적으로 사용되던 yaml을 그대로 사용하며, kustomization.yaml과 base, overay 및 production, development등 디렉토리를 환경에 맞게 구성하여 별도의 데이터 기반으로 배포 관리를 할수 있음.  
+
+overlay는 패치가 필요한 쿠버네티스 리소스에는 변경하고자 하는 부분만 YAML로 만들어서 패치 형태로 쓸 수 있다.  
+
+
+<img src="./assets/kustomize_config.png" style="width: 80%; height: auto;"/>    
+
+<br/>
+base  
+
+- 기본 yaml file들이 저장되는 경로
+  - 해당폴더에 kustomization.yaml 파일이 필히 존재해야 함
+- https://github.com/kubernetes-sigs/kustomize#1-make-a-kustomization-file
+- 기존에 사용되던 yaml파일들을 여기에 복사해두고 kustomization.yaml에 사용할 yaml을 선언해두면 된다.  
+
+
+<img src="./assets/kustomize_base.png" style="width: 80%; height: auto;"/>      
+
+<br/>  
+
+overlays  
+
+- 일반적으로 base에 사용되는 yaml을 기반으로 patch하여 업데이트 하는 방식으로 사용
+- 하위 디렉토리에서 느낄수 있듯이 stage 별로 나누거나 공용으로 사용되는 base에 특정한 value를 추가해야 하는 경우 사용된다.
+- https://github.com/kubernetes-sigs/kustomize#2-create-variants-using-overlays
+- overlays 하위에 디렉토리로 staging, dev, production 등 다양한 stage별 식별이 가능한 옵션을 두고 관리할수 있다.  
+
+
+<img src="./assets/kustomize_overlay.png" style="width: 80%; height: auto;"/>  
+
+<br/>
+테스트를 위한 config는 https://github.com/shclub/edu6를 참고한다.  
+
+현재 화일 구조는 아래와 같다.  
+
+```
+├── base
+│   ├── service.yaml
+│   ├── deployment.yaml
+│   ├── kustomization.yaml
+└── overlays
+    └── development
+       ├── kustomization.yaml
+        └── cpu_count.yaml
+        └── replica_count.yaml
+    └── production
+        ├── kustomization.yaml
+        └── cpu_count.yaml
+        └── replica_count.yaml
+
+```
+
+base 폴더의 kustomzation.yaml 화일  
+
+```
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- deployment.yaml
+- service.yaml
+```  
+
+overlays/development 폴더의 kustomization.yaml 화일  
+- namePrefix : pod의 이름 앞에 붙는다.  
+
+```
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+images:
+- name: shclub/edu4
+  newTag: v1 
+namePrefix: dev-
+bases:
+- ../../base
+patchesStrategicMerge:
+- replica_count.yaml
+- cpu_count.yaml
+```  
+
+cpu_count.yaml 화일   
+- cpu max 값 설정  
+
+```
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: edu6
+spec:
+  template:
+    spec:
+      containers:
+      - name: edu6
+        resources:
+          limits: 
+            cpu: 300m
+```  
+
+replica_count.yaml 화일   
+- replica 설정    
+
+```
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: edu6
+spec:
+  replicas: 2
+```
+
+<br/>
+
+먼저 kustomize를 설치한다. 
+
+아래 명령어 하나로  설치가 된다.
+
+```bash 
+root@jakelee:~# curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"  | bash
+
+{Version:kustomize/v4.5.4 GitCommit:cf3a452ddd6f83945d39d582243b8592ec627ae3 BuildDate:2022-03-28T23:12:45Z GoOs:linux GoArch:amd64}
+kustomize installed to //root/kustomize
+```
+
+-bash: kustomize: command not found 에러가 발생하면  
+아래 명령어를 실행한다.  
+
+```bash 
+mv kustomize /usr/local/bin/
+```  
+
+우리는 ArgoCD를 통해서 kustomize를 연동하도록 한다.  
+ArgoCD에서 New App을 아래와 같이 만든다.  
+
+
+<img src="./assets/kustomize_argocd_dev1.png" style="width: 100%; height: auto;"/>  
+
+sync를 해보면 replica 2개로 설정되어 pod가 2개가 생성 된걸 볼수 있다.  
+
+<img src="./assets/kustomize_argocd_dev2.png" style="width: 100%; height: auto;"/>  
+
+POD의 resource는 300m으로 최대값이 설정되어 있다.  
+
+<img src="./assets/kustomize_argocd_dev3.png" style="width: 100%; height: auto;"/>  
+
+<br/>  
+
+참고 : 명령어로 작업하기   
+
+<br/>  
+kustomize 설정 확인.
+github의 shclub/edu6에 설정 되어 있는 화일로 테스트 한다.
+- git clone은 하고 다운받은 화일로 하면 됨.  
+
+```bash
+root@jakelee:~# kustomize build https://github.com/shclub/edu6/overlays/development/
+apiVersion: v1
+kind: Service
+metadata:
+  name: dev-edu6
+spec:
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 80
+  selector:
+    run: edu6
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dev-edu6
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      run: edu6
+  template:
+    metadata:
+      labels:
+        run: edu6
+    spec:
+      containers:
+      - image: shclub/edu4:v1
+        name: edu6
+        ports:
+        - containerPort: 80
+        resources:
+          limits:
+            cpu: 300m
+```  
+
+kustomize 적용  
+
+```bash
+kubectl apply -k https://github.com/shclub/edu6/overlays/development/
+```
+
+### 과제
+
+<br/>
+
+과제 1 :  kustomize를 production 에서 argocd로 배포 한다. ( shclub/edu6/overlays/production 참고)

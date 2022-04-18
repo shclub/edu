@@ -1312,7 +1312,7 @@ hosts 의 값을 복사하여 web browser 에서 실행한다.
 
 http (80) 포트인 경우는 위와 같이 가능하지만 https (443) 인 경우는 서비스 마다 인증서를 만들어 추가 해야한다.  
 
-우리는 교육용이기 때문에 ssl을 적용하지 않고 테스트를 진행힌다.  
+우리는 교육용이기 때문에 ssl을 적용하지 않고 테스트를 진행한다.  
 
 /var/lib/rancher/k3s/server/manifests/traefik.yaml 화일을 수정한다.   
 
