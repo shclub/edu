@@ -472,8 +472,6 @@ root@jakelee:~# docker stats
 - 도커 이미지 삭제 : docker rmi (도커 로컬 이미지 이름)
 - 컨테이너 삭제 : docker rm [CONTAINER_ID] 
 - 컨테이너 일시정지 :  docker stop [CONTAINER_ID]
-- 컨테이너 일시정지 :  docker commit [CONTAINER_ID]
-
 
 ### <a name='Swagger'></a>Swagger
 

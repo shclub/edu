@@ -43,6 +43,11 @@ Argo Rollout 기능을 사용하기 위해서 kubectl plugins을 설치한다.
   100   166  100   166    0     0   5187      0 --:--:-- --:--:-- --:--:--  5187
   100   672  100   672    0     0  17684      0 --:--:-- --:--:-- --:--:-- 17684
   100 76.7M  100 76.7M    0     0   156M      0 --:--:-- --:--:-- --:--:--  399M
+  ```  
+  
+  chmod로 권한을 부여하고 /usr/local/bin 폴더로 이동한다.
+
+  ```bash
   root@jakelee:~# chmod +x ./kubectl-argo-rollouts-linux-amd64
   root@jakelee:~# sudo mv ./kubectl-argo-rollouts-linux-amd64 /usr/local/bin/kubectl-argo-rollouts
   ```  
@@ -678,7 +683,7 @@ overlays
 <img src="./assets/kustomize_overlay.png" style="width: 80%; height: auto;"/>  
 
 <br/>
-테스트를 위한 config는 https://github.com/shclub/edu6를 참고한다.  
+테스트를 위한 config는 https://github.com/shclub/edu6 를 참고한다.  
 
 현재 화일 구조는 아래와 같다.  
 
