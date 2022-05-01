@@ -298,10 +298,17 @@ vi Dockerfile
 
 <br/>
 i (소문자) 를 누른 후 위의 Dockerfile 내용을 복사하여 붙여넣기 한다. 
-esc 키를 누른 후 :wq를 입력하여 저장하고 나온다.
+esc 키를 누른 후 :wq를 입력하여 저장하고 나온다.   
 
 
-app.py를 생성하고 아래 소스를 추가하여 Dockerfile과 같이 저장하고 나온다.
+그리고  app.py 화일을 아래 소스를 사용하여 생성한다.  
+
+```bash
+vi app.py
+``` 
+
+app.py    
+
 
 ```python
 # -*- coding:utf-8 -*-
@@ -503,10 +510,12 @@ Swagger의 기능
 브라우저에서 (본인 VM IP ):40003를 호출하면 아래 화면을 볼 수 있다.
 <img src="./assets/swagger_first.png" style="width: 60%; height: auto;">   
 
-GET을 클릭하고 오른쪽에 try it out를 클릭하면 API를 테스트 할 수 있다.
+GET을 클릭하고 오른쪽에 try it out를 클릭하면 API를 테스트 할 수 있다.  
+
 <img src="./assets/swagger_second.png" style="width: 60%; height: auto;">  
 
-연산자 1, 2에 값을 넣고 execute를 하면 API 가 수행이된다.
+연산자 1, 2에 값을 넣고 execute를 하면 API 가 수행이된다.  
+
 <img src="./assets/swagger_third.png" style="width: 60%; height: auto;">  
 
 <br/>
@@ -657,12 +666,21 @@ docker compose 기동시에 volumes 설정이 로컬 폴더와 컨테이너 폴�
 
 <br/>
 
-### <a name=''></a>과제  
+## 과제
 
-* 과제 1 : docker compose로 구성한 mysql container  접속하여 로그인 한 후 wordpress db에 customer 테이블을 생성해 본다.  
-    
-* 과제 2 : mysql container  접속하여 로그인 한 후 wordpress db에 
-  아래 테이블 script를  로컬에 저장된 화일을 사용하여 test 테이블을 생성해 본다.  
+<br/>
+
+### 과제 1
+
+
+ docker compose로 구성한 mysql container  접속하여 로그인 한 후 wordpress db에 customer 테이블을 생성해 본다.  
+
+<br/>
+
+### 과제 2
+
+mysql container  접속하여 로그인 한 후 wordpress db에 
+아래 테이블 script를  로컬에 저장된 화일을 사용하여 test 테이블을 생성해 본다.  
 
   https://github.com/shclub/edu1/blob/master/test.sql 화일을 다운 받는다.  
 
@@ -679,11 +697,19 @@ docker compose 기동시에 volumes 설정이 로컬 폴더와 컨테이너 폴�
     docker cp [container name]:[container 내부 경로] [host 파일경로]
     ```  
 
-* 과제 3 : 금일 실습한 Dockerfile과 docker-compose.yml 화일을 git 명령어를 사용하여 edu2에 push 한다.  
+<br/>
 
-* 과제 4 : docker 컨테이너 GUI 관리 툴인 portainer를 설치하고 웹에서 접속하여
+### 과제 3
+
+금일 실습한 Dockerfile과 docker-compose.yml 화일을 git 명령어를 사용하여 edu2에 push 한다.  
+
+<br/>
+
+### 과제 4
+
+docker 컨테이너 GUI 관리 툴인 portainer를 설치하고 웹에서 접속하여
           모니터링한다.
-   - url  참고 :  https://docs.portainer.io/v/ce-2.11/start/install/server/docker/linux
-   - 웹 포트는 40005로 expose 한다 ( https 9443 포트 변경 필요 ).
-   - 웹브라우저 접속은 https://(본인VM Public IP):40005  
+  - url  참고 :  https://docs.portainer.io/v/ce-2.11/start/install/server/docker/linux
+  - 웹 포트는 40005로 expose 한다 ( https 9443 포트 변경 필요 ).
+  - 웹브라우저 접속은 https://(본인VM Public IP):40005  
      admin 비밀번호 신규로 생성 (8자리 이상) 한다.

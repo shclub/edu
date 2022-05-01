@@ -456,6 +456,8 @@ lens 화면 구성
 도커 루트 디렉토리를 확인하면 /var/lib/docker 폴더를 확인 할 수 있다.  
 
 ```bash
+docker info | grep "Storage Driver"
+  Storage Driver: overlay2
 docker info | grep "Docker Root Dir"
 ```  
 
@@ -466,7 +468,8 @@ docker info | grep "Docker Root Dir"
 루트 폴더에서 디스크 사용량을 조회해 보면 사용량이 적은것 을 볼수 있다.  
 
 ```bash
-du -h --max-depth=1
+du -h --max-depth=1 # 디렉토리 용량만 확인
+du -sh *            # 디렉토리 및 파일 용량 확인
 ```  
 
 <img src="./assets/root_du_h.png" style="width: 60%; height: auto;"/>  

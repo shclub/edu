@@ -155,7 +155,7 @@ k8s nodePort  : 30000 -> 32767
 로그인 후  connecting 저장 질문이 나오면 yes 를 입력한다. 
 
 ```bash
-ssh root@(본인 private ip) -p 22222
+ssh root@(본인 Public ip) -p 22222
 ``` 
 
  <img src="./assets/first_login1.png" style="width: 80%; height: auto;"/>

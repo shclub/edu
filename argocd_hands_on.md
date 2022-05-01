@@ -357,7 +357,7 @@ maxSurge는 배포되는 Pod의 비율을 뜻하고, maxUnavailable는 배포될
 
 steps에서 setWeight는 Weight 값을 주어 트래픽을 어느 정도 인가하는지에 대한 옵션입니다.  
 
-pause는 Blue/Green 때처럼 AutoPromotion Time을 뜻합니다.  
+pause는 Blue/Green 처럼 AutoPromotion Time을 뜻합니다.  
 
 아래와 같이 시간을 지정할 수 있습니다.  
 
@@ -650,7 +650,7 @@ kustomize란?
 
 kubernetes의 배포 도구 중 하나로, kubectl v1.14에 통합되었음  
 
-기존에 helm chart를 통해 application 배포를 수행하였으나, helm value를 추가 하기 위해서는 heml template chart의 수정이 필요했음.  
+기존에 helm chart를 통해 application 배포를 수행하였으나, helm value를 추가 하기 위해서는 helm template chart의 수정이 필요했음.  
 
 kustomize는 기본적으로 사용되던 yaml을 그대로 사용하며, kustomization.yaml과 base, overay 및 production, development등 디렉토리를 환경에 맞게 구성하여 별도의 데이터 기반으로 배포 관리를 할수 있음.  
 

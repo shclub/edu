@@ -38,21 +38,23 @@
 
      <br/>
 
-5. Chapter 5 : 5주차    
+
+5. Chapter 5 : 5주차  
+     - kt cloud 하드디스크 추가
+     - Github Action , worflow 사용
+     - 모니터링 솔루션 연동 ( Datadog ) 
+     
+     <br/>
+
+6. Chapter 6 : 6주차    
      - SpringBoot 개념 설명 
      - IDE 개발 환경 구성      
 
      <br/>
 
-6. Chapter 6 : 6주차  
+7. Chapter 7 : 7주차  
      - SpringBoot 실습 및 k8s 배포 실습  
 
-     <br/>
-
-7. Chapter 7 : 7주차  
-     - 모니터링 솔루션 설치 ( pinpoint ) 
-     - Prometheus 소개  
- 
      <br/>
 
 8. Chapter 8 : 8주차  
