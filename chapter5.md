@@ -490,7 +490,9 @@ SaaS 형 All-In-One 모니터링 솔루션인 DataDog과 연동합니다.
 
 <br/>
 
-브라우저에서 https://www.datadoghq.com/ 로 이동한후 Free Trial을 클릭합니다.   
+브라우저에서 https://www.datadoghq.com/ 로 이동한후 Free Trial을 클릭합니다. 
+
+무료 계정은 14일간 사용이 가능하다.  
 
 처음에 나오는 항목은 datadog 서버의 위치를 선택하게 되며 이번 예제는 US5를 기준으로 설명합니다.  
 
@@ -537,6 +539,10 @@ APP key가 생성되고  Copy key 버튼을 클릭하여 APP Key를 저장합니
 
 <br/>
 
+###  Agent 설정
+
+<br/>
+
 이제 kubernetes 모니터링을 위해서 DataDog Agent 를 설치합니다.  
 
 먼저 터미널로 로그인 한다.  
@@ -564,6 +570,13 @@ datadog:
   #apiKeyExistingSecret: datadog-secret
   #appKeyExistingSecret: datadog-secret
   clusterName: default
+```  
+
+kt cloud는 kernel 버전이 낮아 아래 옵션을 true로 설정하면 에러가 발생하여 false로 설정한다.  
+
+```
+systemProbe:
+    enableTCPQueueLength: false
 ```  
 
 datadog namespace를 생성합니다.   
