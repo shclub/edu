@@ -103,17 +103,12 @@ ssh root@(본인 VM 공인 ip) -p 22222
 아래 명령어를 실행한다.  
 
 ```bash
-root@jakelee:/# df -h | grep dev
-udev            7.8G     0  7.8G   0% /dev
-/dev/xvda4       17G  9.1G  6.7G  58% /
-tmpfs           7.9G     0  7.9G   0% /dev/shm
-/dev/loop0      112M  112M     0 100% /snap/core/12941
-/dev/loop1      111M  111M     0 100% /snap/core/12834
-/dev/xvdb        49G    0    49G  100% 
-/dev/xvda3      976M  240M  670M  27% /boot
+root@jakelee:/# fdisk -l
 ```
 
-/dev/xvdb 라는 파티션이 추 가된걸 확인 할수 있습니다.  
+<img src="./assets/disk_add_fdisk.png" style="width: 80%; height: auto;"/>   
+
+/dev/xvdb 라는 디스크가 추가 된걸 확인 할수 있습니다.  
 
 위에서 확인한 디바이스 파티션의 포맷을 진행합니다. ( 리눅스 파티션 ext4 )
 
@@ -646,7 +641,24 @@ helm 차트의 최신 버전을 가져 옵니다.
 helm repo update
 ```  
 
-helm (버전 3.x) 을 사용하여 Datadog Agent 를 deploy 합니다.      
+진행하기 전에 아래 명령어를 먼저 수행한다.  
+
+```bash
+export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+```  
+
+반복 작업을 하지 않기 위해 아래와 같이 실행한다.
+
+```bash
+# /etc/profile을 vi 에디터로 오픈한다.
+vi /etc/profile
+# 아래 구문을 추가하고 저장한다.
+export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+#  수정된 값을 적용한다.
+source /etc/profile
+```  
+
+helm (버전 3.x) 을 사용하여 Datadog Agent 를 deploy 합니다.  
 
 ```bash
 helm install -f datadog-values.yaml my-datadog datadog/datadog -n datadog
@@ -687,6 +699,36 @@ live container 를 클릭하면 좀더 자세한 k8s 컨테이너 정보를 실�
 실시간 정보 이외에도 위 상단의 prev 버튼으로 과거의 metric 정보도 확인 할 수 있다.  
 
 <img src="./assets/datadog_k8s_container_prev.png" style="width: 80%; height: auto;"/>
+
+<br/>
+
+###  Log / Trace 설정
+
+<br/>
+
+인프라 Metric은 위에서 처럼 Agent를 설치하면 되지만 Application의 Log 와 Trace를 위해서는 별도 설정이 필요하다.  
+
+APM -> Docs 메뉴로 이동한다.  
+
+<img src="./assets/datadog_docs1.png" style="width: 80%; height: auto;"/>  
+
+Container Based -> Kubernetes -> Helm Chart -> Python을 선택한다.  
+
+<img src="./assets/datadog_docs2.png" style="width: 80%; height: auto;"/>  
+
+Agenst Setup은 이미 완료 했기 때문에 Configure your application container for APM 으로 이동한다.  
+
+오른쪽 메뉴를 다 체크를 하면 왼쪽 yaml 파일에 내용이 추가 된것을 확인할수 있다.  
+
+<img src="./assets/datadog_docs3.png" style="width: 80%; height: auto;"/>  
+
+
+
+```bash 
+root@jakelee:~# ls datadog-values.yaml
+datadog-values.yaml
+```  
+
 
 ## 과제
 
