@@ -42,7 +42,7 @@
 5. Chapter 5 : 5주차   ( [가이드 문서보기](./chapter5.md) ) 
      - kt cloud 하드디스크 추가
      - k3s 위치 변경
-     - Github Action , workflow 사용
+     - Github Action , workflow 사용 ( GoodBye Jenkins )
      - 모니터링 솔루션 연동 ( Datadog ) 
      
      <br/>

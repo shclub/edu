@@ -6,7 +6,7 @@
 
 2. k3s 위치 변경
 
-3. Github action 과 workflow 사용하여 도커 이미지 생성
+3. Github action 과 workflow 사용하여 도커 이미지 생성 ( GoodBye Jenkins )
 
 4. DataDog 연동
 
@@ -301,7 +301,7 @@ kubectl taint nodes jakelee node.kubernetes.io/disk-pressure-
 
 <br/>
 
-##  Github action 과 worlflow 사용하여 도커 이미지 생성
+##  Github action 과 worlflow 사용하여 도커 이미지 생성 ( Goodbye Jenkins )
 
 <br/>
 
@@ -480,6 +480,42 @@ Re-run jobs를 클릭한다.
 
 
 <br/>
+
+### 수동으로 Actions workflow 실행 
+
+<br/>
+
+workflow는 schedule 또는 event trigger를 통해서 동작을 하지만 수동으로 원할때만 빌드 할수 있도록 구성을 할 수 있다. 
+
+<br/>
+
+docker-hub-publish.yml 화엘에서 on 아래에 아래와 같이 추가해 준다.  
+기존의 값은 주석 처리한다.  
+
+```bash
+on:      
+  workflow_dispatch:
+    inputs:
+      name:
+        description: "TAG"
+        required: true
+        default: "master"
+#  schedule:
+#    - cron: '25 2 * * *'
+#  push:
+#    branches: [ master ]
+#    # Publish semver tags as releases.
+#    tags: [ 'v*.*.*' ]
+#  pull_request:
+#    branches: [ master ]
+```  
+
+Commit을 하고 Actions Tab으로 이동하면 아래와 같이 Run workflow 버튼이 생성된 것을 확인 할 수 있다.  
+
+버튼을 클릭하면 설정한 Input 값이 나오고 Run을 하면 실행이 된다.  
+
+<img src="./assets/github_action_manual.png" style="width: 80%; height: auto;"/>  
+
 
 ##  DataDog 연동
 
