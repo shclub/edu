@@ -706,7 +706,13 @@ live container 를 클릭하면 좀더 자세한 k8s 컨테이너 정보를 실�
 
 <br/>
 
-인프라 Metric은 위에서 처럼 Agent를 설치하면 되지만 Application의 Log 와 Trace를 위해서는 별도 설정이 필요하다.  
+인프라 Metric은 위에서 처럼 Agent를 설치하면 되지만 Application의 Log 와 Trace를 위해서는 별도 설정이 필요하다.   
+
+구성은 다음과 같다.   
+
+<img src="./assets/datadog_dogstatsd.png" style="width: 80%; height: auto;"/>  
+
+<br/>
 
 APM -> Docs 메뉴로 이동한다.  
 
@@ -722,13 +728,182 @@ Agenst Setup은 이미 완료 했기 때문에 Configure your application contai
 
 <img src="./assets/datadog_docs3.png" style="width: 80%; height: auto;"/>  
 
+<br/>
+
+vm에서 먼저 테스트 해보기 위해 pip3 버전을 확인한다.  
+ubuntu 18 버전에서는 python 3.6이 설치 된것 을 확인 할 수 있다.  
+
+```bash
+root@jakelee:~/edu7# pip3 -V
+pip 9.0.1 from /usr/lib/python3/dist-packages (python 3.6)
+```
+
+DataDog의 python trace library 인 ddtrace 0.34.0 버전을 설치한다.  
+- python 3.8 에서는 최신 버전 설치 가능
+
+```bash 
+root@jakelee:~/edu7# pip3 install ddtrace==0.34.0
+Collecting ddtrace==0.34.0
+  Downloading https://files.pythonhosted.org/packages/09/ad/0ae290415ca1ba97d347915b6fe15f2d7d686260f0b177317ec05b9beda3/ddtrace-0.34.0-cp36-cp36m-manylinux1_x86_64.whl (508kB)
+    100% |████████████████████████████████| 512kB 2.7MB/s
+Collecting msgpack>=0.5.0 (from ddtrace==0.34.0)
+  Downloading https://files.pythonhosted.org/packages/61/3c/2206f39880d38ca7ad8ac1b28d2d5ca81632d163b2d68ef90e46409ca057/msgpack-1.0.3.tar.gz (123kB)
+    100% |████████████████████████████████| 133kB 10.7MB/s
+Building wheels for collected packages: msgpack
+  Running setup.py bdist_wheel for msgpack ... done
+  Stored in directory: /root/.cache/pip/wheels/b4/58/67/1a6b3c87c4b15456c801d68297a8d6e9040b1e95f3293a82cf
+Successfully built msgpack
+Installing collected packages: msgpack, ddtrace
+Successfully installed ddtrace-0.34.0 msgpack-1.0.3
+```  
+
+flask를 설치한다. ( kt cloud 기준 )
+
+```bash 
+root@jakelee:~/edu7# pip3 install flask==0.11.1
+```  
+
+github의 edu7 repository에서 datadog 폴더의 app.py 화일을 복사하여 저장한다.  
 
 
 ```bash 
-root@jakelee:~# ls datadog-values.yaml
-datadog-values.yaml
+root@jakelee:~/edu7# vi app.py
 ```  
 
+아래의 값은 datadog에서 보여지는 이름이기 때문에 적당히 변경하다.  
+
+```bash
+config.env = "jake_edu"  # the environment the application is in
+config.service = "app"  # name of your application
+config.version = "0.1"  # version of your application
+```  
+
+python flask 기동시 아래와 같은 에러가 발생하면   
+
+```
+OSError: [Errno 98] Address already in use
+```  
+
+5000번 포트를 검색을 한 후 기존 서비스를 kill 한다.  
+
+```
+lsof -i:5000
+```  
+
+아래 명령어를 사용 하여 서비스를 기동한다.  
+- DD_LOGS_INJECTION=true DD_TRACE_DEBUG=true 을 앞에 사용하지 않으면 에러 발생
+
+    <img src="./assets/datadog_trace_error.png" style="width: 80%; height: auto;"/>  
+
+실행해보자.  
+
+```bash 
+root@jakelee:~/edu7DD_LOGS_INJECTION=true DD_TRACE_DEBUG=true ddtrace-run python3 app.py
+2022-05-02 14:20:00,182 WARNING [werkzeug] [_internal.py:225] [dd.trace_id=0 dd.span_id=0] -  * Running on all addresses.
+   WARNING: This is a development server. Do not use it in a production deployment.
+2022-05-02 14:20:00,182 INFO [werkzeug] [_internal.py:225] [dd.trace_id=0 dd.span_id=0] -  * Running on http://172.27.0.134:5000/ (Press CTRL+C to quit)
+2022-05-02 14:20:18,471 INFO [__main__] [app.py:36] [dd.trace_id=7289993804914578989 dd.span_id=12183544174804120126] -  Container EDU | POD Working : jakelee | v=1
+
+2022-05-02 14:20:18,472 INFO [werkzeug] [_internal.py:225] [dd.trace_id=0 dd.span_id=0] - 127.0.0.1 - - [02/May/2022 14:20:18] "GET / HTTP/1.1" 200 -
+```  
+
+새로운 창을 띄워 아래 명령어를 2번 실행 한다.
+
+```bash
+root@jakelee:~# curl localhost:5000
+ Container EDU | POD Working : jakelee | v=1
+root@jakelee:~# curl localhost:5000
+ Container EDU | POD Working : jakelee | v=1
+root@jakelee:~#
+```  
+
+브라우저에서 DataDog으로 로그인 하고 Infrastructure -> Infrastructure List 로 이동한다.  
+
+본인의 서버를 클릭하면 오른쪽에 세부 화면이 나오고 trace를 선택하면 2개의 trace를 볼수 있다.  
+
+<img src="./assets/datadog_infra_trace.png" style="width: 80%; height: auto;"/>   
+
+또한  APM -> Traces 를 통하여 진입할 수도 있다.
+
+<img src="./assets/datadog_apm_trace.png" style="width: 80%; height: auto;"/> 
+
+2개의 데이터중 하나를 클릭한다.  
+
+<img src="./assets/datadog_apm_trace1.png" style="width: 80%; height: auto;"/>   
+
+Live Trace를 볼수 있고 아래와 같이 Span 을 그래프 / List / Map 형태로 볼 수 있다.  
+
+<img src="./assets/datadog_apm_trace2.png" style="width: 80%; height: auto;"/>   
+
+로그가 수집이 되지 않으면 daemonset을 수정해야 한다.  
+먼저 daemonset을 조회한다.  
+  
+```bash
+root@jakelee:~/edu7# kubectl get daemonset
+NAME         DESIRED   CURRENT   READY   UP-TO-DATE   AVAILABLE   NODE SELECTOR            AGE
+my-datadog   1         1         1       1            1           kubernetes.io/os=linux   2d5h
+```  
+
+수정 모드로 진입하여  
+
+```bash
+root@jakelee:~/edu7# kubectl edit daemonset my-datadog
+```  
+
+아래에서 LOG 관련된 값을 true로 설정한다.  
+
+```bash
+       - name: DD_APM_ENABLED
+          value: "true"
+        - name: DD_LOGS_ENABLED
+          value: "true"
+        - name: DD_LOGS_CONFIG_CONTAINER_COLLECT_ALL
+          value: "true"
+        - name: DD_LOGS_CONFIG_K8S_CONTAINER_USE_FILE
+          value: "true"
+        - name: DD_LOGS_CONFIG_AUTO_MULTI_LINE_DETECTION
+          value: "true"
+```  
+
+<br/>
+
+k8s의 pod로 구성을 해보자. 구성도는 아래와 같다.     
+
+<img src="./assets/datadog_trace_collect.png" style="width: 80%; height: auto;"/>  
+
+<br/>
+
+github의 edu7 리포지토리에 datadog 폴더 밑에 deployment.yaml 를 사용한다.  
+
+배포를 적용한다.  
+
+```bash
+root@jakelee:~/edu7# kubectl apply -f deployment.yaml
+deployment.apps/edu7 created
+```  
+
+pod 의 로그를 확인하고 서비스 ip 와 포트를 확인 한다.  
+
+```bash 
+root@jakelee:~/edu7# kubectl logs -f edu7-7dddb77987-hgknh
+2022-05-02 06:02:34,492 WARNING [werkzeug] [_internal.py:225] [dd.trace_id=0 dd.span_id=0] -  * Running on all addresses.
+   WARNING: This is a development server. Do not use it in a production deployment.
+2022-05-02 06:02:34,493 INFO [werkzeug] [_internal.py:225] [dd.trace_id=0 dd.span_id=0] -  * Running on http://10.42.0.200:5000/ (Press CTRL+C to quit)
+2022-05-02 06:03:31,391 INFO [__main__] [app.py:36] [dd.trace_id=9691429885235158795 dd.span_id=10369185742989157470] -  Container EDU | POD Working : edu7-7dddb77987-hgknh | v=1
+```  
+
+창을 하나 더 열어서 아래 명령어를 수행하면 서비스가 호출이 된다.     
+
+```bash
+root@jakelee:~# curl http://10.42.0.200:5000
+ Container EDU | POD Working : edu7-7dddb77987-hgknh | v=1
+```  
+
+브라우저의 DataDog에서 trace를 확인 할 수 있다.  
+
+<img src="./assets/datadog_container_trace.png" style="width: 80%; height: auto;"/>  
+
+<br/>
 
 ## 과제
 
