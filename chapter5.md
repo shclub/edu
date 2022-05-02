@@ -798,7 +798,7 @@ lsof -i:5000
 실행해보자.  
 
 ```bash 
-root@jakelee:~/edu7DD_LOGS_INJECTION=true DD_TRACE_DEBUG=true ddtrace-run python3 app.py
+root@jakelee:~/edu7# DD_LOGS_INJECTION=true DD_TRACE_DEBUG=true ddtrace-run python3 app.py
 2022-05-02 14:20:00,182 WARNING [werkzeug] [_internal.py:225] [dd.trace_id=0 dd.span_id=0] -  * Running on all addresses.
    WARNING: This is a development server. Do not use it in a production deployment.
 2022-05-02 14:20:00,182 INFO [werkzeug] [_internal.py:225] [dd.trace_id=0 dd.span_id=0] -  * Running on http://172.27.0.134:5000/ (Press CTRL+C to quit)
@@ -873,30 +873,30 @@ k8s의 pod로 구성을 해보자. 구성도는 아래와 같다.
 
 <br/>
 
-github의 edu7 리포지토리에 datadog 폴더 밑에 deployment.yaml 를 사용한다.  
+github의 shclub/edu8 리포지토리에 deployment.yaml 를 사용한다.  
 
 배포를 적용한다.  
 
 ```bash
 root@jakelee:~/edu7# kubectl apply -f deployment.yaml
-deployment.apps/edu7 created
+deployment.apps/edu8 created
 ```  
 
 pod 의 로그를 확인하고 서비스 ip 와 포트를 확인 한다.  
 
 ```bash 
-root@jakelee:~/edu7# kubectl logs -f edu7-7dddb77987-hgknh
+root@jakelee:~/edu7# kubectl logs -f edu8-7dddb77987-hgknh
 2022-05-02 06:02:34,492 WARNING [werkzeug] [_internal.py:225] [dd.trace_id=0 dd.span_id=0] -  * Running on all addresses.
    WARNING: This is a development server. Do not use it in a production deployment.
 2022-05-02 06:02:34,493 INFO [werkzeug] [_internal.py:225] [dd.trace_id=0 dd.span_id=0] -  * Running on http://10.42.0.200:5000/ (Press CTRL+C to quit)
-2022-05-02 06:03:31,391 INFO [__main__] [app.py:36] [dd.trace_id=9691429885235158795 dd.span_id=10369185742989157470] -  Container EDU | POD Working : edu7-7dddb77987-hgknh | v=1
+2022-05-02 06:03:31,391 INFO [__main__] [app.py:36] [dd.trace_id=9691429885235158795 dd.span_id=10369185742989157470] -  Container EDU | POD Working : edu8-7dddb77987-hgknh | v=1
 ```  
 
 창을 하나 더 열어서 아래 명령어를 수행하면 서비스가 호출이 된다.     
 
 ```bash
 root@jakelee:~# curl http://10.42.0.200:5000
- Container EDU | POD Working : edu7-7dddb77987-hgknh | v=1
+ Container EDU | POD Working : edu8-7dddb77987-hgknh | v=1
 ```  
 
 브라우저의 DataDog에서 trace를 확인 할 수 있다.  
