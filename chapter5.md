@@ -257,7 +257,7 @@ k3s 에서 evicted 된 pod를 정리한다.
 먼저 pod 상태를 를 살펴 봅니다.  
 
 ```bash
-kubect get po --all-namespace
+kubect get po --all-namespaces
 ```
 
 아래 명령어를 실행하면 Pod가 정리되고 재기동 됩니다.       
