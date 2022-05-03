@@ -4,7 +4,7 @@
 
 1. kt cloud 하드 디스크 추가
 
-2. k3s 위치 변경
+2. k3s 위치 변경 및 k8s trouble shooting
 
 3. Github action 과 workflow 사용하여 도커 이미지 생성 ( GoodBye Jenkins )
 
@@ -595,8 +595,8 @@ site 정보는 us5로 되어 있고 clusterName은 원하는 것으로 변경하
 ```bash 
 datadog:
   site: us5.datadoghq.com
-  apiKey: f007473b3e34cc378d7c3fc83bce6c65
-  appKey: c230ae82f285af1742bd1aa46a32140381180bd6
+  apiKey: < 본인의 API key >
+  appKey: < 본인의 APP key >
   # If not using secrets, then use apiKey and appKey instead
   #apiKeyExistingSecret: datadog-secret
   #appKeyExistingSecret: datadog-secret
@@ -626,7 +626,7 @@ kubectl create secret generic datadog-secrets --from-literal api-key=<본인 api
 실제 예  
 
 ```bash
-kubectl create secret generic datadog-secrets --from-literal api-key=f007473b3e34cc378d7c3fc83bce6c65 --from-literal app-key=c230ae82f285af1742bd1aa46a32140381180bd6 -n data dog
+kubectl create secret generic datadog-secrets --from-literal api-key=111111 --from-literal app-key=11111 -n data dog
 ```
 
 helm repository를 추가 합니다.  
@@ -791,6 +791,11 @@ lsof -i:5000
 ```  
 
 아래 명령어를 사용 하여 서비스를 기동한다.  
+
+```bash
+DD_LOGS_INJECTION=true DD_TRACE_DEBUG=true ddtrace-run python3 app.py
+```  
+
 - DD_LOGS_INJECTION=true DD_TRACE_DEBUG=true 을 앞에 사용하지 않으면 에러 발생
 
     <img src="./assets/datadog_trace_error.png" style="width: 80%; height: auto;"/>  
@@ -869,7 +874,7 @@ root@jakelee:~/edu7# kubectl edit daemonset my-datadog
 
 k8s의 pod로 구성을 해보자. 구성도는 아래와 같다.     
 
-<img src="./assets/datadog_trace_collect.png" style="width: 80%; height: auto;"/>  
+<img src="./assets/datagog_k8s_architecture.png" style="width: 80%; height: auto;"/>  
 
 <br/>
 
@@ -902,6 +907,11 @@ root@jakelee:~# curl http://10.42.0.200:5000
 브라우저의 DataDog에서 trace를 확인 할 수 있다.  
 
 <img src="./assets/datadog_container_trace.png" style="width: 80%; height: auto;"/>  
+
+<br/>
+개발 언어 마다 config 별도 설정 해야 하나? 
+
+<img src="./assets/istio.png" style="width: 80%; height: auto;"/>
 
 <br/>
 
