@@ -140,14 +140,13 @@ root@jakelee:/# mkdir -p /data
 ```bash
 root@jakelee:/# vi /etc/fstab
 ```  
+<img src="./assets/disk_mount.png" style="width: 80%; height: auto;"/>   
 
 이제 마운트를 적용합니다.  
 
 ```bash
 root@jakelee:/# mount -a
 ```  
-
-<img src="./assets/disk_mount.png" style="width: 80%; height: auto;"/>   
 
 아래 명령어를 실행하여 /data 마운트 포인트가 생성된걸 확인합니다.  
 
@@ -253,8 +252,15 @@ tmpfs           7.9G     0  7.9G   0% /dev/shm
 /dev/xvda3      976M  240M  670M  27% /boot
 ```  
 
-k3s 에서 evicted 된 pod를 정리한다.   
-아래 명령어를 실행하면 Pod가 재기동 된다.    
+k3s 에서 evicted 된 pod를 정리한다.  
+
+먼저 pod 상태를 를 살펴 봅니다.  
+
+```bash
+kubect get po --all-namespace
+```
+
+아래 명령어를 실행하면 Pod가 정리되고 재기동 됩니다.       
 
 ```bash
 kubectl drain --delete-emptydir-data --ignore-daemonsets --force < node 이름 > && kubectl uncordon < node 이름 >
@@ -288,7 +294,7 @@ disk full 이 발생한 경우는 아래 명령어를 사용하여 disk-pressure
 kubectl describe node < node 명 >
 ```  
 
-taint 명령어를 사용하여 해당 node를 untaint 하여  pod 가 schedule 되게 한다.   
+taint 명령어를 사용하여 해당 node를 untaint 하여 pod 가 schedule 되게 한다.   
 
 ```bash  
 kubectl taint nodes jakelee node.kubernetes.io/disk-pressure- 
@@ -296,7 +302,7 @@ kubectl taint nodes jakelee node.kubernetes.io/disk-pressure-
 
 <br/>
 
-##  Github action 과 worlflow 사용하여 도커 이미지 생성 ( Goodbye Jenkins )
+##  Github action 과 workflow 사용하여 도커 이미지 생성 ( Goodbye Jenkins )
 
 <br/>
 
@@ -329,8 +335,8 @@ Actions tab 을 클릭한다.
 
 <img src="./assets/github_action1.png" style="width: 80%; height: auto;"/>  
 
-템플릿 목록이 나오고 먼저 Github package 에  push 하기 위해서 Publish Docker Container Template을 선택한다.  
-configure 를 클릭한다.  
+템플릿 목록이 나오고 먼저 Github package 에  push 하기 위해서 Publish Docker Container Template을 선택한 후 configure 를 클릭한다.  
+- IOS 나 Android의 경우는 search 메뉴에서 검색한다.    
 
 <img src="./assets/github_action_template.png" style="width: 80%; height: auto;"/>  
 
@@ -405,8 +411,84 @@ Actions Tab으로 이동하여 New workflow를 클릭한다.
 
 <img src="./assets/github_action11.png" style="width: 100%; height: auto;"/>  
 
-root 폴더의 docker-hub-publish.yml 화일을 내용을 복사한다.  
+아래의 내용을 복사한다.    
+
+```bash
+name: Publish Docker image
+
+on:
+#  release:
+#    types: [published]
+  push:
+    branches: [ master ]
+    # Publish semver tags as releases.
+#    tags: [ 'v*.*.*' ]
+  pull_request:
+    branches: [ master ]
+    
+jobs:
+  push_to_registry:
+    name: Push Docker image to Docker Hub
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v3
+      
+      - name: Log in to Docker Hub
+        uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@98669ae865ea3cffbcbaa878cf57c20bbf1c6c38
+        with:
+          images: shclub/edu7
+      
+      - name: Build and push Docker image
+        uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
+        with:
+          context: .
+          push: true
+          tags: shclub/edu7 
+          #${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+```  
+
 아래와 같이 생성이 되면 화일명을 docker-hub-publish.yml로 변경을 하고 image 이름을 원하는 이름으로 변경한다.  
+본인 docker hub id 를 사용한다.  
+
+```bash
+#before
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@98669ae865ea3cffbcbaa878cf57c20bbf1c6c38
+        with:
+          images: shclub/edu7
+      
+      - name: Build and push Docker image
+        uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
+        with:
+          context: .
+          push: true
+          tags: shclub/edu7 
+          labels: ${{ steps.meta.outputs.labels }}
+#after
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@98669ae865ea3cffbcbaa878cf57c20bbf1c6c38
+        with:
+          images: <본인 도커 계정>/edu7 <-- 수정
+      
+      - name: Build and push Docker image
+        uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
+        with:
+          context: .
+          push: true
+          tags: <본인 도커 계정>/edu7   <-- 수정  
+          labels: ${{ steps.meta.outputs.labels }}
+```  
 
 <img src="./assets/github_action12.png" style="width: 100%; height: auto;"/>  
 
@@ -419,7 +501,7 @@ Actions Tab 으로 이동하면 Publish Docker image 가 생성이 되고 빌드
 <img src="./assets/github_action14.png" style="width: 100%; height: auto;"/>  
 
 에러를 클릭하면 세부 파이프라인 창으로 이동을 하고 오른편 화면에 에러가 난 곳을 확장 하여 에러메시지를
- 확인한다.  
+확인한다.  
 
 에러 메시지는  Github Repository (edu7)에 도커 허브 credential을 만들지 않아서 발생한 에러이다.
 
@@ -484,8 +566,8 @@ workflow는 schedule 또는 event trigger를 통해서 동작을 하지만 수�
 
 <br/>
 
-docker-hub-publish.yml 화엘에서 on 아래에 아래와 같이 추가해 준다.  
-기존의 값은 주석 처리한다.  
+docker-hub-publish.yml 화일에서 on 아래에 아래와 같이 추가해 준다.  
+기존의 값은 주석 처리한다.  ( jobs 아래 내용은 수정하지 않는다 )  
 
 ```bash
 on:      
@@ -582,14 +664,62 @@ APP key가 생성되고  Copy key 버튼을 클릭하여 APP Key를 저장합니
 ssh root@(본인 VM 공인 ip) -p 22222
 ``` 
 
-github이 본인 계정의 edu7 repository에서 datadog-values.yaml 을 복사하여 서버에 같은 이름으로 화일을 생성합니다.  
+먼저 vi 에디터를 사용하여 datadog-values.yaml 화일을 생성한다.  
+
+```bash
+root@jakelee:~# vi  datadog-values.yaml
+```   
+
+아래 내용을 복사하여 붙여 넣기를 한다.  
 
 ```bash 
-root@jakelee:~# ls datadog-values.yaml
-datadog-values.yaml
-```  
+# Datadog Agent with Datadog Cluster Agent and
+# OrchestratorExplorer (Live Containers), Check Runners, and
+# External Metrics Server enabled
 
-vi에디터로 화일을 열고 API Key와  APP Key를 본인의 것으로 수정합니다.  
+targetSystem: "linux"
+datadog:
+  site: us5.datadoghq.com
+  apiKey: ------
+  appKey: ------
+  # If not using secrets, then use apiKey and appKey instead
+  #apiKeyExistingSecret: datadog-secret
+  #appKeyExistingSecret: datadog-secret
+  clusterName: default
+  tags: []
+  kubelet:
+    tlsVerify: "false"
+  orchestratorExplorer:
+    enabled: true
+  logs:
+    enabled: true
+    containerCollectAll: true
+    containerCollectUsingFiles: true
+  apm:
+    portEnabled: true
+    socketPath: /var/run/datadog/apm.socket
+    hostSocketPath: /var/run/datadog/
+  processAgent:
+    enabled: true
+    processCollection: true
+  systemProbe:
+    enableTCPQueueLength: true
+    enableOOMKill: false
+    collectDNSStats: true
+    #agents:
+        #  tolerations:
+    # These tolerations are needed to run the agent on master nodes
+    #- effect: NoSchedule
+    #  key: node-role.kubernetes.io/controlplane
+    #  operator: Exists
+    #- effect: NoExecute
+    #  key: node-role.kubernetes.io/etcd
+    #  operator: Exists
+```    
+
+
+API Key와  APP Key를 본인의 것으로 수정합니다.  
+
 site 정보는 us5로 되어 있고 clusterName은 원하는 것으로 변경하면 됩니다.  
 
 ```bash 
@@ -607,7 +737,7 @@ kt cloud는 kernel 버전이 낮아 아래 옵션을 true로 설정하면 에러
 
 ```
 systemProbe:
-    enableTCPQueueLength: false
+    enableOOMKill: false
 ```  
 
 datadog namespace를 생성합니다.   
@@ -618,7 +748,7 @@ namespace/datadog created
 ```  
 
 secret 형식으로 api key 와 app key를 사용하기 위해서는 secret 를 생성합니다.  
-
+일반 키로 적용 했으면 SKIP.
 
 ```bash
 kubectl create secret generic datadog-secrets --from-literal api-key=<본인 api key> --from-literal app-key=<본인 app key>  
@@ -644,6 +774,7 @@ helm repo update
 진행하기 전에 아래 명령어를 먼저 수행한다.  
 
 ```bash
+kubectl config view --raw  > ~/.kube/config
 export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
 ```  
 
