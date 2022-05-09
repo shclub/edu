@@ -47,7 +47,7 @@
      
      <br/>
 
-6. Chapter 6 : 6주차    
+6. Chapter 6 : 6주차    ( [가이드 문서보기](./chapter6.md) ) 
      - SpringBoot 개념 설명 
      - IDE 개발 환경 구성      
 
