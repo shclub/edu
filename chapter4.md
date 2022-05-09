@@ -457,7 +457,7 @@ traffic 흐름을 볼수 도 있고
 
 추가 배포 관련  Hands-on은 아래 문서를 참고 한다.
 
-- 문서를 참고한다. [ArgoCD Hands-On ](./argocd_hands_on.md.md)  
+- 문서를 참고한다. [ArgoCD Hands-On ](./argocd_hands_on.md)  
 
 <br/>
 

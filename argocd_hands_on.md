@@ -12,7 +12,9 @@ ArgoCD 활용 방법에 대해서 실습한다.
 
 5. kustomize 사용법   
 
-6. 참고 사이트 
+6. argocd remote 에서 배포 하기  
+
+7. 참고 사이트 
     - https://potato-yong.tistory.com/138
     - https://teichae.tistory.com/entry/Argo-CD%EB%A5%BC-%EC%9D%B4%EC%9A%A9%ED%95%9C-BlueGreen-%EB%B0%B0%ED%8F%AC-3
     - canary : https://teichae.tistory.com/entry/Argo-CD%EB%A5%BC-%EC%9D%B4%EC%9A%A9%ED%95%9C-Canary-%EB%B0%B0%ED%8F%AC-4
@@ -225,22 +227,33 @@ Blue/Green 교체 승인
 
 Blue/Green yaml 파일에서 autoPromotionEnabled 옵션을 false로 주었기 때문에 Blue에서 Green으로 자동으로 배포되지 않고 정지되어 있는 상태를 확인할 수 있다.  
 
-이후, 정상적으로 Blue/Green이 배포된것을 확인했다면 Green으로 교체해주는 과정을 진행해주어야 한다.
+이후, 정상적으로 Blue/Green이 배포된것을 확인했다면 Green으로 교체해주는 과정을 진행해주어야 한다.  
 
-```bash
-#rollout 상태 확인 : STATUS는 Paused
-root@jakelee:~# kubectl argo rollouts list rollout -n rollout-demo
-NAME               STRATEGY   STATUS        STEP  SET-WEIGHT  READY  DESIRED  UP-TO-DATE  AVAILABLE
-rollout-bluegreen  BlueGreen  Paused        -     -           2/4    2        2           2
-```  
+- argocd ui에서 진행하는 방법  
 
-rollout 상태 확인 후 승인  
+  rollout 화면에서 파란색 아이콘으로 paused 된 상태를 볼수 있고 오른쪽 점 표시를 클릭하면 여러가지 메뉴를 볼수 있는데 승인을 하기 위해서는 resume을 클릭한다.  
 
-```bash
-#rollout 상태 확인 후 승인
-root@jakelee:~# kubectl argo rollouts promote rollout-bluegreen -n rollout-demo
-rollout 'rollout-bluegreen' promoted
-```  
+  <img src="./assets/argocd_bluegreen_resume.png" style="width: 80%; height: auto;"/>  
+
+  실행을 하기 위해서 OK를 클릭한다.  
+
+  <img src="./assets/argocd_bluegreen_resume_action.png" style="width: 80%; height: auto;"/>
+
+- 명령 모드 에서 진행하는 방법
+  ```bash
+  #rollout 상태 확인 : STATUS는 Paused
+  root@jakelee:~# kubectl argo rollouts list rollout -n rollout-demo
+  NAME               STRATEGY   STATUS        STEP  SET-WEIGHT  READY  DESIRED  UP-TO-DATE  AVAILABLE
+  rollout-bluegreen  BlueGreen  Paused        -     -           2/4    2        2           2
+  ```  
+
+  rollout 상태 확인 후 승인  
+
+  ```bash
+  #rollout 상태 확인 후 승인
+  root@jakelee:~# kubectl argo rollouts promote rollout-bluegreen -n rollout-demo
+  rollout 'rollout-bluegreen' promoted
+  ```  
 
 rollout 상태 확인   
 
@@ -849,6 +862,138 @@ kubectl apply -k https://github.com/shclub/edu6/overlays/development/
 ```  
 
 <br/> 
+
+
+### argocd remote 에서 배포 하기    
+
+<br/>
+
+argocd 를 다른 cluster를 통해서 배포해 본다.  
+
+접속하고자 하는 k8s cluster의 config 정보를 복사한다.  
+
+.kube 폴더 밑에 config 화일을 하나 추가한다. 
+
+vi 에디터로 사용한다.  
+
+```
+root@jake-Wyse-mint2:~/.kube# vi config-epc-jakelee
+```  
+
+복사한 config 화일 내용을 붙여넣기 한다.  
+아래는 샘플 내용이다.  
+
+```bash
+apiVersion: v1
+clusters:
+- cluster:
+    certificate-authority-data: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1J-----SUJkekNDQVIyZ0F3SUJBZ0l
+    server: https://210.106.105.165:6443
+  name: k3s-test
+contexts:
+- context:
+    cluster: k3s-test
+    user: k3s-test
+  name: k3s-test
+current-context: k3s-test
+kind: Config
+preferences: {}
+users:
+- name: k3s-test
+  user:
+    client-certificate-data: LS0tLS1CRUdJTiBDRVJUSUZJQ0FUZ0F3SUJBZ0lJTzJxVnRk-----0tLQo=
+```  
+
+새로운 config을 /etc/profile 에 추가한다.  
+
+```bash
+root@jake-Wyse-mint2:~/.kube# vi /etc/profile
+```  
+
+추가할 내용은 아래와 같다.  
+
+```bash
+export KUBECONFIG=/etc/rancher/k3s/k3s.yaml:/root/.kube/config-epc-jakelee:$KUBECONFIG
+```  
+
+source 명령어를 사용하여 적용한다.  
+
+```bash
+root@jake-Wyse-mint2:~/.kube# source /etc/profile
+```  
+
+정상적으로 추가가 된지 확인한다.  
+
+```bash
+root@jake-Wyse-mint2:~/.kube# kubectl config get-contexts
+CURRENT   NAME       CLUSTER    AUTHINFO   NAMESPACE
+*         default    default    default
+          k3s-test   k3s-test   k3s-test
+```  
+
+k3s-test 클러스터에 접속하기 위해서 context를 switch 해본다.  
+
+```bash
+root@jake-Wyse-mint2:~/.kube# kubectl config use-context k3s-test
+Switched to context "k3s-test".
+```  
+
+리모트 k8s 접속이 확인 되었으면 다시 로컬 클러스터로 switch 한다.  
+
+```bash
+root@jake-Wyse-mint2:~/.kube# kubectl config use-context default
+Switched to context "default".
+```  
+
+argo cd 에 cli 로 로그인 하기 위해서 서비스의 ip를 확인한다. ( 로컬 k8s 임 )  
+
+```bash
+root@jake-Wyse-mint2:~/.kube# kubectl get svc -n argocd
+NAME                    TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)                      AGE
+argocd-dex-server       ClusterIP   10.43.159.136   <none>        5556/TCP,5557/TCP,5558/TCP   69d
+argocd-metrics          ClusterIP   10.43.4.89      <none>        8082/TCP                     69d
+argocd-redis            ClusterIP   10.43.124.226   <none>        6379/TCP                     69d
+argocd-repo-server      ClusterIP   10.43.221.146   <none>        8081/TCP,8084/TCP            69d
+argocd-server-metrics   ClusterIP   10.43.148.232   <none>        8083/TCP                     69d
+argocd-server           NodePort    10.43.188.106   <none>        80:32000/TCP,443:30904/TCP   69d
+```  
+
+argocd server로 로그인한다.  
+insecurely 접속을 물어보면 y를 입력한다.  
+
+```bash
+root@jake-Wyse-mint2:~/.kube# argocd login 10.43.188.106
+WARNING: server certificate had error: x509: cannot validate certificate for 10.43.188.106 because it doesn't contain any IP SANs. Proceed insecurely (y/n)? y
+Username: admin
+Password:
+```  
+
+cluster 추가 명령어는 아래와 같다.  
+
+```bash
+argocd cluster add <클러스터 이름 >
+```  
+
+argocd에 외부 k8s cluster를 추가해 본다.  
+
+```bash
+root@jake-Wyse-mint2:~/.kube# argocd cluster add k3s-test
+WARNING: This will create a service account `argocd-manager` on the cluster referenced by context `k3s-test` with full cluster level admin privileges. Do you want to continue [y/N]? y
+INFO[0004] ServiceAccount "argocd-manager" created in namespace "kube-system"
+INFO[0004] ClusterRole "argocd-manager-role" created
+INFO[0004] ClusterRoleBinding "argocd-manager-role-binding" created
+Cluster 'https://210.106.105.165:6443' added
+```
+
+<br/>
+
+web browser로 argocd ui 를 접속하여 setting-> Cluster 메뉴로 이동하면  cluster가 추가 된 것을 확인한다.  
+
+<img src="./assets/argocd_remote_cluster_add.png" style="width: 80%; height: auto;"/>    
+
+배포 구성을 할때  remote 클러스터 선택 할 수 있다.  
+
+<br/>
 
 ### 참고
 
