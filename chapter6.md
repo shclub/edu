@@ -27,7 +27,6 @@ SpringBoot는 Java 개발을 쉽게 해주는 Framework 이다.
 <br/>
 
 
-
 ##  IDE 환경 설정 ( IntelliJ , STS )
 
 <br/>
@@ -153,6 +152,11 @@ Preferences ->  Build, Execution , Deploy 메뉴로 이동하여 Maven -> Runner
 
 <img src="./assets/springboot_firstproject8.png" style="width: 60%; height: auto;"/>
 
+- sts의 경우는 Preferences -> Java -> Installed JRE 선택  
+
+  <img src="./assets/springboot_sts_java_setting.png" style="width: 80%; height: auto;"/>
+
+
 <br/>
 
 ### 프로젝트 실행하기
@@ -212,13 +216,22 @@ main -> resources -> static 폴더를 선택을 하고  마우스 오른쪽 버�
 
 <br/>
 
-저장을 하고 다시 한번 run 한다. 왼쪽 하단의 아래 아이콘을 클릭한다.   
+저장을 하고 다시 한번 run 한다. 왼쪽 하단의 refresh 아이콘을 클릭한다.   
 
 <img src="./assets/springboot_firstproject17.png" style="width: 80%; height: auto;"/>  
+
+<br/>
 
 에러가 발생하지 않으면 web browser 에서 http://localhost:8080/hello.html 을 실행한다.     
 
 <img src="./assets/springboot_firstproject18.png" style="width: 80%; height: auto;"/>  
+
+<br/>
+<br/>
+
+추가 SpringBoot 관련  Hands-on은 아래 문서를 참고 한다.
+
+- 문서를 참고한다. [SpringBoot Hands-On ](./springboot_hands_on.md)  
 
 <br/>
 
@@ -228,7 +241,5 @@ main -> resources -> static 폴더를 선택을 하고  마우스 오른쪽 버�
 
 ### 과제 1
 
-현재 Docker Root 디렉토리를 /data로 변경한다.  
-
-도커도 위와 같이 폴더를 변경 할 수 있습니다.    
+Spring vs SpringBoot 차이를 비교하시오.
 
