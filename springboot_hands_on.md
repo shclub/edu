@@ -8,7 +8,7 @@ SpringBoot 활용 방법에 대해서 실습한다.
 
 3. 롬복과 리팩토링
 
-4. 데이터 목록 조회 , 수정 및 삭제  with JPA
+4. 데이터 조회 , 수정 및 삭제  with JPA
 
 5. CRUD 와 SQL Query
 
@@ -1186,3 +1186,66 @@ public class Article {
 <img src="./assets/jpa_read7.png" style="width: 100%; height: auto;"/>  
 
 
+<br/>
+
+### 데이터 목록 조회
+
+<br/>
+
+데이터 목록 조회 흐름
+
+<img src="./assets/jpa_list1.png" style="width: 100%; height: auto;"/>    
+
+ArticleController 에 index라는 메소드를 생성한다.  
+
+../controller/ArticleController  
+```java
+...
+@Controller
+@Slf4j
+public class ArticleController {
+    ...
+    @GetMapping("/articles")
+    public String index() {
+        // 1: 모든 Article을 가져온다!
+        // 2: 가져온 Article 묶음을 뷰로 전달!
+        // 3: 뷰 페이지를 설정!
+        return "";
+    }
+}
+```  
+
+<br/>
+
+controller 흐름  
+
+<img src="./assets/jpa_list2.png" style="width: 100%; height: auto;"/>    
+
+<br/>
+
+Article 데이터를 가져오기 위해서는 Repository가 필요하고 findAll 함수는 모든 데이터를 가져오는 기능을 한다.  
+
+데이터 묶음을 가져오기 위해 List를 사용한다.  
+
+../controller/ArticleController  
+```java
+...
+@Controller
+@Slf4j
+public class ArticleController {
+    ...
+    @GetMapping("/articles")
+    public String index() {
+        // 1: 모든 Article을 가져온다!
+        List<Article> articleEntityList = articleRepository.findAll();
+        // 2: 가져온 Article 묶음을 뷰로 전달!
+        // 3: 뷰 페이지를 설정!
+        return "";
+    }
+}
+```  
+
+findAll 함수에 마우스를 올리면 타입이 불일치 하는 것을 알 수 있다.  
+이때 캐스팅을 해야 한다.  
+ 
+<img src="./assets/jpa_list3.png" style="width: 100%; height: auto;"/>    

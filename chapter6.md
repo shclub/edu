@@ -92,7 +92,7 @@ OpenJDK 64-Bit Server VM Zulu17.32+13-CA (build 17.0.2+8-LTS, mixed mode, sharin
 
 <br/>
 
-`인텔리제이`를 설치하기 위해 다운로드 페이지(https://www.jetbrains.com/ko-kr/idea/download)로 이동한다.  
+`인텔리제이`를 설치하기 위해 다운로드 페이지( https://www.jetbrains.com/ko-kr/idea/download )로 이동한다.  
 
 원하는 OS를 선택을 하고 무료 버전인 Community 버전을 선택하여 받은 받는다.  
 
