@@ -8,7 +8,7 @@ SpringBoot 활용 방법에 대해서 실습한다.
 
 3. 롬복과 리팩토링
 
-4. 데이터 수정 및 삭제  
+4. 데이터 목록 조회 , 수정 및 삭제  with JPA
 
 5. CRUD 와 SQL Query
 
@@ -174,9 +174,10 @@ class 위에 @Controller 라는 Annotation을 입력하면 자동으로 import �
 
 <img src="./assets/controller4.png" style="width: 80%; height: auto;"/>  
 
-Auto import가 안되면 Prefrences -> Editor -> General -> Auto import 에서 배제된 항목이 있는지 확인합니다.  
+Auto import가 안되면 Prefrences -> Editor -> General -> Auto import 에서 아래와 같이 체크를 하고 always옵션을 선택한다.  
+배제된 항목이 있는지도 확인합니다.  
 
-<img src="./assets/controller5.png" style="width: 80%; height: auto;"/>  
+<img src="./assets/auto_import.png" style="width: 80%; height: auto;"/>  
 
 <br/>
 
@@ -835,3 +836,353 @@ ARTICLE 테이블을 선택 하고 RUN 버튼을 클릭하여 데이터를 조�
 데이터 1건이 입력 된 것을 확인 할 수 있다.  
 
 <img src="./assets/spring_data_jpa23.png" style="width: 100%; height: auto;"/>  
+
+
+<br/>
+
+## 롬복과 리팩토링
+
+<br/>
+
+### Lombok 과 Refactoring
+
+<br/>
+
+롬복 ( Lombok ) 이란 소스를 간소화 시켜주는 라이브러리 이다.  
+필수 코드 기입 최소화 및 로깅 기능을 개선 할 수 있다.
+
+<img src="./assets/lombok1.png" style="width: 100%; height: auto;"/>    
+
+리팩토링 ( Refactoring ) 이란 코드의 구조 성능의 개선을 말한다.  
+
+
+롬복을 설치한다.  ( IntelliJ는 이미 포함이 되어 있음 )
+롬복을 설치한 이후에 pom 파일에 아래 내용을 추가한다.  
+
+pom.xml
+```bash
+<dependency>
+    <groupId>org.projectlombok</groupId>
+    <artifactId>lombok</artifactId>
+    <optional>true</optional>
+</dependency>
+```  
+
+<br/>
+
+아래와 같이 추가 하면 된다.  
+
+<img src="./assets/lombok2.png" style="width: 100%; height: auto;"/>   
+
+<br/>
+
+M으로 표시된 아이콘이 보이고  Load Maven Changes 라고 나오는데  이것을 클릭한다.  
+
+<img src="./assets/lombok3.png" style="width: 100%; height: auto;"/>   
+
+화면 하단에 아래와 같이 라이브러리를 다운 받기 시작한다. 시간이 좀 소요된다.    
+
+<img src="./assets/lombok4.png" style="width: 100%; height: auto;"/>  
+
+다운이 완료가 되면 오른쪽에 Maven Tab을 클릭하고 Dependency에 가면 라이브러리가 추가 된것을 확인 할 수 있다.   
+
+<img src="./assets/lombok5.png" style="width: 100%; height: auto;"/>   
+
+<br/>
+
+### Lombok 플러그인 설치
+
+<br/>
+
+Intellij 2020.3 버전부터는 Lombok Plugin을 기본으로 제공하고 있습니다. 
+
+이하 버전에서는 상단 Help > Find Action > Plugins > "lombok" 검색 > Install 클릭하여 설치합니다.
+
+<img src="./assets/lombok6.png" style="width: 100%; height: auto;"/>    
+
+설치가 완료되면 IntelliJ 를 재시작합니다.  
+
+plugins를 활성화 하기 위해서 Preferences > Build, Execution, Deployment > Compiler > Annotation Processors에서 Enable annotation processing을 체크해줍니다. 
+
+<img src="./assets/lombok7.png" style="width: 100%; height: auto;"/>    
+
+
+<br/>
+
+### refactoring
+
+<br/>
+
+Intellij 2020.3 버전부터는 Lombok Plugin을 기본으로 제공하고 있습니다.   
+
+ArticleForm java 화일에서 생성사와 toString을 지우고 Annotation을 추가한다.  
+
+붉은색으로 글씨가 나오기 때문에 import class를 해준다.  
+
+../dto/ArticleForm
+```java
+package com.kt.edu.firstproject.dto;
+
+import com.kt.edu.firstproject.entity.Article;
+
+@AllArgsConstructor
+@ToString
+public class ArticleForm {
+    private String title;
+    private String content;
+
+    public Article toEntity() {
+        return new Article(null,title,content);
+    }
+}
+```  
+
+<br/>
+
+Article 화일도 수정한다.  
+
+../entity/Article
+```java
+package com.kt.edu.firstproject.entity;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
+
+@Entity
+@AllArgsConstructor
+@ToString
+public class Article {
+    @Id
+    @GeneratedValue
+    private Long id;
+    
+    @Column
+    private String title;
+    
+    @Column
+    private String content;
+}
+```  
+
+<br/>
+
+로그 남기는 Slf4j 를 사용하고  System.out.println을 대체한다.  
+
+../controller/ArticleController  
+```java
+package com.kt.edu.firstproject.controller;
+
+import com.kt.edu.firstproject.dto.ArticleForm;
+import com.kt.edu.firstproject.entity.Article;
+import com.kt.edu.firstproject.repository.ArticleRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+
+@Slf4j // 로깅을 위한 롬복 어노테이션
+@Controller
+public class ArticleController {
+
+    @Autowired // 스프링 부트가 미리 생성해놓은 리파지터리 객체를 가져옴(DI)
+    private ArticleRepository articleRepository;
+
+    @GetMapping("/articles/new")
+    public String newArticleForm() {
+        return "articles/new";
+    }
+    @PostMapping("/articles/create")
+    public String createArticle(ArticleForm form) {
+        log.info(form.toString());    // println() 을 로깅으로 대체!
+
+        //1. DTO를 를 변환 , entity
+        Article article = form.toEntity();
+        log.info(article.toString());    // println() 을 로깅으로 대체!
+
+        // 2. Repository에게 Entity를 DB로 저장하게 함
+        Article saved = articleRepository.save(article);
+        log.info(saved.toString());   // println() 을 로깅으로 대체!
+
+        return "";
+    }
+}
+```  
+
+프로젝트를 재시동하고 웹 브라우저에서 http://localhost:8080/articles/new 로 접속하여 submit 을 하면 다시 데이터가 생성이 된다.  
+
+<img src="./assets/lombok8.png" style="width: 100%; height: auto;"/> 
+
+log 형태로 system.out보다 더 많은 데이터가 나오는 것을 볼 수 있다.  
+
+
+<br/>
+
+## 데이터 조회 , 수정 및 삭제 with JPA
+
+<br/>
+
+### 데이터 조회
+
+<br/>
+
+데이터 조회 흐름
+
+<img src="./assets/jpa_read1.png" style="width: 100%; height: auto;"/>    
+
+기존에 생성한 프로젝트는 웹브라우저 를 통하여 데이터를 전달 받았고 우리는
+http://localhost:8080/articles/1 이런 형태로 데이터를 조회하고자 한다. ( 1은 테이블의 key 값 )  
+
+데이터를 받아주기 위한 controller를 생성합니다.  
+ArticleController가 있기 때문에 아래 처럼 추가합니다.  
+
+- URL요청 처리
+  @GetMapping("/articles/{id}")
+- URL에서 id를 변수로 가져오기
+  @PathVariable   
+
+../controller/ArticleController  
+```java
+...
+@Controller
+@Slf4j
+public class ArticleController {
+    ...
+    @GetMapping("/articles/{id}") // 해당 URL요청을 처리 선언
+    public String show(@PathVariable Long id) { // URL에서 id를 변수로 가져옴
+        log.info("id = " + id);
+        return "";
+    }
+}
+```  
+
+재기동을 하고 웹 브라우저에서 http://localhost:8080/articles/1 호출하면 IntelliJ Console에서 로그 정보를 통해 id 가 1인 값이 전달 된것을 확인 할 수 있다.  
+
+<img src="./assets/jpa_read2.png" style="width: 100%; height: auto;"/>   
+
+아래 단계를 통해 데이터를 가져온다.
+
+- 1단계 : id로 데이터를 가져오기 
+- 2단계 : 가져온 데이터를 모델에 등록
+- 3단계 : 보여줄 페이지를 설정 
+
+<br/> 
+
+<img src="./assets/jpa_read3.png" style="width: 100%; height: auto;"/>   
+
+데이터를 가져오는 것은 Repository의 역할이다.  
+
+findById는 이미 Repository Interface에 정의된 method 이고 여기에
+구현을 하면 된다.  ( interface는 껍데기만 있음 )  
+
+../controller/ArticleController
+```java
+      // 1: id로 데이터를 가져옴!
+        Article articleEntity = articleRepository.findById(id).orElse(null);  // orElse는 데이터가 없으면 다른 값 return
+        return "";
+ ```  
+
+view에서 데이터를 보여주기 위해 가져온 데이터를 모델에 등록한다.  
+
+<img src="./assets/jpa_read4.png" style="width: 100%; height: auto;"/>   
+
+<br/>
+
+show 매개변수에  model 을 추가한다.  
+
+../controller/ArticleController
+```java
+public String show(@PathVariable Long id, Model model) { // URL에서 id를 변수로 가져옴
+        log.info("id = " + id);
+
+        // 1: id로 데이터를 가져옴!
+        Article articleEntity = articleRepository.findById(id).orElse(null);  // orElse는 데이터가 없으면 다른 값 return
+        // 2: 가져온 데이터를 모델에 등록!
+        model.addAttribute("article", articleEntity);
+        
+        return "";
+```  
+
+데이터를 보여 주기 위해 페이지를 설정한다.  
+articles 폴더에 show 라는 mustache 파일이 있다고 가정한다.  
+
+../controller/ArticleController
+```java
+      // 1: id로 데이터를 가져옴!
+        Article articleEntity = articleRepository.findById(id).orElse(null);  // orElse는 데이터가 없으면 다른 값 return
+        // 2: 가져온 데이터를 모델에 등록!
+        model.addAttribute("article", articleEntity);
+        // 3: 보여줄 페이지를 설정!
+        return "articles/show";
+ ```  
+
+ mustache 화일을 만들기 위해서 resourcs > templates > articles로 이동하여 New > File 선택하고 화일명을 입력한다.  
+ 
+<img src="./assets/jpa_read5.png" style="width: 100%; height: auto;"/>   
+
+ ../articles/show.mustache
+ ```html
+ 
+<style>
+    table, th, td {
+        border: 1px solid black;
+    }
+</style>
+
+<table class="table" style="width:100%">
+    <thead>
+    <tr>
+        <th scope="col">ID</th>
+        <th scope="col">Title</th>
+        <th scope="col">Content</th>
+    </tr>
+    </thead>
+    <tbody>
+    {{#article}}
+        <tr>
+            <th>{{id}}</th>
+            <td>{{title}}</td>
+            <td>{{content}}</td>
+        </tr>
+    {{/article}}
+    </tbody>
+</table>
+ ```  
+프로젝트를 재기동하고 웹 브라우저에서  http://localhost:8080/articles/new 를 접속을하고 데이터를 생성한다.   
+
+그리고  http://localhost:8080/articles/1 를 호출 해본다.  
+아래와 같은 에러가 발생한다.  
+
+<img src="./assets/jpa_read6.png" style="width: 100%; height: auto;"/>   
+
+entity에 Default 생성자가 없다는 에러 이다.
+Default 생성자는 파라미터가 하나도 없는 생성자이다.  
+  
+```bash
+No default constructor for entity: : com.kt.edu.firstproject.entity
+```  
+
+Article 자바 화일에 lombok을 이용하여 생성자를 생성한다.  
+```bash
+...
+@Entity
+@AllArgsConstructor
+@NoArgsConstructor // Default 생성자 추가
+@ToString
+public class Article {
+    @Id
+    @GeneratedValue
+    private Long id;
+...
+}
+```  
+
+재기동 하면 데이터가 삭제가 되기 때문에 다시 한번 데이터를 입력한다.   
+
+입력 후에  http://localhost:8080/articles/1 를 호출 하면
+아래 화면을 볼수 있습니다.  
+
+<img src="./assets/jpa_read7.png" style="width: 100%; height: auto;"/>  
+
+

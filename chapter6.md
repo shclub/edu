@@ -159,6 +159,13 @@ Preferences ->  Build, Execution , Deploy 메뉴로 이동하여 Maven -> Runner
 
 <br/>
 
+폐쇄망에서 개발 할 경우에는 Preferences ->  Build, Execution , Deployment > Build Tools > Maven  에서 user setting에 해당하는
+xml을 찾아서 사내 nexus 연결 정보를 넣어준다.  
+
+<img src="./assets/maven_user_setting.png" style="width: 80%; height: auto;"/>
+
+<br/>
+
 ### 프로젝트 실행하기
 
 <br/>  
