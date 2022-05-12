@@ -130,7 +130,7 @@ doc를 입력하고 tab을 누르면 자동으로 코드가 생성이 된다.
 
 <br/>
 
-body tag안에 값을 입력한다.
+body tag 안에 값을 입력한다.
 
 ```html
 <body>
@@ -152,7 +152,7 @@ view template 이제 완성이 되었고 이것을 보기 위해서는 controlle
 
 프로젝트명 -> src -> main -> java -> 기본 패키지 -> 'controller' package 생성   
 
-기본 패키지명 위에서 마우으 오른쪽 키 클릭하고 New -> Package 선택  
+기본 패키지명 위에서 마우스 오른쪽 키 클릭하고 New -> Package 선택  
 
 <img src="./assets/controller1.png" style="width: 80%; height: auto;"/>  
 
@@ -174,7 +174,7 @@ class 위에 @Controller 라는 Annotation을 입력하면 자동으로 import �
 
 <img src="./assets/controller4.png" style="width: 80%; height: auto;"/>  
 
-Auto import가 안되면 Prefrences -> Editor -> General -> Auto import 에서 아래와 같이 체크를 하고 always옵션을 선택한다.  
+Auto import가 안되면 Preferences ( 윈도우는 settings ) -> Editor -> General -> Auto import 에서 아래와 같이 체크를 하고 always옵션을 선택한다.  
 배제된 항목이 있는지도 확인합니다.  
 
 <img src="./assets/auto_import.png" style="width: 80%; height: auto;"/>  
@@ -1999,4 +1999,11 @@ public class Article {
 
 <br/>
 
-JPA 로깅을 설정하고 DB Query를 확인 한다.  
+다양한 client 들과 서버 연동을 위해서 데이터를 주고 받는 방식으로 Rest 방식을 최근에 많이 사용 합니다. 기존에는 xml 방식을 사용하였습니다.  
+
+<img src="./assets/rest_api_xml.png" style="width: 80%; height: auto;"/>  
+
+최근에는 JSON 방식으로 데이터 포맷을 사용합니다.  
+
+<img src="./assets/rest_api_json.png" style="width: 80%; height: auto;"/>  
+

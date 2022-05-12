@@ -110,12 +110,13 @@ OpenJDK 64-Bit Server VM Zulu17.32+13-CA (build 17.0.2+8-LTS, mixed mode, sharin
 <br/>  
 
 스프링 부트 프로젝트는 https://start.spring.io 에서 생성한다.   
-왼쪽 영역에서 프로젝트 기본 설정을, 오른쪽 영역에서 필요한 라이브러리를 추가할 수 있다. ( 사내 환경에서는 접속 불가로 외부에서 먼저 하나 생성 후 복사 )
+왼쪽 영역에서 프로젝트 기본 설정을, 오른쪽 영역에서 필요한 라이브러리를 추가할 수 있다. ( 사내 환경에서는 버전 `2.5.13` 을 선택한다. )
 
 <img src="./assets/springboot_firstproject.png" style="width: 80%; height: auto;"/>  
 
 - project : maven 선택 ( gradle 보다 직관적이고 익숙 )
 - Language : Java
+- SpringBoot : 2.5.13 ( 사외환경은 3.0.0 선택해도 됨 )
 - Group : com.kt.edu ( 원하는 이름으로 만들면 되고 package 이름 자동 생성 )
 - Artifcat : firstproject ( 원하는 이름으로 만들면 되고 package 이름 자동 생성 )
 - packaging : Jar
@@ -128,11 +129,13 @@ Generate를 클릭하여 소스를 생성한다.
 
 <img src="./assets/springboot_firstproject2.png" style="width: 60%; height: auto;"/>   
 
-압축을 푼다.  
+압축을 풀때는 firstproject 만 생성 되도록 한다.  
+윈도우에서 압축을 풀련 firstproject/firstproject로 생성이 됨.
 
 <img src="./assets/springboot_firstproject3.png" style="width: 60%; height: auto;"/>   
 
 IntelliJ 창에서 Open을 클릭하고 Downloads 폴더 밑의 firstproject 폴더는 선택한다.  
+( 만약 firstproject/firstproject로 생성이 되었으면 제일 하위 폴더의 firstproject를 선택한다.  )
 
 <img src="./assets/springboot_firstproject4.png" style="width: 60%; height: auto;"/>
 
@@ -148,7 +151,7 @@ Trust check가 나오면 체크를 해주고 Trust Project를 클릭한다.
 
 <img src="./assets/springboot_firstproject7.png" style="width: 60%; height: auto;"/>  
 
-Preferences ->  Build, Execution , Deploy 메뉴로 이동하여 Maven -> Runner 에 JDK 17 ( zulu )  로 설정 되어 있는지 확인하고 안되어 있으면 변경한다.  
+Preferences ->  Build, Execution , Deploy 메뉴로 이동하여 Maven -> Runner 에 JDK 17 ( zulu )  로 설정 되어 있는지 확인하고 안되어 있으면 변경한다.  ( 사내 PC의 경우 시간이 좀 걸림 )  
 
 <img src="./assets/springboot_firstproject8.png" style="width: 60%; height: auto;"/>
 
@@ -159,10 +162,22 @@ Preferences ->  Build, Execution , Deploy 메뉴로 이동하여 Maven -> Runner
 
 <br/>
 
-폐쇄망에서 개발 할 경우에는 Preferences ->  Build, Execution , Deployment > Build Tools > Maven  에서 user setting에 해당하는
+사내망에서 개발 할 경우에는 Preferences ->  Build, Execution , Deployment > Build Tools > Maven  에서 user setting에 해당하는
 xml을 찾아서 사내 nexus 연결 정보를 넣어준다.  
 
-<img src="./assets/maven_user_setting.png" style="width: 80%; height: auto;"/>
+edu github에 있는 settings.xml 화일을 내용을 복사하여 아래 처럼 생성한다.  
+
+<img src="./assets/maven_user_setting.png" style="width: 80%; height: auto;"/>  
+
+최근 사내 pc는 아래와 같이 구성이 된다. 이전 pc는 KT 대신 사번.  
+.m2 폴더가 없으면 생성한다.  
+
+```bash
+C:\사용자\KT\.m2\settings.xml
+```  
+
+확장자는 xml 이어야 하고 탐색기에서 보기 메뉴 -> 확장자 체크 선택 하여 txt로 되어 있으면 txt 확장자는 삭제한다.  
+
 
 <br/>
 
@@ -203,6 +218,7 @@ Web browser를 사용하여 localhost:8080 으로 접속을 한다.
 <img src="./assets/springboot_firstproject13.png" style="width: 80%; height: auto;"/>  
 
 위의 에러 메시지가 발생한 이유는 html web 페이지를 만들지 않았기 때문이다.    
+
 main -> resources -> static 폴더를 선택을 하고  마우스 오른쪽 버튼 클릭 한 후 New -> HTML File을 선택한다.   
 
 <img src="./assets/springboot_firstproject14.png" style="width: 80%; height: auto;"/>  
