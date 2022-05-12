@@ -1933,10 +1933,70 @@ index.mustach 상단에 아래 처럼 alert 로직을 추가한다.
   <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
 </div>
 {{/msg}}
-
 ```  
 
 재기동을 하면 3개의 데이터가 있고 하나를 지워보면 아래과 같이 메시지가 나온다.  
 
 <img src="./assets/delete5.png" style="width: 80%; height: auto;"/>  
 
+
+<br/>
+
+###  CRUD 와 SQL Query
+
+<br/>
+
+JPA 로깅을 설정하고 DB Query를 확인 한다.  
+
+JPA 로깅 설정을 하기 위해서는 application.properties 화일에 아래 내용을 추가한다.  
+
+```bash
+../resources/application.properties
+#  JPA 로깅 설정
+
+## 디버그 레벨로 쿼리 출력
+logging.level.org.hibernate.SQL=DEBUG
+## 이쁘게 보여주기
+spring.jpa.properties.hibernate.format_sql=true
+## 파라미터 보여주기
+logging.level.org.hibernate.type.descriptor.sql.BasicBinder=TRACE
+## 고정 H2 DB url 설정
+spring.datasource.url=jdbc:h2:mem:testdb
+```  
+
+재기동을 하면 SQL이 보이는 것을 확인 할 수 있다.  
+
+<img src="./assets/crud1.png" style="width: 80%; height: auto;"/>  
+
+id를 자동으로 생성하게 설정한다.  
+Article DB에서는 id가 primary key 이다.  
+
+../entity/Article
+```java
+@Getter
+public class Article {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY) // DB가 id를 자동 생성 Annotation 
+    private Long id;
+```  
+
+재기동을 하고 웹 브라우저에서 http://localhost:8080/articles 를 입력하고
+기존의 3개의 데이터를 삭제한 후에 신규 데이터를 입력한다.  
+
+아래와 같이 ID가 새로 생성된것을 확인 할 수 있다.  
+
+<img src="./assets/crud2.png" style="width: 80%; height: auto;"/>  
+
+
+인텔리제이 콘솔에 가면 아래와 같이 SQL Query를 확인 할 수 있다.  
+
+<img src="./assets/crud3.png" style="width: 80%; height: auto;"/>  
+
+
+<br/>
+
+###  Rest API 와 JSON
+
+<br/>
+
+JPA 로깅을 설정하고 DB Query를 확인 한다.  
