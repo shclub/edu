@@ -25,7 +25,7 @@
      - kubernetes 설치 (k3s) 및 설정 , k8s 이해 및 활용
      - kubernetes IDE 인 Lens 설치 및 사용법 실습   
      - Helm 설치 및 helm으로 prometheus 설치 활용
-     - k8s hands-on Basic [ Hands-On 문서보기](./k8s_basic_hands_on.md)  
+     - k8s hands-on Basic [ Hands-On 문서보기 ](./k8s_basic_hands_on.md)  
 
      <br/>
 
@@ -34,7 +34,7 @@
      - ArgoCD 설치 및 설정 
      - kustomize 설명 및 실습 ( 향후 추가 )
      - k8s에 배포 실습 ( Blue/Green , Canary )  
-     - ArgoCD hands-on [ Hands-On 문서보기](./argocd_hands_on.md)  
+     - ArgoCD hands-on [ Hands-On 문서보기 ](./argocd_hands_on.md)  
 
      <br/>
 
@@ -50,7 +50,7 @@
 6. Chapter 6 : 6주차    ( [가이드 문서보기](./chapter6.md) ) 
      - SpringBoot 개념 설명 
      - IDE 개발 환경 구성 
-     - SpringBoot hands-on [ Hands-On 문서보기](./springboot_hands_on.md)       
+     - SpringBoot hands-on [ Hands-On 문서보기 ](./springboot_hands_on.md)       
 
      <br/>
 
