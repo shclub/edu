@@ -16,15 +16,17 @@ SpringBoot 활용 방법에 대해서 실습한다.
 
 7. HTTP 와 Rest Controller
 
-8. 테스트 작성하기
+8. 서비스와 트랜잭션, 그리고 롤백
 
-9. 댓글 서비스 만들기
+9. 테스트 작성하기
 
-10. IoC 와 DI
+10. 댓글 서비스 만들기
 
-11. AOP
+11. IoC 와 DI
 
-12. Object Mapper
+12. AOP
+
+13. Object Mapper
 
 <br/>
 
@@ -1465,7 +1467,7 @@ New Article 링크가 생성 된것을 확인 할 수 있다.
 
 <br/>
 
-새글 저장후에 상세 페이지로 redirect 한다.  
+새글 저장 후에 상세 페이지로 redirect 한다.  
 
 ArticleController 에 리다이렉트를 추가 한다.  
 
@@ -1999,11 +2001,547 @@ public class Article {
 
 <br/>
 
-다양한 client 들과 서버 연동을 위해서 데이터를 주고 받는 방식으로 Rest 방식을 최근에 많이 사용 합니다. 기존에는 xml 방식을 사용하였습니다.  
+다양한 client 들과 서버 연동을 위해서 데이터를 주고 받는 방식으로 Rest 방식을 최근에 많이 사용 합니다.   
+
+기존에는 xml 방식을 사용하였습니다.  
 
 <img src="./assets/rest_api_xml.png" style="width: 80%; height: auto;"/>  
 
 최근에는 JSON 방식으로 데이터 포맷을 사용합니다.  
 
 <img src="./assets/rest_api_json.png" style="width: 80%; height: auto;"/>  
+
+JSON은 Key , Value 형태를 중괄호 형태로 표현합니다.  
+json안에 depth를 더 추가하여 array 형태로도 구현이 가능합니다.  
+
+<img src="./assets/json_format.png" style="width: 80%; height: auto;"/>  
+
+
+
+API를 테스트 하기 위한 사이트로 https://jsonplaceholder.typicode.com/ 를 사용을 할 예정이며 postman이 있으면 postman을 사용 해도 됩니다.  
+
+chrome 에서 세트트 하기 위해서 talend api 확장 프로그램을 설치합니다.  
+구글에서 `talend api 확장 프로그램`으로 검색을 합니다.
+
+<img src="./assets/talend_api.png" style="width: 80%; height: auto;"/>  
+
+chrome Appstore 를 선택 하고 chrome에 추가 버튼을 클릭하여 extension을 설치 합니다.
+
+<img src="./assets/talend_api2.png" style="width: 80%; height: auto;"/>    
+
+아래와 같이  chrome 에 설치가 된 것을 확인 할 수 있습니다.  
+
+<img src="./assets/talend_api3.png" style="width: 60%; height: auto;"/>  
+
+퍼즐 모양을 클릭한다.  
+
+<img src="./assets/chrome_extensions.png" style="width: 60%; height: auto;"/>  
+
+Talend API Test를 클릭하여 Pin을 설정하면 항상 메뉴에 나오게 된다.  
+
+<img src="./assets/chrome_extension_pin.png" style="width: 60%; height: auto;"/>  
+
+
+체크 박스 같은 아이콘이 나오고 클릭을 하면 아래 처럼 welcome 화면이 나옵니다.  
+
+<img src="./assets/talend_welcome.png" style="width: 80%; height: auto;"/>  
+
+하단의 Fee는 버튼을 클릭하면 talend api 확장 프로그램이 실행이 됩니다.  
+
+<img src="./assets/talend_start.png" style="width: 80%; height: auto;"/>  
+
+
+이제 테스트를 실행해봅니다.  
+talend API Test에서 method는 GET 으로 하고  https://jsonplaceholder.typicode.com/posts 를 입력하고 send를 클릭합니다.  
+
+<img src="./assets/talend_get.png" style="width: 80%; height: auto;"/>  
+
+response : 200 은 응답이 성공 했음을 의미합니다.  
+
+데이터를 보면  게시글 1번으로 된 게시글의 제목과 내용이 나오는 것을 볼수 있습니다.  
+
+```json
+...
+{
+"userId": 1,
+"id": 1,
+"title": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit",
+"body": "quia et suscipit\nsuscipit recusandae consequuntur expedita et cum\nreprehenderit molestiae ut ut quas totam\nnostrum rerum est autem sunt rem eveniet architecto"
+},
+...
+```  
+
+다시 한번 https://jsonplaceholder.typicode.com/posts/101 값을 일력하고 send 버튼을 클릭합니다.  
+
+<img src="./assets/talend_get_404.png" style="width: 80%; height: auto;"/>  
+
+response : 404 가 return 이 되고 찾을수  없는 페이지를 요청했다는 의미이다.  
+
+<br/>
+
+http tab을 클릭해보면 http header의 값을 볼수 있다.  
+
+<img src="./assets/talend_get_http.png" style="width: 80%; height: auto;"/>  
+
+더 아래로 내려보면 response body를 볼 수 있다.    
+
+<img src="./assets/talend_get_http_body.png
+" style="width: 80%; height: auto;"/>  
+
+<br/> 
+
+post로 데이터를 전송해봅니다.  
+
+method는  post 로 변경하고 url은 아래와 같습니다. 
+https://jsonplaceholder.typicode.com/posts  
+
+request 데이터가 JSON형식으로 필요합니다.    
+
+```json
+{
+    "title": "test 1",
+    "body" : "교육용입니다."
+}
+```
+아래 샘플을 참고 하였습니다.  
+
+```javascript
+fetch('https://jsonplaceholder.typicode.com/posts', {
+  method: 'POST',
+  body: JSON.stringify({
+    title: 'foo',
+    body: 'bar',
+    userId: 1,
+  }),
+  headers: {
+    'Content-type': 'application/json; charset=UTF-8',
+  },
+})
+  .then((response) => response.json())
+  .then((json) => console.log(json));
+```  
+
+데이터를 입력을 하고 send 버튼을 클릭합니다.  
+
+
+<img src="./assets/talend_post1.png
+" style="width: 80%; height: auto;"/>    
+
+response 201 : 데이터 생성이 성공했다는 의미 이다.  
+
+
+생성된 데이터가 response 로 return 이 됩니다.  
+
+```json
+{
+    "title": "test 1",
+    "body": "교육용입니다.",
+    "id": 101
+}
+```
+
+실패 경우를 테스트 하기 위해서  request body 값을 변경 하고 보내봅니다.  ( key 값에 따옴표 제거)
+
+
+```json
+{
+    title : "test 1",
+    body : "교육용입니다."
+}
+```  
+
+reponse 500 : 서버 내부 오류 ( Internal Server Error) 를 나타낸다.  ( 여기서는 JSON 파싱 오류 )  
+
+<br/>
+
+이제 데이터를 수정해 봅니다.  
+
+method를 patch ( put )로 선택을 하고 게시글에 1번을 변경해봅니다.  
+
+
+<img src="./assets/talend_patch1.png
+" style="width: 80%; height: auto;"/>  
+
+
+200 응답 메시지를 받았고 response Body에 아래와 같이 변경 된것 을 확인 할 수 있습니다.  
+
+```json
+{
+    "userId": 1,
+    "id": 1,
+    "title": "test 1",
+    "body": "수정합니다."
+}
+```  
+
+<br/>
+
+데이터를 삭제해 봅니다.  
+
+method를 DELETE 로 선택을 하고 게시글에 100번을 삭제해봅니다.  
+
+<img src="./assets/talend_delete1.png
+" style="width: 80%; height: auto;"/>  
+
+response : 200 이 나오면 정상적으로 삭제가 된 것입니다.  
+
+요약해보면  전체 구조는 JSON 포맷으로 HTTP를 통해서
+데이터는 주고 받습니다.
+
+<img src="./assets/rest_summary.png
+" style="width: 80%; height: auto;"/>  
+
+상태코드는 5가지 종류로 나눌수 있습니다.  
+  
+<img src="./assets/rest_response.png
+" style="width: 80%; height: auto;"/>  
+
+<br/>
+
+###  HTTP 와 Rest Controller
+
+<br/>
+
+Article 데이터 CRUD를 위한, REST API를 만드는 실습을 합니다.  
+
+<img src="./assets/rest_api1.png
+" style="width: 80%; height: auto;"/>  
+
+<br/>
+RestController를 사용 하여 구현을 합니다.  
+
+<img src="./assets/rest_api2.png
+" style="width: 80%; height: auto;"/>  
+
+
+hello rest api를 만들기 위해 api라는 이름의 패키지를 생성합니다.  
+
+firstproject 패키지 위에서 마우스 오른쪽 버튼을 누른후 패키지를 선택을 하고 api라는 이름으로 생성을 합니다.  
+
+<img src="./assets/rest_api3.png
+" style="width: 80%; height: auto;"/>  
+
+Rest Controller java 화일을 생성합니다.
+- Rest Controller : Rest API용 컨트롤러이고 JSON 반환  
+- Controller : view template page 반환  
+
+api 폴더 아래에 생성합니다.  
+
+<img src="./assets/rest_api4.png
+" style="width: 80%; height: auto;"/>  
+
+../api/FirstApiController
+```java
+package com.kt.edu.firstproject.api;
+
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController // Rest API용 컨트롤러이고 JSON 반환 
+public class FirstApiController {
+    @GetMapping("/api/hello")
+    public String hello() {
+        return "hello world!";
+    }
+}
+```  
+
+프로젝트를 실행을 하고 Talend API로 테스트를 합니다.  
+method는 GET , url은 http://localhost:8080/api/hello 입니다.  
+
+
+<img src="./assets/rest_api5.png
+" style="width: 80%; height: auto;"/>  
+
+http tab에서 보면 hello world! 가 나온 것을 확인 할 수 있습니다.  
+
+<br/>
+
+Controller vs Rest Controller  
+
+일반 controller인  hi라는 api를 Talend 로 실행해보면 응답값이 html로 보내집니다.
+
+<img src="./assets/rest_api6.png
+" style="width: 80%; height: auto;"/>  
+
+
+<br/>
+
+Rest API로 Get을 구현해 봅니다.  
+ArticleApiController class를 생성합니다.  
+아래 코드를 복사하여 붙여 넣기 합니다.  
+
+
+../api/ArticleApiController
+```java
+package com.kt.edu.firstproject.api;
+
+import com.kt.edu.firstproject.entity.Article;
+import com.kt.edu.firstproject.repository.ArticleRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
+
+@RestController // rest api용 컨트롤러이며 데이터(JSON) 반환
+public class ArticleApiController {
+    @Autowired // DI : 외부에서 가져온다는 의미
+    private ArticleRepository articleRepository;
+    // GET
+    @GetMapping("/api/articles")
+    public List<Article> index() {
+        return articleRepository.findAll();
+    }
+    @GetMapping("/api/articles/{id}")  //단일 record 조회
+    public Article show(@PathVariable Long id) {
+        return articleRepository.findById(id).orElse(null);
+    }
+    // POST
+    // PATCH
+    // DELETE
+}
+```  
+
+재기동을 하고 Talend 에서 GET Method로 http://localhost:8080/api/articles 를 호출을 하면
+
+return 값으로 아래와 같은 값이 JSON으로 나오는 것을 볼수 있습니다.  
+
+<img src="./assets/rest_api7.png
+" style="width: 80%; height: auto;"/>  
+
+단일 값도 가져오는것을 테스트 할 수 있다.  
+
+
+<br/>
+
+Rest API로 Post를 사용해 데이터를 생성 해 봅니다.  
+
+아래 코드를 복사하여 붙여 넣기 합니다.  
+
+PostMapping을 사용하며  JSON으로 Request를 던지기 위해서는 @RequestBody를 넣어줍니다.  
+
+../api/ArticleApiController
+```java
+...
+@RestController
+public class ArticleApiController {
+    ...
+    // POST
+    @PostMapping("/api/articles")
+    public Article create(@RequestBody ArticleForm dto) {
+        Article article = dto.toEntity(); // article 저장
+        return articleRepository.save(article);
+    }
+    // PATCH
+    // DELETE
+}
+```
+
+<br/>
+
+재기동을 하고 Talend 에서 POST Method로 url은 http://localhost:8080/api/articles 로 호출을 합니다.  
+Request Body는  아래 json을 사용 합니다.  
+
+```json
+{
+    "title": "rest api 1",
+    "content" : "json test 합니다."
+}
+```  
+
+<img src="./assets/rest_api8.png
+" style="width: 80%; height: auto;"/>  
+
+return 값으로 위와 같은 값이 JSON으로 나오는 것을 볼수 있습니다.  
+DB pk가 오류가 나면 몇번 더 실행합니다. ( pk의 identity 값이 충돌하는 이슈로 데이터를 auto identity로 생성하지 않아서 발생  )  
+
+
+<br/>
+
+Rest API로 Patch를 사용해 데이터를 수정 해 봅니다.  
+
+아래 코드를 복사하여 붙여 넣기 합니다.  
+
+PatchMapping을 사용하며  JSON으로 Request를 던지기 위해서는 @RequestBody를 넣어줍니다.   
+
+데이터와 status값을 전달 하기 위해서는 ResponseEntity를 사용합니다.  
+
+<img src="./assets/rest_api2.png
+" style="width: 80%; height: auto;"/>  
+
+../api/ArticleApiController
+```java
+...
+@Slf4j  //로그 추가
+@RestController
+public class ArticleApiController {
+    ...
+    // PATCH
+    @PatchMapping("/api/articles/{id}")
+    public ResponseEntity<Article> update(@PathVariable Long id,
+                                          @RequestBody ArticleForm dto) {
+        // 1: DTO -> 엔티티
+        Article article = dto.toEntity();
+        log.info("id: {}, article: {}", id, article.toString());
+        // 2: 타겟 조회
+        Article target = articleRepository.findById(id).orElse(null);
+        // 3: 잘못된 요청 처리
+        if (target == null || id != article.getId()) {
+            // 400, 잘못된 요청 응답!
+            log.info("잘못된 요청! id: {}, article: {}", id, article.toString());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        }
+        // 4: 업데이트 및 정상 응답(200)
+        // key와 value가 있는 경우만 update하는 로직 추가
+        target.patch(article);
+        Article updated = articleRepository.save(target);
+        return ResponseEntity.status(HttpStatus.OK).body(updated);  // body 에 데이터를 넣어서 보냅니다.
+    }
+    // DELETE
+}  
+```  
+
+<br/>
+
+patch 함수를 구현하기 위해서 Article entity를 아래와 같이 수정합니다.  
+ 
+../entity/Article
+```java
+package com.kt.edu.firstproject.entity;
+...
+public class Article {
+    ...
+    // 데이터가 있는 경우만 Update . 
+    public void patch(Article article) {
+        if (article.title != null)
+            this.title = article.title;
+        if (article.content != null)
+            this.content = article.content;
+    }
+}
+```  
+
+<br/>
+
+재기동을 하고 Talend 에서 PATCH Method로 url은 http://localhost:8080/api/articles/1 로 호출을 합니다.  
+Request Body는  아래 json을 사용 합니다.  
+
+```json
+{
+    "id" : 3,
+    "title": "rest api 1",
+    "content" : "json test 합니다."
+}
+```  
+
+400에러가 발생을 합니다.  
+
+<img src="./assets/rest_api9.png
+" style="width: 80%; height: auto;"/>  
+
+IntelliJ 콘솔에 가면 아래와 같이 에러가 발생 한 내용을 확인 할 수 있습니다.  
+
+<img src="./assets/rest_api10.png
+" style="width: 80%; height: auto;"/>  
+
+Request Body 값을 변경을 하고 api를 다시 호출해 봅니다.  
+
+```json
+{
+    "id" : 1,
+    "title": "rest api 1",
+    "content" : "json test 합니다."
+}
+```  
+
+정상적으로 변경이 된 것을 확 인 할수 있습니다.   
+
+<img src="./assets/rest_api11.png
+" style="width: 80%; height: auto;"/>  
+
+<br/>
+
+Rest API로 Delete를 사용해 데이터를 삭제 해 봅니다.  
+
+아래 코드를 복사하여 붙여 넣기 합니다.  
+
+DeleteMapping을 사용합니다.  
+  
+../api/ArticleApiController
+```java
+...
+@Slf4j
+@RestController
+public class ArticleApiController {
+    ...
+    // DELETE
+    @DeleteMapping("/api/articles/{id}")
+    public ResponseEntity<Article> delete(@PathVariable Long id) {
+        // 대상 찾기
+        Article target = articleRepository.findById(id).orElse(null);
+        // 잘못된 요청 처리
+        if (target == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        }
+        // 대상 삭제
+        articleRepository.delete(target);
+        return ResponseEntity.status(HttpStatus.OK).build();
+    }
+}
+```  
+
+재기동을 하고 Talend 에서 DELETE Method로 url은 http://localhost:8080/api/articles/1 로 호출을 합니다.  
+
+<img src="./assets/rest_api12.png
+" style="width: 80%; height: auto;"/>  
+
+데이터가 삭제 된 것을 확인 할 수 있습니다.  
+
+
+<br/>
+
+###  서비스와 트랜잭션, 그리고 롤백
+
+<br/>
+
+서비스 계층을 추가하여, 기존 Article Rest API를 리팩토링 합니다.  
+
+<img src="./assets/transaction1.png
+" style="width: 80%; height: auto;"/>    
+
+../api/ArticleApiController
+```java
+package com.kt.edu.firstproject.api;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
+@Slf4j
+@RestController
+public
+class ArticleApiController {
+    @Autowired
+    private ArticleService articleService;
+}
+```  
+
+service 란?  
+
+../serivce/ArticleService
+```java
+package com.example.firstproject.service;
+import com.example.firstproject.repository.ArticleRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+@Service
+public class ArticleService {
+    @Autowired
+    private ArticleRepository articleRepository;
+}
+
+```
+
 
