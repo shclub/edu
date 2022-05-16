@@ -2085,8 +2085,7 @@ http tab을 클릭해보면 http header의 값을 볼수 있다.
 
 더 아래로 내려보면 response body를 볼 수 있다.    
 
-<img src="./assets/talend_get_http_body.png
-" style="width: 80%; height: auto;"/>  
+<img src="./assets/talend_get_http_body.png" style="width: 80%; height: auto;"/>  
 
 <br/> 
 
@@ -2124,8 +2123,7 @@ fetch('https://jsonplaceholder.typicode.com/posts', {
 데이터를 입력을 하고 send 버튼을 클릭합니다.  
 
 
-<img src="./assets/talend_post1.png
-" style="width: 80%; height: auto;"/>    
+<img src="./assets/talend_post1.png" style="width: 80%; height: auto;"/>    
 
 response 201 : 데이터 생성이 성공했다는 의미 이다.  
 
@@ -2143,7 +2141,7 @@ response 201 : 데이터 생성이 성공했다는 의미 이다.
 실패 경우를 테스트 하기 위해서  request body 값을 변경 하고 보내봅니다.  ( key 값에 따옴표 제거)
 
 
-```json
+```
 {
     title : "test 1",
     body : "교육용입니다."
@@ -2159,8 +2157,7 @@ reponse 500 : 서버 내부 오류 ( Internal Server Error) 를 나타낸다.  (
 method를 patch ( put )로 선택을 하고 게시글에 1번을 변경해봅니다.  
 
 
-<img src="./assets/talend_patch1.png
-" style="width: 80%; height: auto;"/>  
+<img src="./assets/talend_patch1.png" style="width: 80%; height: auto;"/>  
 
 
 200 응답 메시지를 받았고 response Body에 아래와 같이 변경 된것 을 확인 할 수 있습니다.  
