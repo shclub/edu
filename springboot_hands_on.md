@@ -2508,8 +2508,35 @@ public class ArticleApiController {
 
 서비스 계층을 추가하여, 기존 Article Rest API를 리팩토링 합니다.  
 
+service 는 RestController 와 Repository 사이에 위치하며 처리 업무의 순서를 총괄한다.  
+
 <img src="./assets/transaction1.png
 " style="width: 80%; height: auto;"/>    
+
+
+트랜잭션 이란 모두 성공되어야 하는 일련의 과정이다. 
+
+<img src="./assets/transaction2.png
+" style="width: 80%; height: auto;"/>    
+
+
+<img src="./assets/transaction3.png
+" style="width: 80%; height: auto;"/>   
+
+
+실패시 원래 상태로 돌리는 것을 롤백이라고 한다.  
+
+<img src="./assets/transaction4.png
+" style="width: 80%; height: auto;"/>    
+
+기존의 RestController는 Client 의 요청을 처리하고 repository에 db 작업을 명령합니다.  
+
+webservice는 서비스 계층을 통해 client 요청과 db처리를 분업화 합니다.  
+
+<br/>
+ArticleApiController 에 서비스 계층을 추가해 봅니다.  
+
+해당 코드를 모두 주석 처리하고 아래과 같이 수정합니다.  
 
 ../api/ArticleApiController
 ```java
@@ -2522,26 +2549,131 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 public
 class ArticleApiController {
-    @Autowired
+    @Autowired // DI, 생성 객체를 가져와 연결!
     private ArticleService articleService;
 }
 ```  
 
-service 란?  
+서비스 패키지를 생성을 합니다.  
+
+<img src="./assets/transaction5.png
+" style="width: 80%; height: auto;"/>   
+
+ArticleService 를 아래와 같이 생성합니다.  
 
 ../serivce/ArticleService
 ```java
-package com.example.firstproject.service;
-import com.example.firstproject.repository.ArticleRepository;
+package com.kt.edu.firstproject.service;
+
+import com.kt.edu.firstproject.repository.ArticleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+@Service // 해당 클래스를 서비스로 인식하여 스프링부트에 객체를 생성(등록)
+public class ArticleService {
+    @Autowired
+    private ArticleRepository articleRepository;
+}
+```
+
+<br/>
+
+리팩토링, Article 목록 조회
+
+../api/ArticleApiController
+```java
+...
+@Slf4j
+@RestController
+public class ArticleApiController {
+    @Autowired
+    private ArticleService articleService;
+    // GET
+    @GetMapping("/api/articles")
+    public List<Article> index() {
+        return articleService.index();
+    }
+}
+```  
+
+../service/ArticleService
+```java
+package com.kt.edu.firstproject.service;
+
+import com.kt.edu.firstproject.entity.Article;
+import com.kt.edu.firstproject.repository.ArticleRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import java.util.List;
 
 @Service
 public class ArticleService {
     @Autowired
     private ArticleRepository articleRepository;
+    public List<Article> index() {
+        return articleRepository.findAll();
+    }
 }
+```  
 
-```
+재기동하고 Talend에서  해당 서비스를 호출해 봅니다.  
+
+<img src="./assets/transaction6.png
+" style="width: 80%; height: auto;"/> 
+
+3건의 데이터가 정상 조회가 됩니다.  
+
+<br/> 
+
+데이터 단건 조회를 수정해 봅니다.  
 
 
+../api/ArticleApiController
+```java
+...
+@Slf4j
+@RestController
+public class ArticleApiController {
+    @Autowired
+    private ArticleService articleService;
+    // GET
+    @GetMapping("/api/articles")
+    public List<Article> index() {
+        return articleService.index();
+    }
+    @GetMapping("/api/articles/{id}")
+    public Article show(@PathVariable Long id) {
+        return articleService.findById(id);
+    }
+}
+```  
+
+../service/ArticleService
+```java
+package com.kt.edu.firstproject.service;
+
+import com.kt.edu.firstproject.entity.Article;
+import com.kt.edu.firstproject.repository.ArticleRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import java.util.List;
+
+@Service
+public class ArticleService {
+    @Autowired
+    private ArticleRepository articleRepository;
+    public List<Article> index() {
+        return articleRepository.findAll();
+    }
+    public Article findById(Long id) {
+        return articleRepository.findById(id).orElse(null);
+    }
+}
+``` 
+
+재기동하고 Talend에서  해당 서비스를 호출해 봅니다.  
+
+<img src="./assets/transaction7.png
+" style="width: 80%; height: auto;"/> 
+
+1건의 데이터가 정상 조회가 됩니다.  
