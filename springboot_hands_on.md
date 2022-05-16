@@ -1635,7 +1635,7 @@ Edit 메뉴를 클릭하면 수정폼으로 이동한다.
 
 전체 흐름은 다음과 같다.  
 
-<img src="./assets/modify3.png" style="width: 80%; height: auto;"/>  
+<img src="./assets/modify4.png" style="width: 80%; height: auto;"/>  
 
 <br/>
 
@@ -1757,7 +1757,7 @@ import lombok.ToString;
 @ToString
 public class ArticleForm {
 
-    private Long id;
+    private Long id; //신규로 추가
     private String title;
     private String content;
 
@@ -1806,7 +1806,7 @@ public class ArticleController {
 <img src="./assets/modify9.png" style="width: 80%; height: auto;"/>  
 
 데이터를 수정해 보고 확인합니다.  
-웹 브라우저에서 http://localhost:8080/articles 를 입력하고 원하는 데이터를 선택하여 수정으 해보고 정상적으로 되는지 확인합니다.  
+웹 브라우저에서 http://localhost:8080/articles 를 입력하고 원하는 데이터를 선택하여 수정을 해보고 정상적으로 되는지 확인합니다.  
 
 <br/>
 
@@ -2018,9 +2018,9 @@ json안에 depth를 더 추가하여 array 형태로도 구현이 가능합니�
 
 
 
-API를 테스트 하기 위한 사이트로 https://jsonplaceholder.typicode.com/ 를 사용을 할 예정이며 postman이 있으면 postman을 사용 해도 됩니다.  
+API를 테스트 하기 위한 사이트로 https://jsonplaceholder.typicode.com/ 를 사용을 할 예정이며   
 
-chrome 에서 세트트 하기 위해서 talend api 확장 프로그램을 설치합니다.  
+chrome 에서 API 테스트 하기 위한 도구로 talend api 확장 프로그램을 사용합니다.     
 구글에서 `talend api 확장 프로그램`으로 검색을 합니다.
 
 <img src="./assets/talend_api.png" style="width: 80%; height: auto;"/>  
@@ -2177,21 +2177,18 @@ method를 patch ( put )로 선택을 하고 게시글에 1번을 변경해봅니
 
 method를 DELETE 로 선택을 하고 게시글에 100번을 삭제해봅니다.  
 
-<img src="./assets/talend_delete1.png
-" style="width: 80%; height: auto;"/>  
+<img src="./assets/talend_delete1.png" style="width: 80%; height: auto;"/>  
 
 response : 200 이 나오면 정상적으로 삭제가 된 것입니다.  
 
 요약해보면  전체 구조는 JSON 포맷으로 HTTP를 통해서
 데이터는 주고 받습니다.
 
-<img src="./assets/rest_summary.png
-" style="width: 80%; height: auto;"/>  
+<img src="./assets/rest_summary.png" style="width: 80%; height: auto;"/>  
 
 상태코드는 5가지 종류로 나눌수 있습니다.  
   
-<img src="./assets/rest_response.png
-" style="width: 80%; height: auto;"/>  
+<img src="./assets/rest_response.png" style="width: 80%; height: auto;"/>  
 
 <br/>
 
@@ -2201,22 +2198,19 @@ response : 200 이 나오면 정상적으로 삭제가 된 것입니다.
 
 Article 데이터 CRUD를 위한, REST API를 만드는 실습을 합니다.  
 
-<img src="./assets/rest_api1.png
-" style="width: 80%; height: auto;"/>  
+<img src="./assets/rest_api1.png" style="width: 80%; height: auto;"/>  
 
 <br/>
 RestController를 사용 하여 구현을 합니다.  
 
-<img src="./assets/rest_api2.png
-" style="width: 80%; height: auto;"/>  
+<img src="./assets/rest_api2.png" style="width: 80%; height: auto;"/>  
 
 
 hello rest api를 만들기 위해 api라는 이름의 패키지를 생성합니다.  
 
 firstproject 패키지 위에서 마우스 오른쪽 버튼을 누른후 패키지를 선택을 하고 api라는 이름으로 생성을 합니다.  
 
-<img src="./assets/rest_api3.png
-" style="width: 80%; height: auto;"/>  
+<img src="./assets/rest_api3.png" style="width: 80%; height: auto;"/>  
 
 Rest Controller java 화일을 생성합니다.
 - Rest Controller : Rest API용 컨트롤러이고 JSON 반환  
@@ -2224,8 +2218,7 @@ Rest Controller java 화일을 생성합니다.
 
 api 폴더 아래에 생성합니다.  
 
-<img src="./assets/rest_api4.png
-" style="width: 80%; height: auto;"/>  
+<img src="./assets/rest_api4.png" style="width: 80%; height: auto;"/>  
 
 ../api/FirstApiController
 ```java
@@ -2247,8 +2240,7 @@ public class FirstApiController {
 method는 GET , url은 http://localhost:8080/api/hello 입니다.  
 
 
-<img src="./assets/rest_api5.png
-" style="width: 80%; height: auto;"/>  
+<img src="./assets/rest_api5.png" style="width: 80%; height: auto;"/>  
 
 http tab에서 보면 hello world! 가 나온 것을 확인 할 수 있습니다.  
 
@@ -2258,8 +2250,7 @@ Controller vs Rest Controller
 
 일반 controller인  hi라는 api를 Talend 로 실행해보면 응답값이 html로 보내집니다.
 
-<img src="./assets/rest_api6.png
-" style="width: 80%; height: auto;"/>  
+<img src="./assets/rest_api6.png" style="width: 80%; height: auto;"/>  
 
 
 <br/>
@@ -2305,8 +2296,7 @@ public class ArticleApiController {
 
 return 값으로 아래와 같은 값이 JSON으로 나오는 것을 볼수 있습니다.  
 
-<img src="./assets/rest_api7.png
-" style="width: 80%; height: auto;"/>  
+<img src="./assets/rest_api7.png" style="width: 80%; height: auto;"/>  
 
 단일 값도 가져오는것을 테스트 할 수 있다.  
 
@@ -2348,8 +2338,7 @@ Request Body는  아래 json을 사용 합니다.
 }
 ```  
 
-<img src="./assets/rest_api8.png
-" style="width: 80%; height: auto;"/>  
+<img src="./assets/rest_api8.png" style="width: 80%; height: auto;"/>  
 
 return 값으로 위와 같은 값이 JSON으로 나오는 것을 볼수 있습니다.  
 DB pk가 오류가 나면 몇번 더 실행합니다. ( pk의 identity 값이 충돌하는 이슈로 데이터를 auto identity로 생성하지 않아서 발생  )  
@@ -2365,8 +2354,7 @@ PatchMapping을 사용하며  JSON으로 Request를 던지기 위해서는 @Requ
 
 데이터와 status값을 전달 하기 위해서는 ResponseEntity를 사용합니다.  
 
-<img src="./assets/rest_api2.png
-" style="width: 80%; height: auto;"/>  
+<img src="./assets/rest_api2.png" style="width: 80%; height: auto;"/>  
 
 ../api/ArticleApiController
 ```java
@@ -2435,13 +2423,11 @@ Request Body는  아래 json을 사용 합니다.
 
 400에러가 발생을 합니다.  
 
-<img src="./assets/rest_api9.png
-" style="width: 80%; height: auto;"/>  
+<img src="./assets/rest_api9.png" style="width: 80%; height: auto;"/>  
 
 IntelliJ 콘솔에 가면 아래와 같이 에러가 발생 한 내용을 확인 할 수 있습니다.  
 
-<img src="./assets/rest_api10.png
-" style="width: 80%; height: auto;"/>  
+<img src="./assets/rest_api10.png" style="width: 80%; height: auto;"/>  
 
 Request Body 값을 변경을 하고 api를 다시 호출해 봅니다.  
 
@@ -2455,8 +2441,7 @@ Request Body 값을 변경을 하고 api를 다시 호출해 봅니다.
 
 정상적으로 변경이 된 것을 확 인 할수 있습니다.   
 
-<img src="./assets/rest_api11.png
-" style="width: 80%; height: auto;"/>  
+<img src="./assets/rest_api11.png" style="width: 80%; height: auto;"/>  
 
 <br/>
 
@@ -2491,8 +2476,7 @@ public class ArticleApiController {
 
 재기동을 하고 Talend 에서 DELETE Method로 url은 http://localhost:8080/api/articles/1 로 호출을 합니다.  
 
-<img src="./assets/rest_api12.png
-" style="width: 80%; height: auto;"/>  
+<img src="./assets/rest_api12.png" style="width: 80%; height: auto;"/>  
 
 데이터가 삭제 된 것을 확인 할 수 있습니다.  
 
@@ -2507,24 +2491,20 @@ public class ArticleApiController {
 
 service 는 RestController 와 Repository 사이에 위치하며 처리 업무의 순서를 총괄한다.  
 
-<img src="./assets/transaction1.png
-" style="width: 80%; height: auto;"/>    
+<img src="./assets/transaction1.png" style="width: 80%; height: auto;"/>    
 
 
 트랜잭션 이란 모두 성공되어야 하는 일련의 과정이다. 
 
-<img src="./assets/transaction2.png
-" style="width: 80%; height: auto;"/>    
+<img src="./assets/transaction2.png" style="width: 80%; height: auto;"/>    
 
 
-<img src="./assets/transaction3.png
-" style="width: 80%; height: auto;"/>   
+<img src="./assets/transaction3.png" style="width: 80%; height: auto;"/>   
 
 
 실패시 원래 상태로 돌리는 것을 롤백이라고 한다.  
 
-<img src="./assets/transaction4.png
-" style="width: 80%; height: auto;"/>    
+<img src="./assets/transaction4.png" style="width: 80%; height: auto;"/>    
 
 기존의 RestController는 Client 의 요청을 처리하고 repository에 db 작업을 명령합니다.  
 
@@ -2553,8 +2533,7 @@ class ArticleApiController {
 
 서비스 패키지를 생성을 합니다.  
 
-<img src="./assets/transaction5.png
-" style="width: 80%; height: auto;"/>   
+<img src="./assets/transaction5.png" style="width: 80%; height: auto;"/>   
 
 ArticleService 를 아래와 같이 생성합니다.  
 
@@ -2615,8 +2594,7 @@ public class ArticleService {
 
 재기동하고 Talend에서  해당 서비스를 호출해 봅니다.  
 
-<img src="./assets/transaction6.png
-" style="width: 80%; height: auto;"/> 
+<img src="./assets/transaction6.png" style="width: 80%; height: auto;"/> 
 
 3건의 데이터가 정상 조회가 됩니다.  
 
@@ -2670,7 +2648,6 @@ public class ArticleService {
 
 재기동하고 Talend에서  해당 서비스를 호출해 봅니다.  
 
-<img src="./assets/transaction7.png
-" style="width: 80%; height: auto;"/> 
+<img src="./assets/transaction7.png" style="width: 80%; height: auto;"/> 
 
 1건의 데이터가 정상 조회가 됩니다.  
