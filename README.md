@@ -1,6 +1,6 @@
 # 본 과정에 대해  ( 초급 과정 )
  
-본 교육 과정은 초급 아키텍트 양성 과정으로 kt 카라반 학습체와 연동하여 진행
+본 교육 과정은 초급 아키텍트 양성 과정으로 kt 카라반 학습체와 연동하여 
 실습 위주로 진행을 하며 직접 설치부터 설정 및 활용까지 수행한다.   
 
 문의 :  이석환 ( seokhwan.lee@kt.com / shclub@gmail.com )
@@ -44,24 +44,30 @@
      - k3s 위치 변경
      - Github Action , workflow 사용 ( GoodBye Jenkins )
      - 모니터링 솔루션 연동 ( Datadog ) 
-     
+     - 샘플 소스 : [ 소스 보기 ](https://github.com/shclub/edu7)  
+
      <br/>
 
 6. Chapter 6 : 6주차    ( [가이드 문서보기](./chapter6.md) ) 
      - SpringBoot 개념 설명 
      - IDE 개발 환경 구성 
      - SpringBoot 전체 hands-on [ Hands-On 문서보기 ](./springboot_hands_on.md)       
-     - SpringBoot Data JPA hands-on [ Hands-On 문서보기 ](./springboot_hands_on_jpa.md) 
+     - SpringBoot Data JPA hands-on [ Hands-On 문서보기 ](./springboot_hands_on_jpa.md)
+     - 샘플 소스 : [ 소스 보기 ](https://github.com/shclub/edu9)  
+ 
      <br/>
 
 7. Chapter 7 : 7주차  
-     - SpringBoot 실습 및 k8s 배포 실습  
+     - SpringBoot 실습  
      - SpringBoot 전체 hands-on [ Hands-On 문서보기 ](./springboot_hands_on.md)  
      - SpringBoot Data Mybatis hands-on [ Hands-On 문서보기 ](./springboot_hands_on_mybatis.md) 
      - SpringBoot Data JDBC hands-on [ Hands-On 문서보기 ](./springboot_hands_on_jdbc.md) 
+
      <br/>
 
 8. Chapter 8 : 8주차  
+     - k8s 배포 실습 ( SpringBoot )
+     - DataDog 연동 ( SpringBoot )
      - Summary
 
 
@@ -70,13 +76,12 @@
 # 중급 과정
 
  
-중급 과정에서는 kubernetes 기반으로 좀더 난이도가 있는 과정이고 실제 프로젝트에서 유용한
-기술 위주로 교육 예정 
+중급 과정에서는 kubernetes 기반으로 좀더 난이도가 있는 과정이며, 실제 프로젝트에서 유용한 기술 위주로 교육 예정 
 
 <br/>
 
 9. Chapter 9 : 9주차  
-     - k8s에 Jenkins 설치 및 설정 
+     - k8s에 Jenkins 설치 및 설정 ( OKD 4.6 )
      - Jenkins Master/Slave 구현, GitHub , Podman 연동 
      - skaffold를 사용한 Jenkins 빌드 Pipeline 생성하여 CI 실습 
      - RBAC 실습 
@@ -98,26 +103,33 @@
 12. Chapter 12 : 12주차 
      - redis/kafka 설치 및 활용 
      - Storage 설정 방법 ( PV/PVC ) 실습 
+     - Object Storage 설치 및 활용 ( Minio )
 
      <br/>
 
 13. Chapter 13 : 13주차
      - SpringBoot 심화 학습  
-
-          : Spring Cloud Stream
-          
+          - Spring Cloud Stream
+     - MSA 패턴 실습
+          - API GW
+          - SAGA
+          - CQRS
 
      <br/>
 
 14. Chapter 14 : 14주차
-     - kubernetes  심화 학습 
+     - kubernetes 심화 학습
+          - ISTIO
+          - CircuitBreak ( Openfeign ) 
 
      <br/>
 
 15. Chapter 15 : 15주차 
-     - 배치프레임웍 Airflow 설치 및 실습
+     - Airflow ( 배치프레임웍 ) 설치 및 실습
 
      <br/>
 
 16. Chapter 16 : 16주차 
      -  Summary
+
+     <br/>
