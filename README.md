@@ -50,13 +50,15 @@
 6. Chapter 6 : 6주차    ( [가이드 문서보기](./chapter6.md) ) 
      - SpringBoot 개념 설명 
      - IDE 개발 환경 구성 
-     - SpringBoot hands-on [ Hands-On 문서보기 ](./springboot_hands_on.md)       
-
+     - SpringBoot 전체 hands-on [ Hands-On 문서보기 ](./springboot_hands_on.md)       
+     - SpringBoot Data JPA hands-on [ Hands-On 문서보기 ](./springboot_hands_on_jpa.md) 
      <br/>
 
 7. Chapter 7 : 7주차  
      - SpringBoot 실습 및 k8s 배포 실습  
-
+     - SpringBoot 전체 hands-on [ Hands-On 문서보기 ](./springboot_hands_on.md)  
+     - SpringBoot Data Mybatis hands-on [ Hands-On 문서보기 ](./springboot_hands_on_mybatis.md) 
+     - SpringBoot Data JDBC hands-on [ Hands-On 문서보기 ](./springboot_hands_on_jdbc.md) 
      <br/>
 
 8. Chapter 8 : 8주차  
