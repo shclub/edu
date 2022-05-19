@@ -4,7 +4,7 @@ SpringBoot 활용 방법에 대해서 실습한다.
 
 1. 뷰 템플릿 과 MVC 패턴
 
-2. SpringBoot JPA hands-on 
+2. SpringBoot Data JPA hands-on 
 
 3. 롬복과 리팩토링
 
@@ -12,19 +12,21 @@ SpringBoot 활용 방법에 대해서 실습한다.
 
 5. HTTP 와 Rest Controller
 
-6. SpringBoot JDBC hands-on 
+6. SpringBoot MyBatis hands-on 
 
-7. 서비스와 트랜잭션, 그리고 롤백
+7. SpringBoot Data JDBC hands-on 
 
-8. 테스트 작성하기
+8. 서비스와 트랜잭션, 그리고 롤백
 
-9. 댓글 서비스 만들기
+9. 테스트 작성하기
 
-10. IoC 와 DI
+10. 댓글 서비스 만들기
 
-11. AOP
+11. IoC 와 DI
 
-12. Object Mapper
+12. AOP
+
+13. Object Mapper
 
 <br/>
 
@@ -296,7 +298,7 @@ Model class를 인식하지 못하여 붉은색으로 표시되며 import class�
 <br/>
 
 
-## SpringBoot JPA hands-on 
+## SpringBoot Data JPA hands-on 
 
 <br/>
 
@@ -425,7 +427,10 @@ Article 화일도 수정한다.
 ```java
 package com.kt.edu.firstproject.entity;
 
-import javax.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
 
 @Entity
 @AllArgsConstructor
