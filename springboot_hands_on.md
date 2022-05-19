@@ -6,27 +6,25 @@ SpringBoot 활용 방법에 대해서 실습한다.
 
 2. SpringBoot Data JPA hands-on 
 
-3. 롬복과 리팩토링
+3. Rest API 와 JSON 
 
-4. Rest API 와 JSON 
+4. HTTP 와 Rest Controller
 
-5. HTTP 와 Rest Controller
+5. SpringBoot MyBatis hands-on 
 
-6. SpringBoot MyBatis hands-on 
+6. SpringBoot Data JDBC hands-on 
 
-7. SpringBoot Data JDBC hands-on 
+7. 서비스와 트랜잭션, 그리고 롤백
 
-8. 서비스와 트랜잭션, 그리고 롤백
+8. 테스트 작성하기
 
-9. 테스트 작성하기
+9. 댓글 서비스 만들기
 
-10. 댓글 서비스 만들기
+10. IoC 와 DI
 
-11. IoC 와 DI
+11. AOP
 
-12. AOP
-
-13. Object Mapper
+12. Object Mapper
 
 <br/>
 
@@ -319,131 +317,6 @@ JPA vs JDBC
 
 참고 : https://gmlwjd9405.github.io/2018/12/25/difference-jdbc-jpa-mybatis.html
 
-
-<br/>
-
-## 롬복과 리팩토링
-
-<br/>
-
-### Lombok 과 Refactoring
-
-<br/>
-
-롬복 ( Lombok ) 이란 소스를 간소화 시켜주는 라이브러리 이다.  
-필수 코드 기입 최소화 및 로깅 기능을 개선 할 수 있다.
-
-<img src="./assets/lombok1.png" style="width: 100%; height: auto;"/>    
-
-리팩토링 ( Refactoring ) 이란 코드의 구조 성능의 개선을 말한다.  
-
-
-롬복을 설치한다.  ( IntelliJ는 이미 포함이 되어 있음 )
-롬복을 설치한 이후에 pom 파일에 아래 내용을 추가한다.  
-
-pom.xml
-```bash
-<dependency>
-    <groupId>org.projectlombok</groupId>
-    <artifactId>lombok</artifactId>
-    <optional>true</optional>
-</dependency>
-```  
-
-<br/>
-
-아래와 같이 추가 하면 된다.  
-
-<img src="./assets/lombok2.png" style="width: 100%; height: auto;"/>   
-
-<br/>
-
-M으로 표시된 아이콘이 보이고  Load Maven Changes 라고 나오는데  이것을 클릭한다.  
-
-<img src="./assets/lombok3.png" style="width: 100%; height: auto;"/>   
-
-화면 하단에 아래와 같이 라이브러리를 다운 받기 시작한다. 시간이 좀 소요된다.    
-
-<img src="./assets/lombok4.png" style="width: 100%; height: auto;"/>  
-
-다운이 완료가 되면 오른쪽에 Maven Tab을 클릭하고 Dependency에 가면 라이브러리가 추가 된것을 확인 할 수 있다.   
-
-<img src="./assets/lombok5.png" style="width: 100%; height: auto;"/>   
-
-<br/>
-
-### Lombok 플러그인 설치
-
-<br/>
-
-Intellij 2020.3 버전부터는 Lombok Plugin을 기본으로 제공하고 있습니다. 
-
-이하 버전에서는 상단 Help > Find Action > Plugins > "lombok" 검색 > Install 클릭하여 설치합니다.
-
-<img src="./assets/lombok6.png" style="width: 100%; height: auto;"/>    
-
-설치가 완료되면 IntelliJ 를 재시작합니다.  
-
-plugins를 활성화 하기 위해서 Preferences > Build, Execution, Deployment > Compiler > Annotation Processors에서 Enable annotation processing을 체크해줍니다. 
-
-<img src="./assets/lombok7.png" style="width: 100%; height: auto;"/>    
-
-
-<br/>
-
-### refactoring
-
-<br/>
-
-Intellij 2020.3 버전부터는 Lombok Plugin을 기본으로 제공하고 있습니다.   
-
-ArticleForm java 화일에서 생성사와 toString을 지우고 Annotation을 추가한다.  
-
-붉은색으로 글씨가 나오기 때문에 import class를 해준다.  
-
-../dto/ArticleForm
-```java
-package com.kt.edu.firstproject.dto;
-
-import com.kt.edu.firstproject.entity.Article;
-
-@AllArgsConstructor
-@ToString
-public class ArticleForm {
-    private String title;
-    private String content;
-
-    public Article toEntity() {
-        return new Article(null,title,content);
-    }
-}
-```  
-
-<br/>
-
-Article 화일도 수정한다.  
-
-../entity/Article
-```java
-package com.kt.edu.firstproject.entity;
-
-import javax.persistence.*;
-
-@Entity
-@AllArgsConstructor
-@ToString
-public class Article {
-    @Id
-    @GeneratedValue
-    private Long id;
-    
-    @Column
-    private String title;
-    
-    @Column
-    private String content;
-}
-```  
 
 
 <br/>

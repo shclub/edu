@@ -5,11 +5,13 @@ SpringBoot JPA 활용 방법에 대해서 실습한다.
 
 1. 데이터 생성 with JPA
 
-2. 데이터 조회 , 수정 및 삭제  with JPA
+2. 롬복과 리팩토링
 
-3. CRUD 와 SQL Query
+3. 데이터 조회 , 수정 및 삭제  with JPA
 
-4. 소스위치 : https://github.com/shclub/edu9
+4. CRUD 와 SQL Query
+
+5. 소스위치 : https://github.com/shclub/edu9
 
 <br/>
 
@@ -156,46 +158,7 @@ Repository는 DB에 전달하고 실행하는 기능을 담당한다.
 
 <br/>
 
-입력 폼을 만듭니다.  
-
-../templates/articles/new.mustache
-```html
-<form class="container" action="/articles/create" method="post">
-    <div class="mb-3">
-        <label class="form-label">제목</label>
-        <!-- 입력값: title -->
-        <input type="text" class="form-control" name="title">
-    </div>
-    <div class="mb-3">
-        <label class="form-label">내용</label>
-        <!-- 입력값: content -->
-        <textarea class="form-control" rows="3" name="content"></textarea>
-    </div>
-    <button type="submit" class="btn btn-primary">Submit</button>
-</form>
-```
-
-<br/>
-
-ArticleController를 생성한다.  
-
-../controller/ArticleController
-```java
-package com.example.firstproject.controller;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-@Controller
-public class ArticleController {
-    @GetMapping("/articles/new")
-    public String newArticleForm() {
-        return "articles/new";
-    }
-}
-```  
-
-<br/>
-
-폼 데이터를 전송한다.    
+폼 데이터를 생성하고 submit을 클릭하여 전송한다.    
 
 ../templates/articles/new.mustache
 ```html
@@ -247,6 +210,15 @@ public class ArticleController {
 
 DTO를 생성한다.  
 
+기본 패키지 위에서 마우스 오른쪽 클릭 후  New -> Package를 선택하고  com.kt.edu.firstproject.dto를 입력하여 패키지를 생성한다.    
+
+<img src="./assets/dto_package_create.png" style="width: 80%; height: auto;"/>  
+
+<br/>
+dto 패키지 위에서 마우스 오른쪽 클릭하여 New -> Class를 선택하고 ArticleForm 이름으로 class 를  생성한다.  
+
+<br/>  
+
 ../dto/ArticleForm
 ```java
 package com.kt.edu.firstproject.dto;
@@ -277,8 +249,8 @@ public class ArticleForm {
 
 <br/>
 
-Entity를 생성한다.  
-
+DTO를 Entity 변환 하기 위해 DTO 인 ArticleForm을 매개 변수로 전달한다.  
+ 
 ../controller/ArticleController
 ```java
 ...
@@ -286,7 +258,7 @@ Entity를 생성한다.
 public class ArticleController {
     ...
     @PostMapping("/articles/create")
-    public String createArticle(ArticleForm form) {
+    public String createArticle(ArticleForm form) { // ArticleForm을 매개 변수로 전달
         System.out.println(form.toString());
         // 1. Dto를 Entity 변환
         Article article = form.toEntity();
@@ -300,18 +272,19 @@ Article 라인에 붉은 전구가 들어오고 클릭하여 create class를 클
 
 <img src="./assets/spring_data_jpa11.png" style="width: 80%; height: auto;"/>  
 
-
 Destination Package에는 entity 를 입력한다.  
 
 <img src="./assets/spring_data_jpa12.png" style="width: 80%; height: auto;"/>  
 
-entity 폴더가 생성이 되고 Article이 생성된 것을 확인 할 수 있다.  
+entity 패키지가 생성이 되고 Article class 가 생성된 것을 확인 할 수 있다.  
 
 <img src="./assets/spring_data_jpa13.png" style="width: 80%; height: auto;"/>  
 
 <br/>
 
 Article class에 entity를 작성한다.  DTO와 유사하다.  
+
+<br/>
 
 ../entity/Article
 ```java
@@ -324,7 +297,6 @@ public class Article {
 
     @Id   // 대표 값
     @GeneratedValue // 자동생성
-
     private Long id;
 
     @Column
@@ -337,7 +309,6 @@ public class Article {
         this.title = title;
         this.content = content;
     }
-
 
     @Override
     public String toString() {
@@ -378,16 +349,17 @@ public class ArticleForm {
 
 <br/>
 
-ArticleRepository 에  Repository를 추가한다.  
+ArticleRepository 를 선언하고 `@Autowired` 라는  Annotation을 입력한다.  AutoWired를 추가하면 springboot가 알아서 처리한다.  
 
 <br/>
 
-../controller/ArticleRepository
+../repository/ArticleRepository
 ```java
 ...
 @Controller
 public class ArticleController {
     ...
+    @Autowired // 스프링 부트가 미리 생성해놓은 리파지터리 객체를 가져옴(DI)
     private ArticleRepository articleRepository; //추가
 
     @PostMapping("/articles/create")
@@ -404,10 +376,7 @@ public class ArticleController {
 
 <br/>
 
-Repository를 작성한다.  
-먼저 repository 패키지를 생성한다.  
-- 이름 : com.kt.edu.firstproject.repository
-
+기본 패키지 위에서 마우스 오른쪽 버튼 클릭후 New -> Package를 선택한 후 repository 라는 이름으로 패키지를 추가한다. 
 
 <img src="./assets/spring_data_jpa15.png" style="width: 80%; height: auto;"/>  
 
@@ -417,7 +386,7 @@ repository 패키지 위에서 마우스 오른쪽 버튼을 눌러 ArticleRepos
 
 <img src="./assets/spring_data_jpa16.png" style="width: 80%; height: auto;"/>  
 
-extends 라는 구문은 상속을 받는 다는 의미이며 여기서는 CRUD를 새로 구현할 필요가 없다.  
+extends 라는 구문은 상속을 받는 다는 의미이며 여기서는 CRUD를 새로 구현할 필요 없이 이미 구현된 method를 사용 한다.    
 
 ../repository/ArticleRepository  
 ```java
@@ -430,30 +399,12 @@ public interface ArticleRepository extends CrudRepository<Article, Long> {
 }
 ```  
 
-ArticleRepository 가 작성이 되면 ArticleController 로 이동하여 에러난 부분을 수정한다.   ( import class 등 )    
-
-```java
-@Controller
-public class ArticleController {
-// 이전
-    private ArticleRepository articleRepository;
-```  
-<br/>
-
-추가적으로 repository 객체를 생성하지 않고 AutoWired를 추가하면
-springboot가 알아서 처리한다.  
-
-```java
-@Controller
-public class ArticleController {
-    // 이후
-    @Autowired // 스프링 부트가 미리 생성해놓은 리파지터리 객체를 가져옴(DI)
-    private ArticleRepository articleRepository;
-```  
 
 <br/>
 
-테스트를 하기 위해 System.out 로직을 삽입한다.  
+테스트를 하기 위한 로그를 찍기 위해 `System.out.println` 구문을 삽입한다.  
+
+<br/>
 
 ../controller/ArticleController
 ```java
@@ -477,6 +428,7 @@ public class ArticleController {
     public String newArticleForm() {
         return "articles/new";
     }
+
     @PostMapping("/articles/create")
     public String createArticle(ArticleForm form) {
         System.out.println(form.toString());
@@ -503,13 +455,15 @@ public class ArticleController {
 
 프로젝트를 재시작하고 웹 브라우저에서 값을 입력하고 submit을 한다.  
 
+화면은 에러가 발생하는 것이 정상이다.    
+
 <img src="./assets/spring_data_jpa18.png" style="width: 100%; height: auto;"/>  
 
 IntelliJ의 console에 id 값이 1로 되어 있는것을 확인 할 수 있다.  
 
 <img src="./assets/spring_data_jpa19.png" style="width: 100%; height: auto;"/>  
 
-한번더 submit을 하면 id 가 2로 증가가 된다.  
+한번 더 submit을 하면 id 가 2로 증가가 된다.  
 
 <br/>
 
@@ -554,6 +508,135 @@ ARTICLE 테이블을 선택 하고 RUN 버튼을 클릭하여 데이터를 조�
 
 <br/>
 
+## 롬복과 리팩토링
+
+<br/>
+
+### Lombok 과 Refactoring
+
+<br/>
+
+롬복 ( Lombok ) 이란 소스를 간소화 시켜주는 라이브러리 이다.  
+필수 코드 기입 최소화 및 로깅 기능을 개선 할 수 있다.
+
+<img src="./assets/lombok1.png" style="width: 100%; height: auto;"/>    
+
+리팩토링 ( Refactoring ) 이란 코드의 구조 성능의 개선을 말한다.  
+
+
+롬복을 설치한다.  ( IntelliJ는 이미 포함이 되어 있음 )
+롬복을 설치한 이후에 pom 파일에 아래 내용을 추가한다.  
+
+pom.xml
+```bash
+<dependency>
+    <groupId>org.projectlombok</groupId>
+    <artifactId>lombok</artifactId>
+    <optional>true</optional>
+</dependency>
+```  
+
+<br/>
+
+아래와 같이 추가 하면 된다.  
+
+<img src="./assets/lombok2.png" style="width: 100%; height: auto;"/>   
+
+<br/>
+
+M으로 표시된 아이콘이 보이고  Load Maven Changes 라고 나오는데  이것을 클릭한다.  
+
+<img src="./assets/lombok3.png" style="width: 100%; height: auto;"/>   
+
+화면 하단에 아래와 같이 라이브러리를 다운 받기 시작한다. 시간이 좀 소요된다.    
+
+<img src="./assets/lombok4.png" style="width: 100%; height: auto;"/>  
+
+다운이 완료가 되면 오른쪽에 Maven Tab을 클릭하고 Dependency에 가면 라이브러리가 추가 된것을 확인 할 수 있다.   
+
+<img src="./assets/lombok5.png" style="width: 100%; height: auto;"/>   
+
+<br/>
+
+### Lombok 플러그인 설치
+
+<br/>
+
+Intellij 2020.3 버전부터는 Lombok Plugin을 기본으로 제공하고 있습니다. 
+
+이하 버전에서는 상단 Help > Find Action > Plugins > "lombok" 검색 > Install 클릭하여 설치합니다.
+
+<img src="./assets/lombok6.png" style="width: 100%; height: auto;"/>    
+
+설치가 완료되면 IntelliJ 를 재시작합니다.  
+
+plugins를 활성화 하기 위해서 Preferences > Build, Execution, Deployment > Compiler > Annotation Processors에서 Enable annotation processing을 체크해줍니다. 
+
+<img src="./assets/lombok7.png" style="width: 100%; height: auto;"/>    
+
+
+<br/>
+
+### refactoring
+
+<br/>
+
+Intellij 2020.3 버전부터는 Lombok Plugin을 기본으로 제공하고 있습니다.   
+
+ArticleForm java 화일에서 생성사와 toString을 지우고 Annotation을 추가한다.  
+
+붉은색으로 글씨가 나오기 때문에 import class를 해준다.  
+
+../dto/ArticleForm
+```java
+package com.kt.edu.firstproject.dto;
+
+import com.kt.edu.firstproject.entity.Article;
+
+@AllArgsConstructor
+@ToString
+public class ArticleForm {
+    private String title;
+    private String content;
+
+    public Article toEntity() {
+        return new Article(null,title,content);
+    }
+}
+```  
+
+<br/>
+
+Article 화일도 수정한다.  
+
+<br/>
+
+../entity/Article
+```java
+package com.kt.edu.firstproject.entity;
+
+import javax.persistence.*;
+
+@Entity
+@AllArgsConstructor
+@NoArgsConstructor // Default 생성자 추가
+@ToString
+public class Article {
+    @Id
+    @GeneratedValue
+    private Long id;
+    
+    @Column
+    private String title;
+    
+    @Column
+    private String content;
+}
+```  
+
+
+<br/>
+
 ## 데이터 조회 , 수정 및 삭제 with JPA
 
 <br/>
@@ -576,6 +659,8 @@ ArticleController가 있기 때문에 아래 처럼 추가합니다.
   @GetMapping("/articles/{id}")
 - URL에서 id를 변수로 가져오기
   @PathVariable   
+
+<br/>
 
 ../controller/ArticleController  
 ```java
@@ -637,9 +722,10 @@ public String show(@PathVariable Long id, Model model) { // URL에서 id를 변�
         model.addAttribute("article", articleEntity);
         
         return "";
+}
 ```  
 
-데이터를 보여 주기 위해 페이지를 설정한다.  
+데이터를 보여 주기 위한 페이지를 설정한다.  
 articles 폴더에 show 라는 mustache 파일이 있다고 가정한다.  
 
 ../controller/ArticleController
@@ -652,9 +738,11 @@ articles 폴더에 show 라는 mustache 파일이 있다고 가정한다.
         return "articles/show";
  ```  
 
- mustache 화일을 만들기 위해서 resourcs > templates > articles로 이동하여 New > File 선택하고 화일명을 입력한다.  
+ mustache 화일을 만들기 위해서 resources > templates > articles 폴더로 이동하여 New > File 선택하고 화일명을 입력한다.  
  
 <img src="./assets/jpa_read5.png" style="width: 80%; height: auto;"/>   
+
+<br/>
 
  ../articles/show.mustache
  ```html
@@ -684,22 +772,27 @@ articles 폴더에 show 라는 mustache 파일이 있다고 가정한다.
     </tbody>
 </table>
  ```  
+
 프로젝트를 재기동하고 웹 브라우저에서  http://localhost:8080/articles/new 를 접속을하고 데이터를 생성한다.   
 
-그리고  http://localhost:8080/articles/1 를 호출 해본다.  
-아래와 같은 에러가 발생한다.  
+<br/>  
+
+데이터 생성 후 http://localhost:8080/articles/1 를 호출 해본다.  
+아래와 같은 에러가 발생하면 entity에 Default 생성자가 없다는 에러 이다.  
 
 <img src="./assets/jpa_read6.png" style="width: 80%; height: auto;"/>   
 
-entity에 Default 생성자가 없다는 에러 이다.
 Default 생성자는 파라미터가 하나도 없는 생성자이다.  
+
+<br/>
   
 ```bash
 No default constructor for entity: : com.kt.edu.firstproject.entity
 ```  
 
 Article 자바 화일에 lombok을 이용하여 생성자를 생성한다.  
-```bash
+
+```java
 ...
 @Entity
 @AllArgsConstructor
@@ -731,7 +824,11 @@ public class Article {
 
 <img src="./assets/jpa_list1.png" style="width: 80%; height: auto;"/>    
 
+<br/>
+
 ArticleController 에 index라는 메소드를 생성한다.  
+
+<br/>
 
 ../controller/ArticleController  
 ```java
@@ -762,6 +859,8 @@ Article 데이터를 가져오기 위해서는 Repository가 필요하고 findAl
 
 데이터 묶음을 가져오기 위해 List를 사용한다.  
 
+<br/>
+
 ../controller/ArticleController  
 ```java
 ...
@@ -786,6 +885,8 @@ findAll 함수에 마우스를 올리면 타입이 불일치 하는 것을 알 �
 <img src="./assets/jpa_list3.png" style="width: 80%; height: auto;"/>    
 
 Iterable로 변경하면 에러가 사라진다.  
+
+<br/>
 
 ../controller/ArticleController  
 ```java
@@ -817,11 +918,15 @@ interface 안에서 마우스 오른쪽을 클릭하고 Generate > Override를 �
 
 <img src="./assets/jpa_list5.png" style="width: 60%; height: auto;"/>   
 
+<br/>
+
 오버라이드할 findAll 함수를 선택하고 OK를 누르면 소스가 생성이 됩니다.  
 
 <img src="./assets/jpa_list6.png" style="width: 80%; height: auto;"/>   
 
 Iterable을 ArrayList로 변경하여 method override를 합니다.  
+
+<br/>
 
 ../repository/ArticleRepository
 ```java
@@ -830,9 +935,12 @@ public interface ArticleRepository extends CrudRepository<Article, Long> {
     ArrayList<Article> findAll();
 }
 ```  
+
 <br/>
 
 ArticleController도 List로 변경을 하면 에러가 발생하지 않습니다.  
+
+<br/>
 
 ../controller/ArticleController  
 ```java
@@ -848,7 +956,9 @@ ArticleController도 List로 변경을 하면 에러가 발생하지 않습니�
 
 모델에 데이터를 등록합니다.  
 articleList 라는 이름으로 articleEntityList 를 전달 합니다.  
-  
+
+<br/>
+
 ../controller/ArticleController  
 ```java
 ...
@@ -874,6 +984,8 @@ public class ArticleController {
 
 articles 폴더에 index mustache 화일로 설정합니다.  
 
+<br/>
+
 ../controller/ArticleController  
 ```java
 ...
@@ -895,6 +1007,8 @@ public class ArticleController {
 
 index.mustache 화일을 생성합니다.  
 model에서 articleList로 보냈기 때문에 articleList로 설정한다.  
+
+<br/>
 
 ../articles/index.mustache
 ```html
@@ -924,6 +1038,8 @@ model에서 articleList로 보냈기 때문에 articleList로 설정한다.
 </table>
 ```  
 
+<br/>
+
 웹브라우저에서 데이터를 3건 정도 입력한다.  
 
 <img src="./assets/jpa_list7.png" style="width: 80%; height: auto;"/>   
@@ -931,6 +1047,8 @@ model에서 articleList로 보냈기 때문에 articleList로 설정한다.
 웹브라우저에서 http://localhost:8080/articles 를 사용하여 데이터를 조회해 보면 3건이 들어가 있는 것을 확인 할 수 있다.  
 
 <img src="./assets/jpa_list8.png" style="width: 60%; height: auto;"/>   
+
+<br/>
 
 mustache 문법을 보면 articleList 에 데이터가 복수개 이면 아래 내용이 데이터 갯수 만큼 반복으로 수행된다.  
 
@@ -943,7 +1061,6 @@ mustache 문법을 보면 articleList 에 데이터가 복수개 이면 아래 �
     </tr>
   {{/articleList}}
 ```  
-
 
 <br/>
 
@@ -971,6 +1088,8 @@ Redirect는 해당 페이지에서 다른 페이지로 연결 할때 사용합�
 
 목록에서 새 글작성 링크를 만든다.    
 
+<br/>
+
 ../articles/index.mustache  
 ```html
 <table class="table">
@@ -984,6 +1103,8 @@ Redirect는 해당 페이지에서 다른 페이지로 연결 할때 사용합�
 New Article 링크가 생성 된것을 확인 할 수 있다.  
 
 <img src="./assets/link5.png" style="width: 80%; height: auto;"/>  
+
+<br/>
 
 목록 돌아가기 링크를 만든다.  
 
@@ -1003,6 +1124,8 @@ New Article 링크가 생성 된것을 확인 할 수 있다.
 새글 저장 후에 상세 페이지로 redirect 한다.  
 
 ArticleController 에 리다이렉트를 추가 한다.  
+
+<br/>
 
 ../controller/ArticleController  
 ```java
@@ -1115,6 +1238,8 @@ index.mustache에
 <br/>
 
 수정 입력을 받기 위해서 컨트롤러에 수정 method 를 추가한다.  
+
+<br/>
 
 ```java
 ...
@@ -1403,6 +1528,8 @@ contoller에서 delete method를 추가합니다.
 
 
 <img src="./assets/delete4.png" style="width: 80%; height: auto;"/>  
+
+<br/>
 
 ../controller/ArticleController
 ```java
