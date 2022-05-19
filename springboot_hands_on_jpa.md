@@ -317,10 +317,7 @@ Article class에 entity를 작성한다.  DTO와 유사하다.
 ```java
 package com.kt.edu.firstproject.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
+import javax.persistence.*;
 
 @Entity //DB가 해당 객체를 인식 가능
 public class Article {
