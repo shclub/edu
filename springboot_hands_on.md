@@ -425,10 +425,7 @@ Article 화일도 수정한다.
 ```java
 package com.kt.edu.firstproject.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
+import javax.persistence.*;
 
 @Entity
 @AllArgsConstructor
@@ -670,8 +667,10 @@ firstproject 패키지 위에서 마우스 오른쪽 버튼을 누른후 패키�
 
 <img src="./assets/rest_api3.png" style="width: 80%; height: auto;"/>  
 
+<br/>
+
 Rest Controller java 화일을 생성합니다.
-- Rest Controller : Rest API용 컨트롤러이고 JSON 반환  
+- Rest Controller : Rest API용 컨트롤러이고 JSON 반환  ( Controller + ResponseBody )
 - Controller : view template page 반환  
 
 api 폴더 아래에 생성합니다.  
