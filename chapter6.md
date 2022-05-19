@@ -110,13 +110,13 @@ OpenJDK 64-Bit Server VM Zulu17.32+13-CA (build 17.0.2+8-LTS, mixed mode, sharin
 <br/>  
 
 스프링 부트 프로젝트는 https://start.spring.io 에서 생성한다.   
-왼쪽 영역에서 프로젝트 기본 설정을, 오른쪽 영역에서 필요한 라이브러리를 추가할 수 있다. ( 사내 환경에서는 버전 `3.0.0-M2` 을 선택한다. )
+왼쪽 영역에서 프로젝트 기본 설정을, 오른쪽 영역에서 필요한 라이브러리를 추가할 수 있다. ( 사내 환경에서는 버전 `2.6.3` 을 선택한다. )
 
 <img src="./assets/springboot_firstproject.png" style="width: 80%; height: auto;"/>  
 
 - project : maven 선택 ( gradle 보다 직관적이고 익숙 )
 - Language : Java
-- SpringBoot : 3.0.0-M2 ( 사외환경은 아무거나 선택해도 됨 )
+- SpringBoot : 2.6.3 ( 사외환경은 아무거나 선택해도 됨 )
 - Group : com.kt.edu ( 원하는 이름으로 만들면 되고 package 이름 자동 생성 )
 - Artifcat : firstproject ( 원하는 이름으로 만들면 되고 package 이름 자동 생성 )
 - packaging : Jar
