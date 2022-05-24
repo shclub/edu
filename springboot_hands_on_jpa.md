@@ -1,6 +1,6 @@
 #  SpringBoot Hands-on JPA
  
-SpringBoot JPA 활용 방법에 대해서 실습한다.  
+Spring Data JPA 활용 방법에 대해서 실습한다.  
 
 
 1. 데이터 생성 with JPA
@@ -11,7 +11,9 @@ SpringBoot JPA 활용 방법에 대해서 실습한다.
 
 4. CRUD 와 SQL Query
 
-5. 소스위치 : https://github.com/shclub/edu9
+5. QueryDSL 사용
+
+6. 소스위치 : https://github.com/shclub/edu9
 
 <br/>
 
@@ -105,6 +107,12 @@ Hibernate는 낮은 결합도의 이점을 살린 ORM 프레임워크로써 API 
 
 ### Spring Data JPA로 데이터 생성하기  
  
+<br/>
+
+전체 구조는 다음과 유사합니다.  
+
+<img src="./assets/jpa_sample.png" style="width: 80%; height: auto;"/> 
+
 <br/>
 
 이번 예제는 H2 라고하는 SpringBoot에서 제공하는 메모리 DB를 사용합니다.  
@@ -1653,3 +1661,18 @@ public class Article {
 인텔리제이 콘솔에 가면 아래와 같이 SQL Query를 확인 할 수 있다.  
 
 <img src="./assets/crud3.png" style="width: 80%; height: auto;"/>  
+
+<br/>
+
+###  QueryDSL 사용
+
+<br/>
+
+쿼리를 자바코드로 작성할 수 있게 도와주는 기술이다.  
+
+Spring Data JPA로 해결하지 못하는 복잡한 쿼리/동적 쿼리를 해결할 수 있다.  
+
+자바코드로 작성하기 때문에 문법오류를 컴파일 시점에 잡아낼 수 있다.  
+
+<br/>
+comming soon  

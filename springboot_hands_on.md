@@ -4,27 +4,29 @@ SpringBoot 활용 방법에 대해서 실습한다.
 
 1. 뷰 템플릿 과 MVC 패턴
 
-2. SpringBoot Data JPA hands-on 
+2. JDBC vs JPA vs Spring JDBC ( Mybatis ) vs Spring Data JDBC 비교
 
-3. Rest API 와 JSON 
+3. Spring Data JPA hands-on 
 
-4. HTTP 와 Rest Controller
+4. Rest API 와 JSON 
 
-5. SpringBoot MyBatis hands-on 
+5. HTTP 와 Rest Controller
 
-6. SpringBoot Data JDBC hands-on 
+6. 서비스와 트랜잭션, 그리고 롤백
 
-7. 서비스와 트랜잭션, 그리고 롤백
+7. Spring JDBC ( MyBatis ) hands-on 
 
-8. 테스트 작성하기
+8. Spring Data JDBC hands-on 
 
-9. 댓글 서비스 만들기
+9. 테스트 작성하기
 
-10. IoC 와 DI
+10. 댓글 서비스 만들기
 
-11. AOP
+11. IoC 와 DI
 
-12. Object Mapper
+12. AOP
+
+13. Object Mapper
 
 <br/>
 
@@ -295,28 +297,229 @@ Model class를 인식하지 못하여 붉은색으로 표시되며 import class�
 
 <br/>
 
+##  JDBC vs JPA vs Spring JDBC ( Mybatis ) vs Spring Data JDBC 비교 
 
-## SpringBoot Data JPA hands-on 
+<br/>
+
+Spring은 DB에 접근하기 위해 자바의 API를 사용한다. 웹 서비스에 필요한 기능들이 추상화돼서 Spring이 만들어졌듯이, DB에 접근하는 기술들도 일종의 추상화 과정을 거치며 진화해 나갔다.  
+
+<br/>
+
+그림에서 초록색 부분은 개발자가 코드 상에서 직접 다뤄야하는 부분이다.  
+
+<br/>
+
+### JDBC  
+
+<br/>
+
+JDBC는 DB에 접근하고, SQL을 날릴 수 있게 해주는 자바의 표준 API다. 자바 진영에서 DB에 접근하는 기술들의 근간이 된다. DriverManager를 사용하여 각 드라이버들을 로딩, 해제한다
+
+<img src="./assets/jdbc1.png" style="width: 100%; height: auto;"/>   
+
+<br/>
+
+샘플    
+
+```java
+// JDBC를 사용한 Java Application(DAO)
+public class CarDao {
+    public Connection getConnection() {
+        Connection con = null;
+        String server = "localhost:3306"; // MySQL 서버 주소
+        String database = "DB_NAME"; // MySQL DATABASE 이름
+        String option = "?useSSL=false&serverTimezone=UTC";
+        String userName = "USER_ID"; //  MySQL 서버 아이디
+        String password = "USER_PASSWORD"; // MySQL 서버 비밀번호
+
+        // 드라이버 로딩
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+        } catch (ClassNotFoundException e) {
+            System.err.println(" !! JDBC Driver load 오류: " + e.getMessage());
+        }
+
+        // 드라이버 연결
+        try {
+            con = DriverManager.getConnection("jdbc:mysql://" + server + "/" + database + option, userName, password);
+            System.out.println("정상적으로 연결되었습니다.");
+        } catch (SQLException e) {
+            System.err.println("연결 오류:" + e.getMessage());
+        }
+        return con;
+    }
+
+    // 드라이버 연결해제
+    public void closeConnection(Connection con) {
+        try {
+            if (con != null)
+                con.close();
+        } catch (SQLException e) {
+            System.err.println("con 오류:" + e.getMessage());
+        }
+    }
+
+    // CRUD
+    public void addCar(Car car) throws SQLException {
+        String query = "INSERT INTO car (car_id, car_brand, car_created) VALUES (?, ?, ?)";
+        PreparedStatement pstmt = getConnection().prepareStatement(query);
+        pstmt.setInt(1, car.getId());
+        pstmt.setString(2, car.getBrand());
+        pstmt.setString(3, car.getCreated());
+        pstmt.executeUpdate();
+    }
+}
+```  
+
+<br/>
+
+### JPA  
+
+<br/>
+
+JPA는 자바 진영 ORM의 API 표준 명세이다. ORM을 간단하게 설명하면, 직접적인 SQL 문을 사용하지 않고 자바 코드를 사용해서 DB에 접근, 조작할 수 있는 기술이다. JPA 역시 내부적으로 JDBC를 사용한다.  
+
+
+<img src="./assets/jpa_compare_1.png" style="width: 100%; height: auto;"/>   
+
+<br/>
+
+샘플  
+```java
+```  
+
+<br/>
+
+### Spring JDBC(SQL Mapper -> MyBatis)
+
+<br/>
+Spring JDBC는 JDBC에서 DriveManager가 하는 일들을 JdbcTemplate에게 맡긴다.   따라서 개발자는 쿼리문으로 질의할 수 있다.   
+이 때, JdbcTemplate은 SQL Mapper 중 하나이다  (참고로 MyBatis 역시 SQL Mapper 중의 하나다).  
+
+
+<img src="./assets/spring_jdbc1.png" style="width: 100%; height: auto;"/>   
+
+<br/>
+
+샘플  
+
+```java
+public class CarDao {
+    private String driver = "com.mysql.cj.jdbc.Driver";
+    private String url = "localhost:3306";
+    private String userid = "USER_ID";
+    private String userpw = "USER_PASSWORD";
+
+    private DriverManagerDataSource dataSource;
+    private JdbcTemplate template;
+
+    public CarDao() {
+        dataSource = new DriverManagerDataSource();
+        dataSource.setDriverClass(driver);
+        dataSource.setJdbcUrl(url);
+        dataSource.setUser(userid);
+        dataSource.setPassword(userpw);
+
+        template = new JdbcTemplate();
+        template.setDataSource(dataSource);
+    }
+
+    // CRUD
+    public int carInsert(Car car) {
+        String query = "INSERT INTO car (car_id, car_brand, car_created) VALUES (?, ?, ?)";
+        int result = template.update(query, car.getId(), car.getBrand(), car.getCreated());
+
+        return result;
+    }
+ }
+```  
+
+<br/>
+
+### Spring Data JDBC   
+
+<br/>
+
+Spring data는 Spring 진영에서 DB를 쉽게 다루기 위해 시작한 프로젝트이다.   
+그 중 하나인 Spring Data JDBC는 기본적인 드라이버 설정 기능부터 CRUD 기능을 제공한다.   
+
+<br/>
+
+공식 문서를 보면 Spring Data JDBC를 간단하고 선택적인 ORM이라고 소개하고 있다.   
+선택적 ORM이라는 표현을 사용한 이유는, ORM이 제공하는 기본적인 기능을 제공할 뿐만 아니라, 사용자가 직접 SQL문을 질의하는 기능 역시 제공하기 때문이다(@Query 어노테이션을 사용하면 된다).   
+
+<br/>
+
+Data source에 대한 설정은 application.properties 파일에서 가능하다.  
+
+<br/>
+
+Spring Data JDBC는 `Domain Driven Design`을 기반으로 합니다.  
+따라서 모든 Repository는 Aggregate Root 기준으로 존재합니다.    
+
+
+라이프사이클 또한 Aggregate Root와 하위 속성들이 동일합니다.   
+서로 다른 Aggregate 간 참조는 Id를 통해 수행합니다. 이러한 개념이 코드를 통해 알기 쉽게 설계되어있습니다.  
+
+<br/>
+
+<img src="./assets/spring_data_jdbc1.png" style="width: 100%; height: auto;"/>   
+
+<br/>
+
+샘플  
+
+```java
+// application.properties
+spring.datasource.url=jdbc:mysql://localhost:3306
+spring.datasource.username=USER_ID
+spring.datasource.password=USER_NAME
+spring.datasource.driver-class-name=com.mysql.jdbc.Driver
+
+// CarRepository.java
+public interface CarRepository extends CrudRepository<Car, Long> {
+    @Query("SELECT COUNT(*) FROM car WHERE brand = :brand")
+    int countByBrand(@Param("brand") String brand);
+}
+
+// CarService.java
+@Service
+public CarService {
+    @Autowired
+    private CarRepository carRepository;
+
+    // CRUD
+    public int addCar(Car car){
+        return carRepository.save(car);
+    }
+
+    // Custom SQL
+    public int countByBrand(String brand) {
+        return carRepository.countByBrand(brand);    
+    }
+}
+```  
 
 <br/>
 
 
-JPA vs JDBC
+### 정리   
 
 <br/>
 
+<img src="./assets/db_summary.png" style="width: 100%; height: auto;"/>   
 
-<img src="./assets/jpa_vs_jdbc.png" style="width: 100%; height: auto;"/> 
+<br/>
+참고 : https://skyblue300a.tistory.com/7
+
+<br/>
+
+## Spring Data JPA hands-on 
+
 
 <br/>
 
 [ JPA Hands-On 문서보기로 이동하기 ](./springboot_hands_on_jpa.md)       
-
-
-<br/>
-
-참고 : https://gmlwjd9405.github.io/2018/12/25/difference-jdbc-jpa-mybatis.html
-
 
 
 <br/>
@@ -1062,3 +1265,16 @@ public class ArticleService {
 <img src="./assets/transaction7.png" style="width: 80%; height: auto;"/> 
 
 1건의 데이터가 정상 조회가 됩니다.  
+
+
+<br/>
+
+## Spring JDBC ( MyBatis ) hands-on 
+
+
+<br/>
+
+[ MyBatis Hands-On 문서보기로 이동하기 ](./springboot_hands_on_mybatis.md)       
+
+
+<br/>
