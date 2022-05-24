@@ -305,10 +305,9 @@ dev 환경에서와 운영환경에서는 설정이 다를수가 있어 향후 p
 
 <br/>
 
-controller 패키지에 ArticleController 를 rest로 생성합니다.  
+controller 패키지에 ArticleController 를 RestController 로 생성합니다.  
 
-ArticleController  
-
+../controller/ArticleController  
 ```java
 package com.kt.edu.secondproject.controller;
 
@@ -367,6 +366,7 @@ public class ArticleController {
 
 domain 패키지에 Article DTO 를 생성한다.  
 
+../domain/Article 
 ```java
 package com.kt.edu.secondproject.domain;
 
@@ -384,11 +384,15 @@ public class Article {
 ```
  
 <br/>
-repository 패키지에 ArticleMapper Interface 를 생성한다.  
+
+repository 패키지에 ArticleMapper Interface 를 생성한다.    
 
 <img src="./assets/mybatis4.png" style="width: 80%; height: auto;"/>
 
-ArticleMapper
+<br/>
+
+../repository/ArticleMapper
+
 ```java
 package com.kt.edu.secondproject.repository;
 
@@ -417,8 +421,9 @@ public interface ArticleMapper {
 
 service 패키지에 ArticleService class 를 생성한다.  
 
-ArticleService
+<br/>
 
+../service/ArticleService  
 ```java
 package com.kt.edu.secondproject.service;
 
@@ -484,7 +489,12 @@ public class ArticleService {
 ```
 
 <br/>
+
 resources 폴더에 mapper 디렉토리를 생성하고 Article Mapper xml 화일을 생성한다.   
+
+<br/>
+
+../resources/mapper/ArticleMapper.xml    
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -547,7 +557,13 @@ resources 폴더에 mapper 디렉토리를 생성하고 Article Mapper xml 화�
 
 <br/>
 
-SpringBoot 를 기동하고 에러가 발생하지 않으면 웹 브라우저에서 http://localhost:8080/articles 를 입력하여 데이터를 조회합니다.  
+Main 함수가 있는 class를 마우스 오른쪽 버튼을 클릭하고 Run 메뉴를 선택하여 실행한다.  
+
+<img src="./assets/mybatis10.png" style="width: 80%; height: auto;"/>  
+
+<br/>
+
+에러가 발생하지 않으면 웹 브라우저에서 http://localhost:8080/articles 를 입력하여 데이터를 조회합니다.  
 
 <img src="./assets/mybatis6.png" style="width: 80%; height: auto;"/>  
 
@@ -560,7 +576,7 @@ http://localhost:8080/articles/1 호출하여 단건 데이터를 확인 합니�
 
 <br/>
 
-Talend API Tester로 데이트를 입력해 봅니다.    
+Talend API Tester로 설정값을 입력해 봅니다.    
 - Method : post
 - URL : http://localhost:8080/articles/
 - header : JSON

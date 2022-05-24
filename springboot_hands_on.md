@@ -380,13 +380,8 @@ public class CarDao {
 JPA는 자바 진영 ORM의 API 표준 명세이다. ORM을 간단하게 설명하면, 직접적인 SQL 문을 사용하지 않고 자바 코드를 사용해서 DB에 접근, 조작할 수 있는 기술이다. JPA 역시 내부적으로 JDBC를 사용한다.  
 
 
-<img src="./assets/jpa_compare_1.png" style="width: 100%; height: auto;"/>   
+<img src="./assets/jpa_compare_1.png" style="width: 80%; height: auto;"/>   
 
-<br/>
-
-샘플  
-```java
-```  
 
 <br/>
 
@@ -397,7 +392,7 @@ Spring JDBC는 JDBC에서 DriveManager가 하는 일들을 JdbcTemplate에게 �
 이 때, JdbcTemplate은 SQL Mapper 중 하나이다  (참고로 MyBatis 역시 SQL Mapper 중의 하나다).  
 
 
-<img src="./assets/spring_jdbc1.png" style="width: 100%; height: auto;"/>   
+<img src="./assets/spring_jdbc1.png" style="width: 80%; height: auto;"/>   
 
 <br/>
 
@@ -834,14 +829,13 @@ return 값으로 아래와 같은 값이 JSON으로 나오는 것을 볼수 있�
 
 <img src="./assets/rest_api7.png" style="width: 80%; height: auto;"/>  
 
-단일 값도 가져오는것을 테스트 할 수 있다.  
-
-<br/><br/>
+<br/>
 
 `@RequestParam, @PathVariable` 차이점
 
-- 1) http://restapi.com?userId=test&memo=테스트
-- 2) http://restapi.com/test/테스트  
+1번) http://restapi.com?userId=test&memo=테스트  
+
+2번) http://restapi.com/test/테스트  
 
 1과 같은 방식은 쿼리 스트링이라 부르며 Get 방식의 통신을 할 때 주로 쓰인다.  
 
@@ -1125,6 +1119,7 @@ service 는 RestController 와 Repository 사이에 위치하며 처리 업무�
 webservice는 서비스 계층을 통해 client 요청과 db처리를 분업화 합니다.  
 
 <br/>
+
 ArticleApiController 에 서비스 계층을 추가해 봅니다.  
 
 해당 코드를 모두 주석 처리하고 아래과 같이 수정합니다.  
