@@ -53,16 +53,19 @@
      - IDE 개발 환경 구성 
      - SpringBoot 전체 hands-on [ Hands-On 문서보기 ](./springboot_hands_on.md)       
      - SpringBoot Data JPA hands-on [ Hands-On 문서보기 ](./springboot_hands_on_jpa.md)
-     - 샘플 소스 : [ 소스 보기 ](https://github.com/shclub/edu9)  
- 
+     - 샘플 소스 ( Web ): [ 소스 보기 ](https://github.com/shclub/edu9)  
+     - 샘플 소스( Rest ) : [ 소스 보기 ](https://github.com/shclub/edu9-1)
+
      <br/>
 
 7. Chapter 7 : 7주차  
      - SpringBoot 실습  
      - SpringBoot 전체 hands-on [ Hands-On 문서보기 ](./springboot_hands_on.md)  
      - SpringBoot Data Mybatis hands-on [ Hands-On 문서보기 ](./springboot_hands_on_mybatis.md) 
+     - 샘플 소스 ( mybatis ): [ 소스 보기 ](https://github.com/shclub/edu10) 
      - SpringBoot Data JDBC hands-on [ Hands-On 문서보기 ](./springboot_hands_on_jdbc.md) 
-
+     - 샘플 소스 ( Data Jdbc ): [ 소스 보기 ](https://github.com/shclub/edu11)
+      
      <br/>
 
 8. Chapter 8 : 8주차  

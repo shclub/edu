@@ -1268,7 +1268,9 @@ public class ArticleService {
 
 <br/>
 
-리팩토링, Article  생성 
+리팩토링, Article  생성  
+
+- 참고 소스 : https://github.com/shclub/edu9-1
 
 post method를 아래와 같이 변경합니다.
 
