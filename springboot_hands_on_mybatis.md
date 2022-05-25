@@ -9,7 +9,9 @@ MyBatis 활용 방법에 대해서 실습한다.
 
 3. 실행해보기
 
-4. 소스위치 : https://github.com/shclub/edu10
+4. SQL문 로그 보기
+
+5. 소스위치 : https://github.com/shclub/edu10
 
 <br/>
 
@@ -109,43 +111,35 @@ spring.datasource.generate-unique-name=false
 
 # log configuration path
 #logging.config=classpath:log4j2.xml
-#로그 정보의 세밀한 컨트롤을 위한 logback 설정 화일 위치. resources 폴더 아래.  
 logging.config=classpath:logback-spring-dev.xml
-logging.config.file.path=log
 
-# log4jdbc
-log4j.logger.jdbc.sqltiming=info
-#log4jdbc.drivers=
-#log4jdbc.spu
-log4jdbc.dump.sql.maxlinelength=0
-
+# for inserting data.sql
+#spring.jpa.defer-datasource-initialization=true
 
 # Default Profile
 spring.profiles.active=dev
 
 spring.main.allow-bean-definition-overriding=true
 
-# Database Platform
+# Database Platform : DB 생성 및 초기화 여부
 spring.sql.init.platform=h2
-# DB 생성 및 초기화 여부
 spring.sql.init.mode=embedded
 spring.datasource.driver-class-name=org.h2.Driver
-#spring.datasource.driver-class-name=net.sf.log4jdbc.sql.jdbcapi.DriverSpy
 spring.datasource.url=jdbc:h2:mem:testdb
 spring.datasource.username=sa
 spring.datasource.password=
 
+# log4jdbc
+#spring.datasource.driver-class-name=net.sf.log4jdbc.sql.jdbcapi.DriverSpy
+#spring.datasource.url=jdbc:log4jdbc:h2:mem:testdb
+
+
 # model/domain package
 mybatis.type-aliases-package= com.kt.edu
-# mapper xml location . resources 폴더 아래
 mybatis.mapper-locations= mapper/*.xml
-# mybatis-config.xml 화일 위치 . resources 폴더 아래
 mybatis.config-location= classpath:mybatis-config.xml
 
-# mybatis mapper log level
-#logging.level.com.kt.edu.secondproject.article.mapper=TRACE
-```   
-
+```
 
 <br/>
 
@@ -605,3 +599,127 @@ Talend API Tester로 설정값을 입력해 봅니다.
 Article 테이블을 조회 하여 데이터를 확인 합니다.  
 
 <img src="./assets/mybatis9.png" style="width: 80%; height: auto;"/>
+
+<br/>
+
+### SQL문 로그 보기     
+
+<br/>
+
+이번 에는 log4jdbc를 사용하려 쿼리를 log로 찍어보도록 하겠습니다.  
+
+먼저 pom.xml 화일에 log4jdbc를 dependency로 추가한다.
+
+```xml
+<!-- MyBatis sql pretty -->
+		<dependency>
+			<groupId>org.bgee.log4jdbc-log4j2</groupId>
+			<artifactId>log4jdbc-log4j2-jdbc4.1</artifactId>
+			<version>1.16</version>
+		</dependency>
+```  
+
+
+resources 폴더 아래에 log4jdbc.log4j2.properties 화일을 생성합니다.  
+
+
+<br/>
+
+<img src="./assets/mybatis11.png" style="width: 80%; height: auto;"/>   
+
+<br/>
+
+화일에 아래 내용을 추가합니다.  
+
+```
+log4jdbc.spylogdelegator.name=net.sf.log4jdbc.log.slf4j.Slf4jSpyLogDelegator
+
+log4jdbc.dump.sql.maxlinelength=0
+log4j.logger.jdbc.sqltiming=info
+```
+
+<br>
+
+application.properties 에서 DB 설정 정보를 수정합니다.  
+
+기존 연결 설정은 주석 처리 하고 새로 Driver, Url 부분은 변경하여 줍니다.  
+
+```  
+#spring.datasource.driver-class-name=org.h2.Driver
+#spring.datasource.url=jdbc:h2:mem:testdb
+
+# log4jdbc
+spring.datasource.driver-class-name=net.sf.log4jdbc.sql.jdbcapi.DriverSpy
+spring.datasource.url=jdbc:log4jdbc:h2:mem:testdb
+```  
+
+<br/>
+
+springboot 를 재기동 하면 IntelliJ Console 에서 
+schema.sql , data.sql 화일의 Query가 동작 하는 것을 불 수 있습니다.    
+
+<img src="./assets/mybatis12.png" style="width: 100%; height: auto;"/>   
+
+<br/>
+
+log4jdbc는 SQL문에서부터 Connect정보, JDBC호출 정보, SQL 결과를 Table로 표현 하는 등의 옵션을 제공한다. 이에 대해 간단히 설명하고, 설정하는 방법을  살펴봅니다.  
+
+- jdbc.sqlonly  
+    SQL문만을 로그로 남기며, PreparedStatement일 경우 관련된 argument 값으로 대체된 SQL문이 보여진다.  
+
+- jdbc.sqltiming  
+    SQL문과 해당 SQL을 실행시키는데 수행된 시간 정보(milliseconds)를 포함한다.  
+      
+- jdbc.audit  
+    ResultSet을 제외한 모든 JDBC 호출 정보를 로그로 남긴다. 많은 양의 로그가 생성되므로 특별히 JDBC 문제를 추적해야 할 필요가 있는 경우를 제외하고는 사용을 권장하지 않는다.  
+      
+- jdbc.resultset
+    ResultSet을 포함한 모든 JDBC 호출 정보를 로그로 남기므로 매우 방대한 양의 로그가 생성된다.  
+      
+- jdbc.resultsettable
+    SQL 결과 조회된 데이터의 table을 로그로 남긴다.
+
+<br/>
+
+해당 프로젝트에는 logback-spring-dev.xml 화일에 아래와 같이 설정하였습니다.
+
+```xml
+...
+<!-- jdbc loggers -->
+<!-- SQL문과 해당 SQL을 실행시키는데 수행된 시간 정보(milliseconds)를 포함한다. -->
+    <logger name="jdbc.sqltiming" level="INFO" additivity="false">
+        <appender-ref ref="STDOUT" />
+    </logger>
+
+<!-- SQL문만을 로그로 남기며, PreparedStatement일 경우 관련된 argument 값으로 대체된 SQL문이 보여진다. -->
+    <logger name="jdbc.sqlonly" level="ERROR"  additivity="false">
+        <appender-ref ref="STDOUT" />
+    </logger>
+
+<!-- SQL 결과 조회된 데이터의 table을 로그로 남긴다. -->
+    <logger name="jdbc.resultsettable" level="INFO" additivity="false">
+        <appender-ref ref="STDOUT" />
+    </logger>
+```  
+
+<br/>
+
+웹 브라우저에서 http://localhost:8080/h2-console 를 입력하고 DB 접속을 해 봅니다.  
+
+- Driver Class : net.sf.log4jdbc.sql.jdbcapi.DriverSpy
+- JDBC URL : jdbc:log4jdbc:h2:mem:testdb  
+
+
+<img src="./assets/mybatis13.png" style="width: 80%; height: auto;"/>
+
+<br/>
+
+정상적으로 접속이되면 ARTICLE 테이블을 선택을 하고 데이터를 조회해 봅니다.  
+
+<img src="./assets/mybatis14.png" style="width: 80%; height: auto;"/>
+
+<br/>
+
+IntelliJ Console 에서 조회한 로그를 볼수 있습니다.  
+
+<img src="./assets/mybatis15.png" style="width: 80%; height: auto;"/>
