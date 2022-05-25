@@ -659,7 +659,7 @@ ArgoCD 화면에 admin 계정으로 생성한 pipeline 을 볼수 있습니다.
 
 <br/>
 
-```bash
+```yaml
 apiVersion: argoproj.io/v1alpha1
 kind: AppProject
 metadata:
