@@ -27,6 +27,13 @@
      - Helm 설치 및 helm으로 prometheus 설치 활용
      - k8s hands-on Basic [ Hands-On 문서보기 ](./k8s_basic_hands_on.md)  
 
+          - 실습 전체 개요
+          - kubeconfig 설정 : kubectl 설치
+          - kubectl 활용
+          - kubernetes 리소스 ( Pod , Service , Deployment 생성 및 삭제)
+          - 배포 ( Rolling Update / Rollback )
+          - Serivce Expose ( Ingress )  
+
      <br/>
 
 4. Chapter 4 : 4주차   ( [가이드 문서보기](./chapter4.md) ) 
@@ -34,7 +41,14 @@
      - ArgoCD 설치 및 설정 
      - kustomize 설명 및 실습 ( 향후 추가 )
      - k8s에 배포 실습 ( Blue/Green , Canary )  
-     - ArgoCD hands-on [ Hands-On 문서보기 ](./argocd_hands_on.md)  
+     - ArgoCD hands-on [ Hands-On 문서보기 ](./argocd_hands_on.md) 
+
+          - kubectl plugin 설치
+          - Blue/Green 배포
+          - Canary 배포
+          - ArgoCD 계정 추가 및 권한 할당
+          - kustomize 사용법
+          - ArgoCD remote Cluster 에서 배포 하기 
 
      <br/>
 
@@ -51,15 +65,6 @@
 6. Chapter 6 : 6주차    ( [가이드 문서보기](./chapter6.md) ) 
      - SpringBoot 개념 설명 
      - IDE 개발 환경 구성 
-     - SpringBoot 전체 hands-on [ Hands-On 문서보기 ](./springboot_hands_on.md)       
-     - SpringBoot Data JPA hands-on [ Hands-On 문서보기 ](./springboot_hands_on_jpa.md)
-     - 샘플 소스 ( Web ): [ 소스 보기 ](https://github.com/shclub/edu9)  
-     - 샘플 소스( Rest ) : [ 소스 보기 ](https://github.com/shclub/edu9-1)
-
-     <br/>
-
-7. Chapter 7 : 7주차  
-     - SpringBoot 실습  
      - SpringBoot 전체 hands-on [ Hands-On 문서보기 ](./springboot_hands_on.md)   
 
           - 뷰 템플릿 과 MVC 패턴
@@ -74,7 +79,24 @@
           - 댓글 서비스 만들기
           - IoC 와 DI
           - AOP
-          - Object Mapper
+          - Object Mapper   
+          
+     - SpringBoot Data JPA hands-on [ Hands-On 문서보기 ](./springboot_hands_on_jpa.md)  
+
+          - 데이터 생성 with JPA
+          - 롬복과 리팩토링
+          - 데이터 조회 , 수정 및 삭제 with JPA
+          - CRUD 와 SQL Query
+          - QueryDSL 사용
+
+     - 샘플 소스 ( Web ): [ 소스 보기 ](https://github.com/shclub/edu9)  
+     - 샘플 소스( Rest ) : [ 소스 보기 ](https://github.com/shclub/edu9-1)
+
+     <br/>
+
+7. Chapter 7 : 7주차  
+     - SpringBoot 실습  
+     - SpringBoot 전체 hands-on [ Hands-On 문서보기 ](./springboot_hands_on.md)   
 
      - SpringBoot Data Mybatis hands-on [ Hands-On 문서보기 ](./springboot_hands_on_mybatis.md) 
 

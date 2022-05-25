@@ -8,11 +8,11 @@ ArgoCD 활용 방법에 대해서 실습한다.
 
 3. Canary 배포
 
-4. ArgoCD 계정 추가  
+4. ArgoCD 계정 추가 및 권한 관리
 
 5. kustomize 사용법   
 
-6. argocd remote 에서 배포 하기  
+6. ArgoCD remote Cluster 에서 배포 하기  
 
 7. 참고 사이트 
     - https://potato-yong.tistory.com/138
@@ -600,20 +600,19 @@ Password updated
 ArgoCD가 사용하는 RBAC 규칙에 맞게 새롭게 permission 을 할당해주어야 합니다.  
 
 ArgoCD RBAC 을 추가하려면 ArgoCD Confimap 인 argocd-rbac-cm 을 수정해야 합니다. 다음 명령을 실행 하여 수정을 시작 합니다.  
-shclub는 신규 생성한 계정이고 여러번의 계정으로 변경하여 저장하시면 됩니다.  
+
+shclub는 신규 생성한 계정이고 여러분의 계정으로 변경하여 저장하시면 됩니다.  
 
 ```bash
 root@jakelee:~# kubectl -n argocd edit configmap argocd-rbac-cm -o yaml
 apiVersion: v1
 data:
   policy.csv: |
-    p, role:shclub, applications, *, */*, allow
-    p, role:shclub, clusters, get, *, allow
-    p, role:shclub, repositories, get, *, allow
-    p, role:shclub, repositories, create, *, allow
-    p, role:shclub, repositories, update, *, allow
-    p, role:shclub, repositories, delete, *, allow
-    g, shclub, role:shclub
+    p, role:manager, applications, *, */*, allow
+    p, role:manager, clusters, get, *, allow
+    p, role:manager, repositories, *, *, allow
+    p, role:manager, projects, *, *, allow
+    g, shclub, role:manager
   policy.default: role:readonly
 kind: ConfigMap
 metadata:
@@ -630,18 +629,20 @@ metadata:
   uid: 5493d81d-74a4-4f55-830b-919a924d7440
 ```  
 
- 권한 할당을 위해 아래 라인을 추가합니다. 향후에 좀더 detail 하게 설정 할 수 있습니다.
+<br/>
+
+role은 manager 라는 이름으로 생성하였고 거의 full 권한을 가지고 있습니다.  
+
+향후에 좀더 detail 하게 설정 할 수 있습니다.  
 
 ```bash
 data:
   policy.csv: |
-    p, role:shclub, applications, *, */*, allow
-    p, role:shclub, clusters, get, *, allow
-    p, role:shclub, repositories, get, *, allow
-    p, role:shclub, repositories, create, *, allow
-    p, role:shclub, repositories, update, *, allow
-    p, role:shclub, repositories, delete, *, allow
-    g, shclub, role:shclub
+    p, role:manager, applications, *, */*, allow
+    p, role:manager, clusters, get, *, allow
+    p, role:manager, repositories, *, *, allow
+    p, role:manager, projects, *, *, allow
+    g, shclub, role:manager
   policy.default: role:readonly
 ```  
 
@@ -715,7 +716,7 @@ edu-project    88m
 
 edu1 이라는 신규 생성된 계정에서 대부분 readonly 권한만 가지고 있고 edu-project라고 하는 project에 대해서만 전체 권한을 갖는다.  
 
-edu-project 이외의 applications들은 볼수 없다.  
+edu-project 이외의 applications들은 볼수 없습니다.  
 
 ```bash
     p, role:edu1, clusters, get, *, allow
@@ -732,18 +733,16 @@ edu-project 이외의 applications들은 볼수 없다.
 ```bash
 data:
   policy.csv: |
-    p, role:shclub, applications, *, */*, allow
-    p, role:shclub, clusters, get, *, allow
-    p, role:shclub, repositories, get, *, allow
-    p, role:shclub, repositories, create, *, allow
-    p, role:shclub, repositories, update, *, allow
-    p, role:shclub, repositories, delete, *, allow
+    p, role:manager, applications, *, */*, allow
+    p, role:manager, clusters, get, *, allow
+    p, role:manager, repositories, *, *, allow
+    p, role:manager, projects, *, *, allow
     p, role:edu1, clusters, get, *, allow
     p, role:edu1, repositories, get, *, allow
     p, role:edu1, projects, get, *, allow
     p, role:edu1, applications, *, edu-project/*, allow
     g, edu1, role:edu1
-    g, shclub, role:shclub
+    g, shclub, role:manager
   policy.default: role:''
 ```
 

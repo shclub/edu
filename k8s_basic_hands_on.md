@@ -2,17 +2,19 @@
  
 kubernetes에서 kubectl를 사용하여 cli 실습을 한다.   
 
-1. kubectl 설치 ( 윈도우 / Mac )
+1. 실습 전체 개요 
 
-2. kubectl Context 설정
+2. Kubeconfig 설정 : kubectl 설치 ( 윈도우 / Mac )
 
-3. k8s 리소스 보기
+3. Kubectl 활용
 
-4. Pod , Replicaset , Deployment 생성 및 삭제
+4. kubernetes 리소스 ( Pod , Service , Deployment 생성 및 삭제)
 
-5. Service Expose
+5. 배포 ( Rolling Update / Rollback )
 
-6. 참고 사이트 
+6. Serivce Expose ( Ingress )
+
+7. 참고 사이트 
     - podman 사용 : https://github.com/chhanz/kubernetes-hands-on-lab
     - https://github.com/subicura/workshop-k8s-basic/tree/master/guide
 
@@ -58,7 +60,7 @@ Deployment 와 Service 그리고 Ingress의 관계가 간단하게 정리된 그
 
 <br/>
 
-##  Kubeconfig 설정 
+##  Kubeconfig 설정  : kubectl 설치 ( 윈도우 / Mac )
 
 ### kubectl 설치 ( https://kubernetes.io/ko/docs/tasks/tools/ )
 
@@ -139,6 +141,8 @@ kubectl  cluster-info
 <br/>
 
 ##  Kubectl 활용 
+
+<br/>
 
 ### kubectl 명령어
 
@@ -238,6 +242,11 @@ flask-edu4-app-74788b6479-rlght   1/1     Running   0          24m   app=flask-e
 
 <br/>
 
+<br/>
+
+##  kubernetes 리소스 
+
+<br/>
 
 ### Node
 
@@ -811,6 +820,10 @@ root@jakelee:~# while true; do curl 210.106.105.165:30685; done
 
 <br/>
 
+## 배포 ( Rolling Update / Rollback )
+
+<br/>
+
 ### Update APP
 
 <br/>
@@ -837,7 +850,7 @@ Container Image Tag : shclub/edu4:v2
 
 <br/>
 
-#### Rolling Update
+### Rolling Update
 
 <br/>
 
@@ -960,7 +973,7 @@ Events:
 
 <br/>
 
-#### Rollback
+### Rollback
 
 <br/>
 
@@ -1052,6 +1065,10 @@ Rollback 은 배포된 APP 에 문제가 있을 때, 다시 이전 이미지로 
         kubectl rollout undo deployment flask-edu4-app --to-revision=1
         ```
         
+<br/>
+
+## Serivce Expose ( Ingress )
+
 <br/>
 
 ### Ingress
