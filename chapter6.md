@@ -8,6 +8,7 @@ SpringBoot 에 대한 기본 개념과 IDE 환경 설정 및 기본 실습을 �
 
 3. 기본 실습
 
+4. 참고 : 홍팍 스프링부트 ( https://youtube.com/playlist?list=PLyebPLlVYXCiYdYaWRKgCqvnCFrLEANXt )
 
 <br/>
 

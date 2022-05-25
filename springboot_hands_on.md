@@ -744,7 +744,9 @@ firstproject 패키지 위에서 마우스 오른쪽 버튼을 누른후 패키�
 
 Rest Controller java 화일을 생성합니다.
 - Rest Controller : Rest API용 컨트롤러이고 JSON 반환  ( Controller + ResponseBody )
-- Controller : view template page 반환  
+- Controller : view template page 반환    
+
+<br/>
 
 api 폴더 아래에 생성합니다.  
 
@@ -1140,7 +1142,7 @@ class ArticleApiController {
 }
 ```  
 
-서비스 패키지를 생성을 합니다.  
+service 패키지를 생성을 합니다.  
 
 <img src="./assets/transaction5.png" style="width: 80%; height: auto;"/>   
 
@@ -1162,6 +1164,7 @@ public class ArticleService {
 ```
 
 <br/>
+
 
 리팩토링, Article 목록 조회
 
@@ -1232,6 +1235,8 @@ public class ArticleApiController {
 }
 ```  
 
+서비스는 아래와 같습니다.  
+
 ../service/ArticleService
 ```java
 package com.kt.edu.firstproject.service;
@@ -1261,6 +1266,252 @@ public class ArticleService {
 
 1건의 데이터가 정상 조회가 됩니다.  
 
+<br/>
+
+리팩토링, Article  생성 
+
+post method를 아래와 같이 변경합니다.
+
+../api/ArticleApiController
+```java
+...
+@Slf4j
+@RestController
+public class ArticleApiController {
+    ...
+    // POST
+    @PostMapping("/api/articles")
+    public ResponseEntity<Article> create(@RequestBody ArticleForm dto) {
+        Article created = articleService.create(dto);
+        return (created != null) ?
+                ResponseEntity.status(HttpStatus.OK).body(created) :
+                ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+    }
+}
+```  
+
+<br/>
+
+서비스에는 아래 와 같이 create method 를 추가합니다.  
+
+../service/ArticleService
+```java
+...
+@Service
+public class ArticleService {
+    ...
+    public Article create(ArticleForm dto) {
+        Article article = dto.toEntity();
+        if (article.getId() != null) {
+            return null;
+        }
+        return articleRepository.save(article);
+    }
+}
+```  
+
+<br/>
+
+리팩토링, Article  수정 
+
+patch method를 아래와 같이 변경합니다.
+
+../api/ArticleApiController
+```java
+...
+@Slf4j
+@RestController
+public class ArticleApiController {
+    ...
+    // PATCH
+    @PatchMapping("/api/articles/{id}")
+    public ResponseEntity<Article> update(@PathVariable Long id,
+                                          @RequestBody ArticleForm dto) {
+        Article updated = articleService.update(id, dto);
+        return (updated != null) ?
+                ResponseEntity.status(HttpStatus.OK).body(updated):
+                ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+    }
+}
+```  
+
+<br/>
+
+서비스에는 아래 와 같이 update method 를 추가하고 `@Slf4j` 도 추가합니다.  
+
+../service/ArticleService
+```java
+...
+@Slf4j
+@Service
+public class ArticleService {
+    ...
+    public Article update(Long id, ArticleForm dto) {
+        // 1: DTO -> 엔티티
+        Article article = dto.toEntity();
+        log.info("id: {}, article: {}", id, article.toString());
+        // 2: 타겟 조회
+        Article target = articleRepository.findById(id).orElse(null);
+        // 3: 잘못된 요청 처리
+            if (target == null || id != article.getId()) {
+            // 400, 잘못된 요청 응답!
+            log.info("잘못된 요청! id: {}, article: {}", id, article.toString());
+            return null;
+        }
+        // 4: 업데이트
+        target.patch(article);
+        Article updated = articleRepository.save(target);
+        return updated;
+    }
+}
+```  
+
+<br/>
+
+리팩토링, Article  삭제 
+
+delete method를 아래와 같이 변경합니다.
+
+../api/ArticleApiController
+```java
+...
+@Slf4j
+@RestController
+public class ArticleApiController {
+    ...
+    // DELETE
+    @DeleteMapping("/api/articles/{id}")
+    public ResponseEntity<Article> delete(@PathVariable Long id) {
+        Article deleted = articleService.delete(id);
+        return (deleted != null) ?
+                ResponseEntity.status(HttpStatus.NO_CONTENT).build() :
+                ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+    }
+}
+```  
+
+<br/>
+
+서비스에는 아래 와 같이 delete method 를 추가합니다.  
+
+../service/ArticleService
+```java
+...
+@Slf4j
+@Service
+public class ArticleService {
+    ...
+    public Article delete(Long id) {
+        // 대상 찾기
+        Article target = articleRepository.findById(id).orElse(null);
+        // 잘못된 요청 처리
+        if (target == null) {
+            return null;
+        }
+        // 대상 삭제
+        articleRepository.delete(target);
+        return target;
+    }
+}
+```  
+
+<br/>
+
+트랜잭션 맛보기, 묶음 Article 생성  
+
+강제적으로 트랙잭션 실패를 발생을 하여 롤백이 되는 지 확인한다.  
+
+controller에 test용 API를 추가합니다.
+
+../api/ArticleApiController
+```java
+...
+@Slf4j
+@RestController
+public class ArticleApiController {
+    ...
+    // 트랜잭션 -> 실패 -> 롤백!
+    @PostMapping("/api/transaction-test")
+    public ResponseEntity<List<Article>> transactionTest(@RequestBody List<ArticleForm> dtos) {
+        List<Article> createdList = articleService.createArticles(dtos);
+        return (createdList != null) ?
+                ResponseEntity.status(HttpStatus.OK).body(createdList) :
+                ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+    }
+}
+```  
+
+<br/>
+
+`@Transactional` annotation 을 추가하여 트랜잭션을 보장하게 한다.  
+
+../service/ArticleService
+```java
+package com.example.firstproject.service;
+
+import com.example.firstproject.dto.ArticleForm;
+import com.example.firstproject.entity.Article;
+import com.example.firstproject.repository.ArticleRepository;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Slf4j
+@Service
+public class ArticleService {
+    ...
+    @Transactional
+    public List<Article> createArticles(List<ArticleForm> dtos) {
+        // dto 묶음을 entity 묶음으로 변환
+        List<Article> articleList = dtos.stream()
+                .map(dto -> dto.toEntity())
+                .collect(Collectors.toList());
+        // entity 묶음을 DB로 저장
+        articleList.stream()
+                .forEach(article -> articleRepository.save(article));
+        // 강제 예외 발생
+        articleRepository.findById(-1L).orElseThrow(
+                () -> new IllegalArgumentException("결제 실패!")
+        );
+        // 결과값 반환
+        return articleList;
+    }
+}
+```  
+
+기존 데이터를 확인해 본다.  
+
+
+Talend API를 사용하여 테스트를 진행합니다.  
+- url : http://localhost:8080/api/transaction-test
+- method : post
+- body :
+    ```json
+    [
+        {
+            "id": 4,
+            "title": "4",
+            "content": "테스트 4"
+        },
+        {
+            "id": 5,
+            "title": "5",
+            "content": "테스트5"
+        },
+        {
+            "id": 6,
+            "title": "6",
+            "content": "테스트 6"
+        }
+    ]
+    ```  
+
+send를 클릭하면 아래와 같이 에러가 발생하고 rollback 이 된다.  
+
+<img src="./assets/transaction_fail.png" style="width: 80%; height: auto;"/> 
 
 <br/>
 
