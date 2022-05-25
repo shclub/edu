@@ -723,3 +723,32 @@ log4jdbc는 SQL문에서부터 Connect정보, JDBC호출 정보, SQL 결과를 T
 IntelliJ Console 에서 조회한 로그를 볼수 있습니다.  
 
 <img src="./assets/mybatis15.png" style="width: 80%; height: auto;"/>
+
+<br/>
+Talend API 로  http://localhost:8080/articles 를 호출해 보면  
+아래와 같이 sql 문과 resultset 이 나옵니다.     
+
+<br/>
+
+sqltiming과 resultsettable의 레벨을 info로 설정한 결과입니다.  
+SQL, 수행시간, Table을 확인 할 수 있습니다.  
+
+<br/>
+
+<img src="./assets/mybatis16.png" style="width: 80%; height: auto;"/>
+
+<br/>
+
+위의 SQL 형식은  ArticleMapper.xml  파일에 있는 형식과 동일하게 출력됩니다.  
+
+```xml
+    <select id="findAll" resultType="Article">
+
+      /* 데이터 전체 조회 */
+        select
+            id
+             , title
+             , content
+        from article
+    </select>
+```
