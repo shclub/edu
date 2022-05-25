@@ -649,6 +649,103 @@ ArgoCD 화면에 admin 계정으로 생성한 pipeline 을 볼수 있습니다.
 
 <img src="./assets/argocd_new_account_role.png" style="width: 80%; height: auto;"/>  
 
+<br/>
+
+운영 환경에서는 권한을 최소화하여 하여야 합니다.  
+
+먼저 default 라고 하는 project 와는 별도로 신규 project를 생성합니다.  
+
+아래 내용을 복사하고 vi 에디터로 argocd_proj.yaml 화일을 만들고 붙여 넣기 한 후 저장한다.  
+
+<br/>
+
+```bash
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: edu-project
+  namespace: argocd
+spec:
+  clusterResourceWhitelist:
+  - group: '*'
+    kind: '*'
+  destinations:
+  - namespace: '*'
+    server: '*'
+  orphanedResources:
+    warn: false
+  sourceRepos:
+  - '*'
+```   
+
+<br/>
+
+아래 명령어를 사용하여 project를 생성한다. 
+
+```bash
+root@jakelee:~# kubectl apply -f argocd_proj.yaml
+```
+
+에러가 없이 발생하면 edu-project 라는 이름으로 project 가 생성된 것을 확인 할 수 있다.  
+
+```bash
+root@jakelee:~# kubectl get appproject -n argocd
+NAME           AGE
+default        53d
+edu-project    88m
+```  
+
+<br/>
+
+아래 처럼 default role을 readonly에서 모든 기능을 disable 하도록 한다.  
+
+기존
+```bash
+  policy.default: role:readonly
+```  
+
+변경  
+```bash
+  policy.default: role:''
+```  
+
+<br/>
+
+권한을 세부 적으로 컨트롤 한다.  
+
+edu1 이라는 신규 생성된 계정에서 대부분 readonly 권한만 가지고 있고 edu-project라고 하는 project에 대해서만 전체 권한을 갖는다.  
+
+edu-project 이외의 applications들은 볼수 없다.  
+
+```bash
+    p, role:edu1, clusters, get, *, allow
+    p, role:edu1, repositories, get, *, allow
+    p, role:edu1, projects, get, *, allow
+    p, role:edu1, applications, *, edu-project/*, allow
+```
+
+<br/>
+
+전체 내용은 아래와 같다.  
+
+
+```bash
+data:
+  policy.csv: |
+    p, role:shclub, applications, *, */*, allow
+    p, role:shclub, clusters, get, *, allow
+    p, role:shclub, repositories, get, *, allow
+    p, role:shclub, repositories, create, *, allow
+    p, role:shclub, repositories, update, *, allow
+    p, role:shclub, repositories, delete, *, allow
+    p, role:edu1, clusters, get, *, allow
+    p, role:edu1, repositories, get, *, allow
+    p, role:edu1, projects, get, *, allow
+    p, role:edu1, applications, *, edu-project/*, allow
+    g, edu1, role:edu1
+    g, shclub, role:shclub
+  policy.default: role:''
+```
 
 <br/>
 
@@ -778,7 +875,7 @@ spec:
 
 먼저 kustomize를 설치한다. 
 
-아래 명령어 하나로  설치가 된다.
+아래 명령어 하나로 설치가 된다.
 
 ```bash 
 root@jakelee:~# curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"  | bash
