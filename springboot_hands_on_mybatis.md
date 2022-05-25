@@ -11,7 +11,9 @@ MyBatis 활용 방법에 대해서 실습한다.
 
 4. SQL문 로그 보기
 
-5. 소스위치 : https://github.com/shclub/edu10
+5. Swagger 설정
+
+6. 소스위치 : https://github.com/shclub/edu10
 
 <br/>
 
@@ -606,7 +608,7 @@ Article 테이블을 조회 하여 데이터를 확인 합니다.
 
 <br/>
 
-이번 에는 log4jdbc를 사용하려 쿼리를 log로 찍어보도록 하겠습니다.  
+이번 에는 log4jdbc를 사용하여 쿼리를 log로 찍어보도록 하겠습니다.  
 
 먼저 pom.xml 화일에 log4jdbc를 dependency로 추가한다.
 
@@ -752,3 +754,119 @@ SQL, 수행시간, Table을 확인 할 수 있습니다.
         from article
     </select>
 ```
+
+<br/>
+
+### Swagger 설정     
+
+<br/>
+
+Rest Api 문서화를 위한 Spring Boot Swagger 3 를 설정합니다.  
+
+먼저 pom.xml 화일에 swagger dependency로 추가한다.
+
+```xml
+		<!-- swagger 3 -->
+		<dependency>
+			<groupId>io.springfox</groupId>
+			<artifactId>springfox-boot-starter</artifactId>
+			<version>3.0.0</version>
+		</dependency>
+		<dependency>
+			<groupId>io.springfox</groupId>
+			<artifactId>springfox-swagger-ui</artifactId>
+			<version>3.0.0</version>
+		</dependency>
+```  
+
+<br/>
+
+config 설정을 위하여 project 상단 폴더 밑에 SwaggerConfig class를 생성합니다.  
+
+basepackage는 com.kt.edu 로 설정합니다.  
+
+<br/> 
+
+<img src="./assets/swagger2.png" style="width: 80%; height: auto;"/>
+
+<br/>
+
+../SwaggerConfig.java   
+```java
+package com.kt.edu.secondproject;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.EnableWebMvc;
+import springfox.documentation.builders.ApiInfoBuilder;
+import springfox.documentation.builders.PathSelectors;
+import springfox.documentation.builders.RequestHandlerSelectors;
+import springfox.documentation.service.ApiInfo;
+import springfox.documentation.spi.DocumentationType;
+import springfox.documentation.spring.web.plugins.Docket;
+
+@Configuration
+@EnableWebMvc
+public class SwaggerConfig {
+
+    @Bean
+    public Docket swaggerAPI(){
+        //Docket : swagger Bean
+        return new Docket(DocumentationType.SWAGGER_2)
+                .useDefaultResponseMessages(true) //기본 응답 메시지 표시 여부
+                .select()
+                .apis(RequestHandlerSelectors.basePackage("com.kt.edu")) //swagger탐색 대상 패키지
+                .paths(PathSelectors.any())
+                .build()
+                .apiInfo(apiInfo());
+    }
+
+    private ApiInfo apiInfo() {
+        return new ApiInfoBuilder()
+                .title("kt Caravan Swagger")
+                .description("Education swagger")
+                .version("1.0")
+                .build();
+    }
+
+}
+```  
+
+
+<br/>
+
+springboot를 기동하고 웹브라우저에서 http://localhost:8080/swagger-ui/index.html 로 접속을 합니다.  
+
+article-controller 를 확장하면 rest api 목록을 볼 수 있습니다.  
+
+<br/> 
+
+<img src="./assets/swagger1.png" style="width: 80%; height: auto;"/>
+
+<br/>  
+
+테스트를 하기 위해 articles API 를 선택하고 try it out 버튼을 클릭합니다.    
+
+<br/>
+
+<img src="./assets/swagger3.png" style="width: 80%; height: auto;"/>
+
+<br/>
+
+Execute 버튼을 클릭하면 API 호출이 되고 Resonse 값을 JSON으로 받을 수 있습니다.  
+    
+<br/>
+
+<img src="./assets/swagger4.png" style="width: 80%; height: auto;"/>
+
+<br/>
+
+swagger 2.0과 3.0의 차이  
+
+- config  
+    @EnableSwagger2 : swagger 2.0 버전   
+    @EnableWebMvc : swagger 3.0 버전  
+
+- url  
+    2.X.X  :  http://localhost:8080/swagger-ui.html  
+    3.X.X  :  http://localhost:8080/swagger-ui/index.html    

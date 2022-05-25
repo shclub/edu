@@ -60,9 +60,32 @@
 
 7. Chapter 7 : 7주차  
      - SpringBoot 실습  
-     - SpringBoot 전체 hands-on [ Hands-On 문서보기 ](./springboot_hands_on.md)  
+     - SpringBoot 전체 hands-on [ Hands-On 문서보기 ](./springboot_hands_on.md)   
+
+          - 뷰 템플릿 과 MVC 패턴
+          - JDBC vs JPA vs Spring JDBC ( Mybatis ) vs Spring Data JDBC 비교
+          - Spring Data JPA hands-on
+          - Rest API 와 JSON
+          - HTTP 와 Rest Controller
+          - 서비스와 트랜잭션, 그리고 롤백
+          - Spring JDBC ( MyBatis ) hands-on
+          - Spring Data JDBC hands-on
+          - 테스트 작성하기
+          - 댓글 서비스 만들기
+          - IoC 와 DI
+          - AOP
+          - Object Mapper
+
      - SpringBoot Data Mybatis hands-on [ Hands-On 문서보기 ](./springboot_hands_on_mybatis.md) 
-     - 샘플 소스 ( mybatis ): [ 소스 보기 ](https://github.com/shclub/edu10) 
+
+          -  프로젝트 생성 및 환경 설정
+          -  프로젝트 구성하기 
+          -  실행해 보기
+          -  SQL문 로그 보기 ( log4jdbc 설정 )
+          -  Swagger 설정 ( 3.0 )  
+
+     - 샘플 소스 ( mybatis ): [ 소스 보기 ](https://github.com/shclub/edu10)
+     
      - SpringBoot Data JDBC hands-on [ Hands-On 문서보기 ](./springboot_hands_on_jdbc.md) 
      - 샘플 소스 ( Data Jdbc ): [ 소스 보기 ](https://github.com/shclub/edu11)
       
