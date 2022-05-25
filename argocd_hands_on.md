@@ -714,9 +714,9 @@ edu-project    88m
 
 권한을 세부 적으로 컨트롤 한다.  
 
-edu1 이라는 신규 생성된 계정에서 대부분 readonly 권한만 가지고 있고 edu-project라고 하는 project에 대해서만 전체 권한을 갖는다.  
+edu1 이라는 신규 생성은 edu-project라고 하는 project에 한하여만 전체 권한을 갖는다.  
 
-edu-project 이외의 applications들은 볼수 없습니다.  
+edu-project 이외의 applications 들은 볼수 없습니다.  
 
 ```bash
     p, role:edu1, clusters, get, *, allow
