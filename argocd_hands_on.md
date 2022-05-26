@@ -723,6 +723,15 @@ edu-project 이외의 applications 들은 볼수 없습니다.
     p, role:edu1, repositories, get, *, allow
     p, role:edu1, projects, get, *, allow
     p, role:edu1, applications, *, edu-project/*, allow
+```  
+
+<br/> 
+
+아래 처럼 프로젝트 명을 적어 주면 해당 프로젝트만 보입니다.  
+
+
+```bash
+    p, role:edu1, projects, get, edu-project, allow
 ```
 
 <br/>

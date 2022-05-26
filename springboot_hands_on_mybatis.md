@@ -853,7 +853,7 @@ article-controller 를 확장하면 rest api 목록을 볼 수 있습니다.
 
 <br/>
 
-Execute 버튼을 클릭하면 API 호출이 되고 Response 값을 JSON으로 받을 수 있습니다.  
+Execute 버튼을 클릭하면 API 호출이 되고 Resonse 값을 JSON으로 받을 수 있습니다.  
     
 <br/>
 
