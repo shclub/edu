@@ -145,7 +145,7 @@ mybatis.config-location= classpath:mybatis-config.xml
 
 <br/>
 
-이제 mybatis-config.yaml 화일을 생성한다.  
+이제 mybatis-config.xml 화일을 생성한다.  
 typeAlias는 DTO 이름을 편하게 사용하기 위해 Alias 를 설정한다.  
 
 
@@ -295,6 +295,7 @@ dev 환경에서와 운영환경에서는 설정이 다를수가 있어 향후 p
 - controller
 - repository
 - service
+- resources/mapper
 
 
 <img src="./assets/mybatis3.png" style="width: 80%; height: auto;"/> 
@@ -303,7 +304,7 @@ dev 환경에서와 운영환경에서는 설정이 다를수가 있어 향후 p
 
 controller 패키지에 ArticleController 를 RestController 로 생성합니다.  
 
-../controller/ArticleController  
+../controller/ArticleController.java  
 ```java
 package com.kt.edu.secondproject.controller;
 
@@ -362,7 +363,7 @@ public class ArticleController {
 
 domain 패키지에 Article DTO 를 생성한다.  
 
-../domain/Article 
+../domain/Article.java
 ```java
 package com.kt.edu.secondproject.domain;
 
@@ -387,7 +388,7 @@ repository 패키지에 ArticleMapper Interface 를 생성한다.
 
 <br/>
 
-../repository/ArticleMapper
+../repository/ArticleMapper.java
 
 ```java
 package com.kt.edu.secondproject.repository;
@@ -419,7 +420,7 @@ service 패키지에 ArticleService class 를 생성한다.
 
 <br/>
 
-../service/ArticleService  
+../service/ArticleService.java  
 ```java
 package com.kt.edu.secondproject.service;
 
@@ -486,7 +487,7 @@ public class ArticleService {
 
 <br/>
 
-resources 폴더에 mapper 디렉토리를 생성하고 Article Mapper xml 화일을 생성한다.   
+resources 폴더에 mapper 디렉토리를 생성하고 ArticleMapper xml 화일을 생성한다.   
 
 <br/>
 

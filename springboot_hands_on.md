@@ -850,6 +850,7 @@ return 값으로 아래와 같은 값이 JSON으로 나오는 것을 볼수 있�
 각자의 장단점이 있으며 두 개의 방식은 Spring에서 파라미터를 받는 방식이 조금 다르다.   
 
 `@RequestParam`
+
 ```java
 @RestController
 public class TestController (){
@@ -871,6 +872,7 @@ public class TestController (){
 <br/>
 
 `@PathVariable`
+
 ```java
 @RestController
 public class TestController (){
@@ -884,8 +886,7 @@ public class TestController (){
     //memo   = "테스트"
 
     return "TEST 성공"
-  }
-  
+  }  
 }
 ```  
 
@@ -893,7 +894,7 @@ public class TestController (){
 이때는 아래와 같은 방법을 사용하면 정상적으로 받을 수 있다.
 
 ```java
-RestController
+@RestController
 public class TestController (){
 
   @GetMapping("/{userId}/{memo:.+}")
@@ -921,9 +922,9 @@ Rest API로 Post를 사용해 데이터를 생성 해 봅니다.
 
 아래 코드를 복사하여 붙여 넣기 합니다.  
 
-PostMapping을 사용하며  JSON으로 Request를 던지기 위해서는 @RequestBody를 넣어줍니다.  
+PostMapping을 사용하며  JSON으로 Request를 던지기 위해서는 `@RequestBody`를 넣어줍니다.  
 
-../api/ArticleApiController
+../api/ArticleApiController.java
 ```java
 ...
 @RestController
@@ -970,7 +971,7 @@ PatchMapping을 사용하며  JSON으로 Request를 던지기 위해서는 @Requ
 
 <img src="./assets/rest_api2.png" style="width: 80%; height: auto;"/>  
 
-../api/ArticleApiController
+../api/ArticleApiController.java
 ```java
 ...
 @Slf4j  //로그 추가
@@ -1006,7 +1007,7 @@ public class ArticleApiController {
 
 patch 함수를 구현하기 위해서 Article entity를 아래와 같이 수정합니다.  
  
-../entity/Article
+../entity/Article.java
 ```java
 package com.kt.edu.firstproject.entity;
 ...
@@ -1065,7 +1066,7 @@ Rest API로 Delete를 사용해 데이터를 삭제 해 봅니다.
 
 DeleteMapping을 사용합니다.  
   
-../api/ArticleApiController
+../api/ArticleApiController.java
 ```java
 ...
 @Slf4j
@@ -1130,7 +1131,7 @@ ArticleApiController 에 서비스 계층을 추가해 봅니다.
 
 해당 코드를 모두 주석 처리하고 아래과 같이 수정합니다.  
 
-../api/ArticleApiController
+../api/ArticleApiController.java
 ```java
 package com.kt.edu.firstproject.api;
 import lombok.extern.slf4j.Slf4j;
@@ -1172,7 +1173,7 @@ public class ArticleService {
 
 리팩토링, Article 목록 조회
 
-../api/ArticleApiController
+../api/ArticleApiController.java
 ```java
 ...
 @Slf4j
@@ -1189,7 +1190,7 @@ public class ArticleApiController {
 }
 ```  
 
-../service/ArticleService
+../service/ArticleService.java
 ```java
 package com.kt.edu.firstproject.service;
 
@@ -1220,12 +1221,13 @@ public class ArticleService {
 데이터 단건 조회를 수정해 봅니다.  
 
 
-../api/ArticleApiController
+../api/ArticleApiController.java
 ```java
 ...
 @Slf4j
 @RestController
 public class ArticleApiController {
+
     @Autowired
     private ArticleService articleService;
     // GET
@@ -1242,7 +1244,7 @@ public class ArticleApiController {
 
 서비스는 아래와 같습니다.  
 
-../service/ArticleService
+../service/ArticleService.java
 ```java
 package com.kt.edu.firstproject.service;
 
@@ -1323,7 +1325,7 @@ public class ArticleService {
 
 patch method를 아래와 같이 변경합니다.
 
-../api/ArticleApiController
+../api/ArticleApiController.java
 ```java
 ...
 @Slf4j
@@ -1346,7 +1348,7 @@ public class ArticleApiController {
 
 서비스에는 아래 와 같이 update method 를 추가하고 `@Slf4j` 도 추가합니다.  
 
-../service/ArticleService
+../service/ArticleService.java
 ```java
 ...
 @Slf4j
@@ -1379,7 +1381,7 @@ public class ArticleService {
 
 delete method를 아래와 같이 변경합니다.
 
-../api/ArticleApiController
+../api/ArticleApiController.java
 ```java
 ...
 @Slf4j
@@ -1401,7 +1403,7 @@ public class ArticleApiController {
 
 서비스에는 아래 와 같이 delete method 를 추가합니다.  
 
-../service/ArticleService
+../service/ArticleService.java
 ```java
 ...
 @Slf4j
@@ -1430,7 +1432,7 @@ public class ArticleService {
 
 controller에 test용 API를 추가합니다.
 
-../api/ArticleApiController
+../api/ArticleApiController.java
 ```java
 ...
 @Slf4j
@@ -1452,7 +1454,7 @@ public class ArticleApiController {
 
 `@Transactional` annotation 을 추가하여 트랜잭션을 보장하게 한다.  
 
-../service/ArticleService
+../service/ArticleService.java
 ```java
 package com.example.firstproject.service;
 
