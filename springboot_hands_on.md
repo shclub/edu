@@ -748,6 +748,10 @@ Rest Controller java 화일을 생성합니다.
 
 <br/>
 
+참고 : https://mangkyu.tistory.com/49
+
+<br/>
+
 api 폴더 아래에 생성합니다.  
 
 <img src="./assets/rest_api4.png" style="width: 80%; height: auto;"/>  
@@ -1173,6 +1177,7 @@ public class ArticleService {
 ...
 @Slf4j
 @RestController
+
 public class ArticleApiController {
     @Autowired
     private ArticleService articleService;

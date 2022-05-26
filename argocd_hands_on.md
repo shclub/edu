@@ -1106,7 +1106,11 @@ web browser로 argocd ui 를 접속하여 setting-> Cluster 메뉴로 이동하�
 
 <br/>
 
-Helm -> Kustomize 전환: Replicated의 쉽(Ship)  사용  
+### Helm -> Kustomize 전환
+
+<br/>
+
+Replicated의 쉽(Ship)  사용  
 
 이제, Helm을 Kustomize 형태로 변환하는 작업이 필요합니다. 이를 도와주는 도구가 쉽(Ship)입니다.  
 
@@ -1114,10 +1118,10 @@ https://www.replicated.com/ship/oss/
 https://github.com/replicatedhq/ship  
 
 
-- 먼저 쉽을 사용해 Helm을 템플릿화된 쿠버네티스 리소스 형태로 변경합니다.
+- 먼저 Ship을 사용해 Helm을 템플릿화된 쿠버네티스 리소스 형태로 변경합니다.  
 - 이후 쿠버네티스 리소스에서 필요한 부분만 Kustomize 패치를 사용해 변경하고   변경한 부분은 GitOps 리포지토리에 넣어서 관리합니다.
 
-- GitOps 리포지토리에 git push origin HEAD:install/ ${cluster}/${namespace}/${app_name}과 같은 Git CLI 명령을 통해 install 브랜치가 생성이 되면 해당 브랜치의 ${app_name} 인프라를 배포하는 CI/CD 파이프라인이 실행됩니다. 
+- GitOps 리포지토리에 `git push origin HEAD:install/ ${cluster}/${namespace}/${app_name}` 과 같은 Git CLI 명령을 통해 install 브랜치가 생성이 되면 해당 브랜치의 `${app_name}` 인프라를 배포하는 CI/CD 파이프라인이 실행됩니다. 
 - 배포의 형상은 마찬가지로 Argo CD를 통해 GitOps로 관리합니다.
 
 ### 과제
