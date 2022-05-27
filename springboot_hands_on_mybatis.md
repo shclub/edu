@@ -105,6 +105,8 @@ INSERT INTO article(id, title, content) VALUES(3, '3', '테스트 3');
 
 application.properties 화일에 DB 연결 설정 및 mybatis 설정을 한다.  
 
+../resources/application.properties  
+
 ```bash  
 # h2 DB
 spring.h2.console.enabled=true
@@ -145,10 +147,14 @@ mybatis.config-location= classpath:mybatis-config.xml
 
 <br/>
 
-이제 mybatis-config.xml 화일을 생성한다.  
-typeAlias는 DTO 이름을 편하게 사용하기 위해 Alias 를 설정한다.  
+이제 mybatis-config.xml 화일을 생성한다.   
 
+mybatis-config.xml 화일은  Mybatis에 별도의 설정들을 정의 합니다.  
 
+sql문의 리턴타입을 DTO로 사용할 경우 태그를 사용하면  풀 패키지명 없이  간단하게 리턴 타입을  사용할 수 있습니다.  
+- typeAlias는 DTO 이름을 간단하게 사용하기 위해 Alias 를 설정.  
+
+../resources/mybatis-config.xml
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD config 3.0//EN"

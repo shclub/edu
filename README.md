@@ -39,7 +39,7 @@
 4. Chapter 4 : 4주차   ( [가이드 문서보기](./chapter4.md) ) 
      - GitOps 설명 
      - ArgoCD 설치 및 설정 
-     - kustomize 설명 및 실습 ( 향후 추가 )
+     - kustomize 설명 및 실습
      - k8s에 배포 실습 ( Blue/Green , Canary )  
      - ArgoCD hands-on [ Hands-On 문서보기 ](./argocd_hands_on.md) 
 
@@ -108,8 +108,8 @@
 
      - 샘플 소스 ( mybatis ): [ 소스 보기 ](https://github.com/shclub/edu10)
      
-     - SpringBoot Data JDBC hands-on [ Hands-On 문서보기 ](./springboot_hands_on_jdbc.md) 
-     - 샘플 소스 ( Data Jdbc ): [ 소스 보기 ](https://github.com/shclub/edu11)
+     - Spring Data JDBC hands-on [ Hands-On 문서보기 ](./springboot_hands_on_spring_data_jdbc.md) 
+     - 샘플 소스 ( Spring Data Jdbc ): [ 소스 보기 ](https://github.com/shclub/edu11)
       
      <br/>
 
@@ -173,6 +173,7 @@
      <br/>
 
 15. Chapter 15 : 15주차 
+     - Prometheus 심화 
      - Airflow ( 배치프레임웍 ) 설치 및 실습
 
      <br/>
