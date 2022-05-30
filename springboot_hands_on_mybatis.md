@@ -819,7 +819,7 @@ public class SwaggerConfig {
     @Bean
     public Docket swaggerAPI(){
         //Docket : swagger Bean
-        return new Docket(DocumentationType.SWAGGER_2)
+        return new Docket(DocumentationType.OAS_30)
                 .useDefaultResponseMessages(true) //기본 응답 메시지 표시 여부
                 .select()
                 .apis(RequestHandlerSelectors.basePackage("com.kt.edu")) //swagger탐색 대상 패키지
