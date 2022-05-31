@@ -109,13 +109,30 @@
      - 샘플 소스 ( mybatis ): [ 소스 보기 ](https://github.com/shclub/edu10)
      
      - Spring Data JDBC hands-on [ Hands-On 문서보기 ](./springboot_hands_on_spring_data_jdbc.md) 
+  
+          -  Spring Data JPA vs Spring Data JDBC 
+          -  프로젝트 구성하기 ( CRUD , Paging & Sorting )
+          -  실행해 보기
+          -  로컬 캐쉬 ( Caffeine Cache ) 사용하기 
+          -  Spring Security ( OAuth 연동 )
+          -  Frontend ( React ) 간단 사용
+          -  Annotation 정리  
+
      - 샘플 소스 ( Spring Data Jdbc ): [ 소스 보기 ](https://github.com/shclub/edu11)
       
      <br/>
 
 8. Chapter 8 : 8주차  
+     - SpringBoot 마지막
+          - 테스트 작성하기
+          - 댓글 서비스 만들기
+          - IoC 와 DI
+          - AOP
+          - Object Mapper   
+ 
      - k8s 배포 실습 ( SpringBoot )
      - DataDog 연동 ( SpringBoot )
+     
      - Summary
 
 
