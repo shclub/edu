@@ -8,11 +8,13 @@
 <br/>
 
 1. Chapter 1 : 1주차  ( [가이드 문서보기](./chapter1.md) )  
+
      - VM 기반으로 Jenkins 설치 및 설정 , GitHub , Docker 계정 생성 , Jenkins Pipeline 생성하여 CI 실습  
      - 샘플 소스 : [ 소스 보기 ](https://github.com/shclub/edu1)  
 
      <br/>
-2. Chapter 2 : 2주차  ( [가이드 문서보기](./chapter2.md) )    
+2. Chapter 2 : 2주차  ( [가이드 문서보기](./chapter2.md) ) 
+
      - git 설치 및 활용 
      - Docker 이해 및 활용 
      - Swagger 실습 
@@ -21,7 +23,8 @@
 
      <br/>
 
-3. Chapter 3 : 3주차   ( [가이드 문서보기](./chapter3.md) )    
+3. Chapter 3 : 3주차   ( [가이드 문서보기](./chapter3.md) )  
+
      - kubernetes 설치 (k3s) 및 설정 , k8s 이해 및 활용
      - kubernetes IDE 인 Lens 설치 및 사용법 실습   
      - Helm 설치 및 helm으로 prometheus 설치 활용
@@ -37,11 +40,12 @@
      <br/>
 
 4. Chapter 4 : 4주차   ( [가이드 문서보기](./chapter4.md) ) 
+
      - GitOps 설명 
      - ArgoCD 설치 및 설정 
      - kustomize 설명 및 실습
      - k8s에 배포 실습 ( Blue/Green , Canary )  
-     - ArgoCD hands-on [ Hands-On 문서보기 ](./argocd_hands_on.md) 
+     - ArgoCD Hands-on [ Hands-On 문서보기 ](./argocd_hands_on.md) 
 
           - kubectl plugin 설치
           - Blue/Green 배포
@@ -52,8 +56,8 @@
 
      <br/>
 
-
 5. Chapter 5 : 5주차   ( [가이드 문서보기](./chapter5.md) ) 
+
      - kt cloud 하드디스크 추가
      - k3s 위치 변경
      - Github Action , workflow 사용 ( GoodBye Jenkins )
@@ -63,23 +67,26 @@
      <br/>
 
 6. Chapter 6 : 6주차    ( [가이드 문서보기](./chapter6.md) ) 
+
      - SpringBoot 개념 설명 
      - IDE 개발 환경 구성 
      - SpringBoot 전체 hands-on [ Hands-On 문서보기 ](./springboot_hands_on.md)   
 
           - 뷰 템플릿 과 MVC 패턴
-          - JDBC vs JPA vs Spring JDBC ( Mybatis ) vs Spring Data JDBC 비교
+          - JDBC vs JPA vs Mybatis vs Spring Data JDBC 비교
           - Spring Data JPA hands-on
           - Rest API 와 JSON
           - HTTP 와 Rest Controller
           - 서비스와 트랜잭션, 그리고 롤백
-          - Spring JDBC ( MyBatis ) hands-on
+          - Spring MyBatis hands-on
           - Spring Data JDBC hands-on
           - 테스트 작성하기
           - 댓글 서비스 만들기
           - IoC 와 DI
           - AOP
           - Object Mapper   
+          - PSA ( Portal Service Abstraction )
+          - Webflux
           
      - SpringBoot Data JPA hands-on [ Hands-On 문서보기 ](./springboot_hands_on_jpa.md)  
 
@@ -95,6 +102,7 @@
      <br/>
 
 7. Chapter 7 : 7주차  
+
      - SpringBoot 실습  
      - SpringBoot 전체 hands-on [ Hands-On 문서보기 ](./springboot_hands_on.md)   
 
@@ -116,19 +124,23 @@
           -  로컬 캐쉬 ( Caffeine Cache ) 사용하기 
           -  Spring Security ( OAuth 연동 )
           -  Frontend ( React ) 간단 사용
-          -  Annotation 정리  
+          -  Annotation 정리 
 
      - 샘플 소스 ( Spring Data Jdbc ): [ 소스 보기 ](https://github.com/shclub/edu11)
       
      <br/>
 
 8. Chapter 8 : 8주차  
+
      - SpringBoot 마지막
+
           - 테스트 작성하기
           - 댓글 서비스 만들기
           - IoC 와 DI
           - AOP
           - Object Mapper   
+          - PSA ( Portal Service Abstraction )
+          - Webflux
  
      - k8s 배포 실습 ( SpringBoot )
      - DataDog 연동 ( SpringBoot )

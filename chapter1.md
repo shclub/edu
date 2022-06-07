@@ -121,7 +121,7 @@ Launch 를 클릭하면 IP가 생성이 된다.
 
 ### <a name='PortForwarding.'></a>Port Forwarding을 설정한다.
 
-VM 과 Private IP를 매핑하면 외부에서 접속 가능 하다.  
+VM 과 Public IP를 매핑하면 외부에서 접속 가능 하다.  
 
 서버를 선택하고  Connection String을 선택한다.
 <!--![](./assets/port_forwarding1.png)-->
@@ -129,19 +129,20 @@ VM 과 Private IP를 매핑하면 외부에서 접속 가능 하다.
 
 - 사설 포트 : vm 서버의 포트  
 - 공인 포트 : 외부에 노출할 포트  
-- 공인 IP : 외부에서 접속할 IP ( 위에서 생성한 Private IP ) 
+- 공인 IP : 외부에서 접속할 IP ( 위에서 생성한 Public IP ) 
 
  <img src="./assets/port_forwarding2.png" style="width: 80%; height: auto;"/>
 
 추가 버튼을 클릭하여 생성하고 아래 포트들도 반복하여 설정한다.
 
-```
+```  
+
 ssh : 22 -> 22222
 jenkins : 9000 -> 9000
-flask web : 40003 -> 40003
-그외 : 40004 ~ 40010 
-k8s  : 6443 -> 6443
-k8s nodePort  : 30000 -> 32767
+테스트용 web 포트 : 40003 ~ 40010
+k8s master 포트  : 6443 -> 6443
+k8s NodePort range  : 30000 ~ 32767  
+
 ```
 <br/><br/>
 
