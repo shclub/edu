@@ -106,7 +106,7 @@
      - SpringBoot 실습  
      - SpringBoot 전체 hands-on [ Hands-On 문서보기 ](./springboot_hands_on.md)   
 
-     - SpringBoot Data Mybatis hands-on [ Hands-On 문서보기 ](./springboot_hands_on_mybatis.md) 
+     - Mybatis hands-on [ Hands-On 문서보기 ](./springboot_hands_on_mybatis.md) 
 
           -  프로젝트 생성 및 환경 설정
           -  프로젝트 구성하기 
@@ -114,8 +114,10 @@
           -  SQL문 로그 보기 ( log4jdbc 설정 )
           -  Swagger 설정 ( 3.0 )  
 
-     - 샘플 소스 ( mybatis ): [ 소스 보기 ](https://github.com/shclub/edu10)
-     
+     - 샘플 소스 ( mybatis ): [ 소스 보기 ](https://github.com/shclub/edu10)  
+
+     - 샘플 소스 ( mybatis / log4j2 / OpenApi ): [ 소스 보기 ](https://github.com/shclub/edu10-1)
+
      - Spring Data JDBC hands-on [ Hands-On 문서보기 ](./springboot_hands_on_spring_data_jdbc.md) 
   
           -  Spring Data JPA vs Spring Data JDBC 

@@ -15,6 +15,10 @@ MyBatis 활용 방법에 대해서 실습한다.
 
 6. 소스위치 : https://github.com/shclub/edu10
 
+7. 로그 변경 및 swagger 변경
+
+8. 소스위치 : https://github.com/shclub/edu10-1
+
 <br/>
 
 ## MyBatis 실습
@@ -877,3 +881,465 @@ swagger 2.0과 3.0의 차이
 - url  
     2.X.X  :  http://localhost:8080/swagger-ui.html  
     3.X.X  :  http://localhost:8080/swagger-ui/index.html    
+
+
+### 로그 변경 및 swagger 변경    
+
+<br/>
+
+로그 관리를 logback 에서 log4j2로 변경 한다.  
+
+pom 화일을 변경하지 않고 log4j2를 설정하면 Multi Bind 오류가 발생하기 때문에 아래와 같이 기존 log를 exclusion tag를 사용하여 제외하고  log4j2 라이브러리를 추가한다.    
+
+swagger는 springfox 에서 openapi 로 변경한다.  
+
+최근에는 springfox 보다 openapi를 많이 사용하는 추세.
+
+    
+pom.xml
+```xml
+...
+<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-web</artifactId>
+            <!-- 기존 logback 제외 -->
+			<exclusions>
+				<exclusion>
+					<groupId>org.springframework.boot</groupId>
+					<artifactId>spring-boot-starter-logging</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+
+		<!-- spring log4j2 -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-log4j2</artifactId>
+		</dependency>
+
+        <!-- swagger 3 -->
+		<!--dependency>
+			<groupId>io.springfox</groupId>
+			<artifactId>springfox-boot-starter</artifactId>
+			<version>3.0.0</version>
+		</dependency>
+		<dependency>
+			<groupId>io.springfox</groupId>
+			<artifactId>springfox-swagger-ui</artifactId>
+			<version>3.0.0</version>
+		</dependency-->
+
+		<!-- Open API 3 -->
+		<dependency>
+			<groupId>org.springdoc</groupId>
+			<artifactId>springdoc-openapi-ui</artifactId>
+			<version>1.6.6</version>
+		</dependency>
+...
+```  
+
+<br/>
+
+이번 부터는  application.properties 대신에 application.yml 화일을 사용한다.  
+
+yml 화일에서는 indent를 주의해서 사용해야 한다.  
+
+
+```yml 
+server:
+  tomcat:
+    url-encoding: UTF-8
+  servlet:
+    context-path: /
+spring:
+  application:
+    name: edu-MyBatis
+  profiles:
+    active: local
+  banner: # banner 위치를 가르킨다
+    location: "classpath:banner.txt"
+# logging : log4j2.xml 위치를 가르킨다
+logging:
+  config: classpath:log4j2.xml
+# actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    shutdown:
+      enabled: true
+    health:
+      show-details: always
+
+# app : openapi swagger 설정을 위한 설정
+app-info:
+  app-name: "edu-MyBatis"
+  title: "Caravan Edu API"
+  build:
+    version: '@project.version@'
+    timestamp: '@app.build.timestamp@'
+  user-id: "jakelee"
+  org-id: "my-home"
+  desc: "EDU 관련 설명입니다."
+  doc-url: "https://github.com/shclub/edu/"
+  license: "Apache License"
+  license_url: "https://github.com/shclub/edu/"
+  version: "@app.build.timestamp@"
+  doc-desc: "기타정보"
+```
+
+<br/>
+
+폴더 구조는 다음과 같다.  
+
+<img src="./assets/mybatis_new.png" style="width: 80%; height: auto;"/>  
+
+<br/>
+
+환경에 맞는 yml 화일이 구분이 되고 spring profile에 따라 환경이 다르다.  
+
+- local PC 환경 : application-local.yml
+- 개발 환경 : application-dev.yml  
+
+<br/>
+
+아래는 개발 환경에 대한 application-dev.yml 화일 내용이다.  
+개발 환경의 서버 및 DB 정보 그리고 swagger를 설정한다.  
+
+../application-dev.yml
+```yml  
+##############
+### dev
+##############
+server:
+  # embeded was 설정
+  port: 8080
+  servlet:
+    context-path: /
+  tomcat:
+    connection-timeout: 5s
+    max-connections: 1000
+    accept-count: 20
+    threads:
+      max: 200
+spring:
+  h2:
+    # h2 DB
+    console:
+      enabled: true
+      path: /h2-console
+  # Database Platform
+  sql:
+    init:
+      platform: h2
+      mode: embedded
+  datasource:
+    driverClassName: net.sf.log4jdbc.sql.jdbcapi.DriverSpy
+    url: jdbc:log4jdbc:h2:mem:testdb 
+    # TMAX Tibero 연동시
+    #jdbc:log4jdbc:tibero:thin:@localhost:8640:POCICISORDDB
+    username: sa
+    password:
+    # h2 DB
+    generate-unique-name: false
+    # DB Connection pool 을 설정한다.
+    hikari:
+      pool-name: hikari-cp
+      maximum-pool-size: 30
+      minimum-idle: 2
+      data-source-properties:
+        cachePrepStmts: true
+        prepStmtCacheSize: 250
+        prepStmtCacheSqlLimit: 2048
+        useServerPrepStmts: true
+
+# model/domain package
+mybatis:
+  type-aliases-package: com.kt.edu
+  mapper-locations: mapper/*.xml
+  config-location: classpath:mybatis-config.xml
+
+# swagger ui 설정
+springdoc:
+  swagger-ui:
+    operations-sorter: alpha
+    tags-sorter: alpha
+    disable-swagger-default-url: true
+    doc-expansion: none
+
+# 로그 레벨 설정
+logging:
+  level:
+    com.kt.edu: trace
+```
+
+<br/> 
+
+springboot 기동시 처음에 보이는 banner를 변경 할 수 있다.    
+인터넷에서 text 만드는 방법이 많이 나와 있다.  
+  
+banner.txt
+```bash
+   _____                                                    ______   _____    _    _
+  / ____|                                                  |  ____| |  __ \  | |  | |
+ | |        __ _   _ __    __ _  __   __   __ _   _ __     | |__    | |  | | | |  | |
+ | |       / _` | | '__|  / _` | \ \ / /  / _` | | '_ \    |  __|   | |  | | | |  | |
+ | |____  | (_| | | |    | (_| |  \ V /  | (_| | | | | |   | |____  | |__| | | |__| |
+  \_____|  \__,_| |_|     \__,_|   \_/    \__,_| |_| |_|   |______| |_____/   \____/
+
+:: Spring Boot ${spring-boot.version} ::
+```  
+
+<br/>
+
+log4j2.xml 에서 로그 세부 설정을 할 수 있다.  
+아래 xml 화일은 console과 file 저장을 동시에 할 수 있는 예제이다.  
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="INFO">
+
+    <Properties>
+        <Property name="logFileName">edu10-1</Property>
+        <!-- 디폴트 로깅시-->
+        <Property name="consoleLayout">${logFileName} %d{HH:mm:ss.SSS} %-5level %c : - %enc{%msg}{CRLF} %n%throwable</Property>
+        <!-- <Property name="consoleLayout">${logFileName} %style{%d{ISO8601}}{black} %highlight{%-5level }[%style{%t}{bright,blue}] %style{%C{1.}}{bright,yellow}: - %msg%n%throwable</Property> -->
+        <!-- 로깅 마스킹 -->
+        <Property name="fileLayout">${logFileName} %d{HH:mm:ss.SSS} %-5level %c : - %enc{%msg}{CRLF} %n</Property>
+        <!-- <Property name="fileLayout">%d [%t] %-5level %c(%M:%L) - %spi%n</Property> -->
+    </Properties>
+
+    <Appenders>
+        <Console name="console" target="SYSTEM_OUT">
+            <PatternLayout pattern="${consoleLayout}" />
+        </Console>
+        <Async name="file" bufferSize="200">
+            <AppenderRef ref="RollingAppender" />
+        </Async>
+        <!-- 화일로 로그를 저장하기 위한 설정 -->
+        <RollingFile name="RollingAppender"
+                     fileName="logs/edu.log"
+                     filePattern="logs/edu-%d{yyyy-MM-DD-HH}-%02i.log.gz" append="true"
+                     ignoreExceptions="false">
+            <PatternLayout>
+                <Pattern>${fileLayout}</Pattern>
+            </PatternLayout>
+            <Policies>
+                <OnStartupTriggeringPolicy />
+                <SizeBasedTriggeringPolicy size="40MB" />
+                <TimeBasedTriggeringPolicy />
+            </Policies>
+            <DefaultRolloverStrategy>
+                <Delete basePath="${baseDir}" maxDepth="2">
+                    <IfFileName glob="logs/edu.*.log.gz" />
+                    <IfLastModified age="1d" />
+                </Delete>
+            </DefaultRolloverStrategy>
+        </RollingFile>
+    </Appenders>
+
+    <Loggers>
+        <!-- 스프링 프레임워크에서 찍는건 level을 info로 설정 -->
+        <logger name="org.springframework" level="info" additivity="false" >
+            <AppenderRef ref="console" />
+            <AppenderRef ref="file" />
+        </logger>
+        <!-- rolling file에는 debug, console에는 info 분리하여 처리 가능하다. -->
+        <logger name="com.kt.edu" additivity="false" >
+            <AppenderRef ref="console" level="info" />
+            <AppenderRef ref="file" level="debug"/>
+        </logger>
+
+        <logger name="org.springframework" level="warn" additivity="false" >
+            <AppenderRef ref="console" level="info" />
+        </logger>
+        <logger name="jdbc.audit" level="warn" additivity="false" >
+            <AppenderRef ref="console" level="info" />
+        </logger>
+
+        <!-- connection pool -->
+        <logger name="com.zaxxer" level="INFO" additivity="false">
+            <appender-ref ref="console"/>
+            <appender-ref ref="file"/>
+        </logger>
+        <logger name="jdbc.connection" level="warn" additivity="false" >
+            <AppenderRef ref="console" level="info" />
+            <AppenderRef ref="file" level="info" />
+        </logger>
+        <logger name="org.apache.kafka" level="warn" additivity="false" >
+            <AppenderRef ref="console" level="info" />
+        </logger>
+
+        <logger name="com.kt.edu" additivity="false" >
+            <AppenderRef ref="console" level="info" />
+            <AppenderRef ref="file" level="info" />
+        </logger>
+
+        <!--logger name="Slf4jSpyLogDelegator" additivity="false" >
+            <AppenderRef ref="console" level="info" />
+            <AppenderRef ref="file" level="info" />
+        </logger-->
+
+        <logger name="net.sf.log4jdbc.log.slf4j" level="info" additivity="false">
+            <appender-ref ref="console" />
+            <appender-ref ref="file" />
+        </logger>
+
+        <logger name="jdbc.sqlonly" additivity="false" >
+            <AppenderRef ref="console" level="error" />
+        </logger>
+
+        <logger name="jdbc.sqltiming" additivity="false" >
+            <AppenderRef ref="console" level="info" />
+            <AppenderRef ref="file" level="info" />
+        </logger>
+
+        <logger name="jdbc.resultset" additivity="false" >
+            <AppenderRef ref="console" level="error" />
+        </logger>
+
+        <logger name="jdbc.resultsettable" level="info" additivity="false" >
+            <AppenderRef ref="console" level="info" />
+            <AppenderRef ref="file" level="info" />
+        </logger>
+
+        <root level="info">
+            <AppenderRef ref="console" />
+            <AppenderRef ref="file" />
+        </root>
+
+    </Loggers>
+</Configuration>
+```  
+
+<br/>
+
+최상위 폴더에서 config 패키지를 생성을 하고 OpenApiConfig 클래스를 생성한다.  
+
+../config/OpenApiConfig.java
+```java
+package com.kt.edu.secondproject.config;
+
+import org.springdoc.core.GroupedOpenApi;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
+import io.swagger.v3.oas.models.ExternalDocumentation;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.info.License;
+
+@Configuration
+public class OpenApiConfig {
+
+    // value annotation은 application.yml 의 값을 가져온다.
+    @Value("${spring.application.name}")
+    private String group;
+
+    @Value("${app-info.title}")
+    private String title;
+
+    @Value("${app-info.desc}")
+    private String desc;
+
+    @Value("${app-info.build.version}")
+    private String version;
+
+    @Value("${app-info.license}")
+    private String license;
+
+    @Value("${app-info.license-url}")
+    private String licenseUrl;
+
+    @Value("${app-info.doc-desc}")
+    private String docDesc;
+
+    @Value("${app-info.doc-url}")
+    private String docUurl;
+
+    @Profile({"local", "dev"})
+    @Bean
+    public GroupedOpenApi openApi() {
+        String[] paths = {"/**"};
+        return GroupedOpenApi.builder().group(group).pathsToMatch(paths).build();
+    }
+
+    @Bean
+    public OpenAPI springShopOpenAPI() {
+        return new OpenAPI()
+                .info(new Info().title(title)
+                        .description(desc)
+                        .version(version)
+                        .license(new License().name(license).url(licenseUrl)))
+                .externalDocs(new ExternalDocumentation()
+                        .description(docDesc)
+                        .url(docUurl));
+    }
+
+}
+```  
+
+<br/>
+
+Swagger에서 원하는 설명이 나오도록 소스를 수정한다.  
+- 참고 : https://blog.jiniworld.me/91  
+
+Controller 패키지로 이동하여 ArticleController.java 화일을 수정한다.
+
+<img src="./assets/mybatis_new_openapi.png" style="width: 80%; height: auto;"/>  
+
+<br/>
+
+../controller/ArticleController.java
+```java
+ArticleController.java 
+...
+@Tag(name = "posts", description = "게시물 API")
+@RestController
+@RequestMapping("/articles")
+public class ArticleController {
+
+    @Autowired
+    private final ArticleService articleService;
+
+    public ArticleController(ArticleService articleService) {
+        this.articleService = articleService;
+    }
+
+    @GetMapping
+    @Operation(summary ="게시물 전체 조회",description="제목과 내용 전체를 조회 합니다.")
+    public List<Article> findAll() {
+        return this.articleService.findAll();
+    }
+```  
+
+<br/>
+
+Tag , Schema , Operation annotation을 추가하고 SpringBoot를 기동한다.    
+
+웹브라우저에서 http://localhost:8080/swagger-ui/index.html 를 입력하면 swagger ui를 확인 할 수 있다.  
+
+<img src="./assets/mybatis_new_swagger.png" style="width: 80%; height: auto;"/>  
+
+<br/>
+
+웹브라우저에서 http://localhost:8080/articles 를 입력을 하고 실행을 한다.  
+
+IntelliJ로 이동하면 console 창에 아래와 같이 로그를 확인 할 수 있다.  
+
+<img src="./assets/mybatis_new_console.png" style="width: 80%; height: auto;"/>  
+
+<br/>
+ 
+또한 logs 폴더에 가면 edu.log 화일이 생성 된 것을 볼 수 있다.  
+
+<img src="./assets/mybatis_new_log.png" style="width: 80%; height: auto;"/>  
+
+<br/>
+
+소스는 아래를 참고 한다.  
+- https://github.com/shclub/edu10-1
+
