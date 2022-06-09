@@ -245,6 +245,8 @@ spring:
     active: local
   banner:
     location: "classpath:banner.txt"
+  cache:
+    cache-names: articles
 # logging
 logging:
   config: classpath:log4j2.xml
@@ -465,7 +467,7 @@ public class CacheConfig {
 
 <br/>
 
-../config/CacheConfig.java 
+../config/CacheType.java 
 ```java
 package com.kt.edu.thirdproject.config;
 
@@ -936,7 +938,7 @@ Talend API Tester로 설정값을 입력해 봅니다.
 
 <br/>
 
-웹브라우저에서 http://localhost:8080/h2-admin 를 통해 DB 접속을 하여 데이터 1건을 삭제 합니다.    
+웹브라우저에서 http://localhost:8080/h2-console 를 통해 DB 접속을 하여 데이터 1건을 삭제 합니다.    
 
 <img src="./assets/spring_data_jdbc_talend2.png" style="width: 80%; height: auto;"/> 
 
