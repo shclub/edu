@@ -1,4 +1,4 @@
-#  SpringBoot Hands-on MyBatis
+#  Spring JDBC ( MyBatis) Hands-on 
  
 MyBatis 활용 방법에 대해서 실습한다.  
 
@@ -18,6 +18,8 @@ MyBatis 활용 방법에 대해서 실습한다.
 7. 로그 변경 및 swagger 변경
 
 8. 소스위치 : https://github.com/shclub/edu10-1
+
+9. Springbean을 등록하는 2가지 방식
 
 <br/>
 
@@ -1095,7 +1097,9 @@ banner.txt
 <br/>
 
 log4j2.xml 에서 로그 세부 설정을 할 수 있다.  
-아래 xml 화일은 console과 file 저장을 동시에 할 수 있는 예제이다.  
+아래 xml 화일은 console과 file 저장을 동시에 할 수 있는 예제이다.
+
+최상위 에서 logs 폴더를 생성한다.
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -1109,6 +1113,8 @@ log4j2.xml 에서 로그 세부 설정을 할 수 있다.
         <!-- 로깅 마스킹 -->
         <Property name="fileLayout">${logFileName} %d{HH:mm:ss.SSS} %-5level %c : - %enc{%msg}{CRLF} %n</Property>
         <!-- <Property name="fileLayout">%d [%t] %-5level %c(%M:%L) - %spi%n</Property> -->
+        <Property name="baseDir">logs</Property>
+
     </Properties>
 
     <Appenders>
@@ -1120,8 +1126,8 @@ log4j2.xml 에서 로그 세부 설정을 할 수 있다.
         </Async>
         <!-- 화일로 로그를 저장하기 위한 설정 -->
         <RollingFile name="RollingAppender"
-                     fileName="logs/edu.log"
-                     filePattern="logs/edu-%d{yyyy-MM-DD-HH}-%02i.log.gz" append="true"
+                     fileName="${baseDir}/edu.log"
+                     filePattern="${baseDir}/edu-%d{yyyy-MM-DD-HH}-%02i.log.gz" append="true"
                      ignoreExceptions="false">
             <PatternLayout>
                 <Pattern>${fileLayout}</Pattern>
@@ -1133,7 +1139,7 @@ log4j2.xml 에서 로그 세부 설정을 할 수 있다.
             </Policies>
             <DefaultRolloverStrategy>
                 <Delete basePath="${baseDir}" maxDepth="2">
-                    <IfFileName glob="logs/edu.*.log.gz" />
+                    <IfFileName glob="*/edu-*.log.gz" />
                     <IfLastModified age="1d" />
                 </Delete>
             </DefaultRolloverStrategy>
@@ -1343,3 +1349,11 @@ IntelliJ로 이동하면 console 창에 아래와 같이 로그를 확인 할 �
 소스는 아래를 참고 한다.  
 - https://github.com/shclub/edu10-1
 
+
+<br/>
+
+### Springbean을 등록하는 2가지 방식   
+
+<br/>
+
+참고 : https://dev-coco.tistory.com/69
