@@ -118,7 +118,7 @@
 
      - 샘플 소스 ( mybatis / log4j2 / OpenApi ): [ 소스 보기 ](https://github.com/shclub/edu10-1)
 
-     - Spring Data JDBC hands-on [ Hands-On 문서보기 ](./springboot_hands_on_spring_data_jdbc.md) 
+     - Spring Data JDBC hands-on [ Hands-On 문서보기 ](./springboot_hands_on_spring_data_jbc.md) 
   
           -  Spring Data JPA vs Spring Data JDBC 
           -  프로젝트 구성하기 ( CRUD , Paging & Sorting )
