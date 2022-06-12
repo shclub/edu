@@ -245,6 +245,7 @@ spring:
     active: local
   banner:
     location: "classpath:banner.txt"
+# cache 적용을 위한 설정
   cache:
     cache-names: articles
 # logging
