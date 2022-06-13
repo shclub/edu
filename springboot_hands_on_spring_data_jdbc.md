@@ -401,6 +401,159 @@ logging:
 
 <br/>
 
+resources 폴더에 추가적으로 3개 화일을 생성합니다.  
+
+<br/>
+
+배너를 추가합니다.  
+
+../resources/banner.txt    
+```bash
+   _____                                                    ______   _____    _    _
+  / ____|                                                  |  ____| |  __ \  | |  | |
+ | |        __ _   _ __    __ _  __   __   __ _   _ __     | |__    | |  | | | |  | |
+ | |       / _` | | '__|  / _` | \ \ / /  / _` | | '_ \    |  __|   | |  | | | |  | |
+ | |____  | (_| | | |    | (_| |  \ V /  | (_| | | | | |   | |____  | |__| | | |__| |
+  \_____|  \__,_| |_|     \__,_|   \_/    \__,_| |_| |_|   |______| |_____/   \____/
+
+:: Spring Boot ${spring-boot.version} ::
+```  
+
+<br/> 
+
+log4j2 설정을  추가합니다.  
+
+../resources/log4j2.xml  
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="INFO">
+
+    <Properties>
+        <Property name="logFileName">edu10-1</Property>
+        <!-- 디폴트 로깅시-->
+        <Property name="consoleLayout">${logFileName} %d{HH:mm:ss.SSS} %-5level %c : - %enc{%msg}{CRLF} %n%throwable</Property>
+        <!-- <Property name="consoleLayout">${logFileName} %style{%d{ISO8601}}{black} %highlight{%-5level }[%style{%t}{bright,blue}] %style{%C{1.}}{bright,yellow}: - %msg%n%throwable</Property> -->
+        <!-- 로깅 마스킹 -->
+        <Property name="fileLayout">${logFileName} %d{HH:mm:ss.SSS} %-5level %c : - %enc{%msg}{CRLF} %n</Property>
+        <!-- <Property name="fileLayout">%d [%t] %-5level %c(%M:%L) - %spi%n</Property> -->
+        <Property name="baseDir">logs</Property>
+
+    </Properties>
+
+    <Appenders>
+        <Console name="console" target="SYSTEM_OUT">
+            <PatternLayout pattern="${consoleLayout}" />
+        </Console>
+        <Async name="file" bufferSize="200">
+            <AppenderRef ref="RollingAppender" />
+        </Async>
+        <RollingFile name="RollingAppender"
+                     fileName="${baseDir}/edu.log"
+                     filePattern="${baseDir}/edu-%d{yyyy-MM-DD-HH}-%02i.log.gz" append="true"
+                     ignoreExceptions="false">
+            <PatternLayout>
+                <Pattern>${fileLayout}</Pattern>
+            </PatternLayout>
+            <Policies>
+                <OnStartupTriggeringPolicy />
+                <SizeBasedTriggeringPolicy size="40MB" />
+                <TimeBasedTriggeringPolicy />
+            </Policies>
+            <DefaultRolloverStrategy>
+                <Delete basePath="${baseDir}" maxDepth="2">
+                    <IfFileName glob="*/edu-*.log.gz" />
+                    <IfLastModified age="1d" />
+                </Delete>
+            </DefaultRolloverStrategy>
+        </RollingFile>
+    </Appenders>
+
+    <Loggers>
+        <!-- 스프링 프레임워크에서 찍는건 level을 info로 설정 -->
+        <logger name="org.springframework" level="info" additivity="false" >
+            <AppenderRef ref="console" />
+            <AppenderRef ref="file" />
+        </logger>
+        <!-- rolling file에는 debug, console에는 info 분리하여 처리 가능하다. -->
+        <logger name="com.kt.edu" additivity="false" >
+            <AppenderRef ref="console" level="info" />
+            <AppenderRef ref="file" level="debug"/>
+        </logger>
+
+        <logger name="jdbc.audit" level="warn" additivity="false" >
+            <AppenderRef ref="console" level="info" />
+        </logger>
+
+        <!-- connection pool -->
+        <logger name="com.zaxxer" level="INFO" additivity="false">
+            <appender-ref ref="console"/>
+            <appender-ref ref="file"/>
+        </logger>
+        <logger name="jdbc.connection" level="warn" additivity="false" >
+            <AppenderRef ref="console" level="info" />
+            <AppenderRef ref="file" level="info" />
+        </logger>
+        <logger name="org.apache.kafka" level="warn" additivity="false" >
+            <AppenderRef ref="console" level="info" />
+        </logger>
+
+        <logger name="com.kt.edu" additivity="false" >
+            <AppenderRef ref="console" level="info" />
+            <AppenderRef ref="file" level="trace" />
+        </logger>
+
+        <!--logger name="Slf4jSpyLogDelegator" additivity="false" >
+            <AppenderRef ref="console" level="info" />
+            <AppenderRef ref="file" level="info" />
+        </logger-->
+
+        <logger name="net.sf.log4jdbc.log.slf4j" level="info" additivity="false">
+            <appender-ref ref="console" />
+            <appender-ref ref="file" />
+        </logger>
+
+        <logger name="jdbc.sqlonly" additivity="false" >
+            <AppenderRef ref="console" level="error" />
+        </logger>
+
+        <logger name="jdbc.sqltiming" additivity="false" >
+            <AppenderRef ref="console" level="info" />
+            <AppenderRef ref="file" level="info" />
+        </logger>
+
+        <logger name="jdbc.resultset" additivity="false" >
+            <AppenderRef ref="console" level="error" />
+        </logger>
+
+        <logger name="jdbc.resultsettable" level="info" additivity="false" >
+            <AppenderRef ref="console" level="info" />
+            <AppenderRef ref="file" level="info" />
+        </logger>
+
+        <root level="info">
+            <AppenderRef ref="console" />
+            <AppenderRef ref="file" />
+        </root>
+
+    </Loggers>
+</Configuration>
+```  
+
+
+log4jdbc.log4j2.properties  설정을  추가합니다.  
+
+<br/>
+
+.../resources/log4jdbc.log4j2.properties    
+```bash
+log4jdbc.spylogdelegator.name=net.sf.log4jdbc.log.slf4j.Slf4jSpyLogDelegator
+
+log4jdbc.dump.sql.maxlinelength=0
+log4j.logger.jdbc.sqltiming=info
+```
+
+<br/>
+
 ### 프로젝트 구성하기     
 
 <br/>
@@ -751,161 +904,7 @@ public class ThirdprojectApplication {
 
 <br/>
 
-resources 폴더에 추가적으로 3개 화일을 생성합니다.  
 
-<br/>
-
-배너를 추가합니다.  
-
-../resources/banner.txt    
-```bash
-   _____                                                    ______   _____    _    _
-  / ____|                                                  |  ____| |  __ \  | |  | |
- | |        __ _   _ __    __ _  __   __   __ _   _ __     | |__    | |  | | | |  | |
- | |       / _` | | '__|  / _` | \ \ / /  / _` | | '_ \    |  __|   | |  | | | |  | |
- | |____  | (_| | | |    | (_| |  \ V /  | (_| | | | | |   | |____  | |__| | | |__| |
-  \_____|  \__,_| |_|     \__,_|   \_/    \__,_| |_| |_|   |______| |_____/   \____/
-
-:: Spring Boot ${spring-boot.version} ::
-```  
-
-<br/> 
-
-log4j2 설정을  추가합니다.  
-
-../resources/log4j2.xml  
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<Configuration status="INFO">
-
-    <Properties>
-        <Property name="logFileName">edu10-1</Property>
-        <!-- 디폴트 로깅시-->
-        <Property name="consoleLayout">${logFileName} %d{HH:mm:ss.SSS} %-5level %c : - %enc{%msg}{CRLF} %n%throwable</Property>
-        <!-- <Property name="consoleLayout">${logFileName} %style{%d{ISO8601}}{black} %highlight{%-5level }[%style{%t}{bright,blue}] %style{%C{1.}}{bright,yellow}: - %msg%n%throwable</Property> -->
-        <!-- 로깅 마스킹 -->
-        <Property name="fileLayout">${logFileName} %d{HH:mm:ss.SSS} %-5level %c : - %enc{%msg}{CRLF} %n</Property>
-        <!-- <Property name="fileLayout">%d [%t] %-5level %c(%M:%L) - %spi%n</Property> -->
-        <Property name="baseDir">logs</Property>
-
-    </Properties>
-
-    <Appenders>
-        <Console name="console" target="SYSTEM_OUT">
-            <PatternLayout pattern="${consoleLayout}" />
-        </Console>
-        <Async name="file" bufferSize="200">
-            <AppenderRef ref="RollingAppender" />
-        </Async>
-        <RollingFile name="RollingAppender"
-                     fileName="${baseDir}/edu.log"
-                     filePattern="${baseDir}/edu-%d{yyyy-MM-DD-HH}-%02i.log.gz" append="true"
-                     ignoreExceptions="false">
-            <PatternLayout>
-                <Pattern>${fileLayout}</Pattern>
-            </PatternLayout>
-            <Policies>
-                <OnStartupTriggeringPolicy />
-                <SizeBasedTriggeringPolicy size="40MB" />
-                <TimeBasedTriggeringPolicy />
-            </Policies>
-            <DefaultRolloverStrategy>
-                <Delete basePath="${baseDir}" maxDepth="2">
-                    <IfFileName glob="*/edu-*.log.gz" />
-                    <IfLastModified age="1d" />
-                </Delete>
-            </DefaultRolloverStrategy>
-        </RollingFile>
-    </Appenders>
-
-    <Loggers>
-        <!-- 스프링 프레임워크에서 찍는건 level을 info로 설정 -->
-        <logger name="org.springframework" level="info" additivity="false" >
-            <AppenderRef ref="console" />
-            <AppenderRef ref="file" />
-        </logger>
-        <!-- rolling file에는 debug, console에는 info 분리하여 처리 가능하다. -->
-        <logger name="com.kt.edu" additivity="false" >
-            <AppenderRef ref="console" level="info" />
-            <AppenderRef ref="file" level="debug"/>
-        </logger>
-
-        <logger name="org.springframework" level="warn" additivity="false" >
-            <AppenderRef ref="console" level="info" />
-        </logger>
-        <logger name="jdbc.audit" level="warn" additivity="false" >
-            <AppenderRef ref="console" level="info" />
-        </logger>
-
-        <!-- connection pool -->
-        <logger name="com.zaxxer" level="INFO" additivity="false">
-            <appender-ref ref="console"/>
-            <appender-ref ref="file"/>
-        </logger>
-        <logger name="jdbc.connection" level="warn" additivity="false" >
-            <AppenderRef ref="console" level="info" />
-            <AppenderRef ref="file" level="info" />
-        </logger>
-        <logger name="org.apache.kafka" level="warn" additivity="false" >
-            <AppenderRef ref="console" level="info" />
-        </logger>
-
-        <logger name="com.kt.edu" additivity="false" >
-            <AppenderRef ref="console" level="info" />
-            <AppenderRef ref="file" level="trace" />
-        </logger>
-
-        <!--logger name="Slf4jSpyLogDelegator" additivity="false" >
-            <AppenderRef ref="console" level="info" />
-            <AppenderRef ref="file" level="info" />
-        </logger-->
-
-        <logger name="net.sf.log4jdbc.log.slf4j" level="info" additivity="false">
-            <appender-ref ref="console" />
-            <appender-ref ref="file" />
-        </logger>
-
-        <logger name="jdbc.sqlonly" additivity="false" >
-            <AppenderRef ref="console" level="error" />
-        </logger>
-
-        <logger name="jdbc.sqltiming" additivity="false" >
-            <AppenderRef ref="console" level="info" />
-            <AppenderRef ref="file" level="info" />
-        </logger>
-
-        <logger name="jdbc.resultset" additivity="false" >
-            <AppenderRef ref="console" level="error" />
-        </logger>
-
-        <logger name="jdbc.resultsettable" level="info" additivity="false" >
-            <AppenderRef ref="console" level="info" />
-            <AppenderRef ref="file" level="info" />
-        </logger>
-
-        <root level="info">
-            <AppenderRef ref="console" />
-            <AppenderRef ref="file" />
-        </root>
-
-    </Loggers>
-</Configuration>
-```  
-
-
-log4jdbc.log4j2.properties  설정을  추가합니다.  
-
-<br/>
-
-.../resources/log4jdbc.log4j2.properties    
-```bash
-log4jdbc.spylogdelegator.name=net.sf.log4jdbc.log.slf4j.Slf4jSpyLogDelegator
-
-log4jdbc.dump.sql.maxlinelength=0
-log4j.logger.jdbc.sqltiming=info
-```
-
-<br/>
 
 ### 실행하기     
 
