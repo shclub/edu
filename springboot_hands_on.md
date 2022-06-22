@@ -18,15 +18,17 @@ SpringBoot 활용 방법에 대해서 실습한다.
 
 8. Spring Data JDBC hands-on 
 
-9. 테스트 작성하기
+9. Security
 
-10. 댓글 서비스 만들기
+10. 테스트 작성하기
 
-11. IoC 와 DI
+11. 댓글 서비스 만들기
 
-12. AOP
+12. IoC 와 DI
 
-13. Object Mapper
+13. AOP
+
+14. Object Mapper
 
 <br/>
 
@@ -1541,6 +1543,17 @@ send를 클릭하면 아래와 같이 에러가 발생하고 rollback 이 된다
 
 
 [ Spring Data JDBC Hands-On 문서보기로 이동하기 ](./springboot_hands_on_spring_data_jdbc.md)       
+
+<br/>
+
+
+## Security 
+
+
+<br/>
+
+
+[ Security 문서보기로 이동하기 ](./security.md)       
 
 <br/>
 

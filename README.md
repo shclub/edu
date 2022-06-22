@@ -124,11 +124,10 @@
           -  프로젝트 구성하기 ( CRUD , Paging & Sorting )
           -  실행해 보기
           -  로컬 캐쉬 ( Caffeine Cache ) 사용하기 
-          -  Spring Security ( OAuth 연동 )
-          -  Frontend ( React ) 간단 사용
-          -  Annotation 정리 
 
-     - 샘플 소스 ( Spring Data Jdbc ): [ 소스 보기 ](https://github.com/shclub/edu11)
+     - 샘플 소스 ( Spring Data Jdbc :  ): [ 실습 소스 보기 ](https://github.com/shclub/edu11)
+     - 샘플 소스 ( Spring Data Jdbc ): [ 전체 소스 보기 ( CUD 포함) ](https://github.com/shclub/edu11-1)
+     
       
      <br/>
 
@@ -136,19 +135,26 @@
 
      - SpringBoot 마지막
 
-          - 테스트 작성하기
-          - 댓글 서비스 만들기
-          - IoC 와 DI
-          - AOP
-          - Object Mapper   
-          - PSA ( Portal Service Abstraction )
-          - Webflux
+          -  Spring Security (  JWT / OAuth 연동 )
+          -  Frontend ( React ) 간단 사용
+          -  Annotation 정리 
+          -  테스트 작성하기
+          -  댓글 서비스 만들기
+          -  IoC 와 DI
+          -  AOP
+          -  Object Mapper   
+          -  PSA ( Portal Service Abstraction ) 
+          -  Webflux : 향후
  
      - k8s 배포 실습 ( SpringBoot )
-     - DataDog 연동 ( SpringBoot )
+     - DataDog 연동 ( SpringBoot ) : 향후
      
-     - Summary
-
+     
+     - 샘플 소스 ( 배포 yaml ): [ 소스 보기 ](https://github.com/shclub/edu12)
+     - 샘플 소스 ( React Front without security ): [ 소스 보기 ](https://github.com/shclub/edu12-1)
+     - 샘플 소스 ( SpringBoot Front without security ): [ 소스 보기 ](https://github.com/shclub/edu12-2)
+     - 샘플 소스 ( React Front with security ): [ 소스 보기 ](https://github.com/shclub/edu12-3)
+     - 샘플 소스 ( React Front with security ): [ 소스 보기  ](https://github.com/shclub/edu12-4)
 
      <br/>
 
