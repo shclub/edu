@@ -12,11 +12,11 @@ React 와 SpringBoot를 연동하면서 security 활용 방법에 대해서 실�
 4. 소스위치   
   - 배포 : https://github.com/shclub/edu12
   - 보안 없음
-    - React ( 임직원 정보 ) :https://github.com/shclub/edu12-1
-    - SpringBoot ( 임직원 정보 ) : https://github.com/shclub/edu12-2
+    - React ( 사원 정보 ) :https://github.com/shclub/edu12-1
+    - SpringBoot ( 사원 정보 ) : https://github.com/shclub/edu12-2
   - 보안 추가
-    - React ( 임직원 정보 ) : https://github.com/shclub/edu12-3
-    - SpringBoot ( 임직원 정보 ) : https://github.com/shclub/edu12-4
+    - React ( 사원 정보 ) : https://github.com/shclub/edu12-3
+    - SpringBoot ( 사원 정보 ) : https://github.com/shclub/edu12-4
 
 5. 참고
   - Sprint Security 
