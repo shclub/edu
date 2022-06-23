@@ -33,7 +33,8 @@ React 와 SpringBoot를 연동하면서 security 활용 방법에 대해서 실�
   - jasypt : https://kitty-geno.tistory.com/160
   - jwt + oauth 2.0 : https://velog.io/@tmdgh0221/Spring-Security-%EC%99%80-OAuth-2.0-%EC%99%80-JWT-%EC%9D%98-%EC%BD%9C%EB%9D%BC%EB%B3%B4
   - 토큰인증 vs 세션 인증 : https://mangkyu.tistory.com/55
-
+  - React + SpringBoot + oauth2 :  https://dodop-blog.tistory.com/249
+  
 <br/>
 
 ## Spring Security
