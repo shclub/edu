@@ -1269,11 +1269,29 @@ edu12-2 19:27:42.466 INFO  jdbc.resultsettable : - \n|---|--------|-------------
 
 <br/>
 
-변경 과 삭제도 테스트를 해본다.  
+삭제 테스트는 Talend  API를 사용해 보도록 합니다.  
+
+먼저 웹 브라우저에서 개발자 도구로 이동하여 token 값을 복사합니다.  
+
+아래와 같이 설정을 하고 send 버튼을 눌러 실행합니다.  
+
+<img src="./assets/spring_security16.png" style="width: 100%; height: auto;"/>  
+
+- method :  post
+- url : http://localhost:8080/api/v1/employee/1
+- header
+  - key : Authentication
+  - value : Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJlZHUiLCJleHAiOjE2NTU5MjE5OTYsImlhdCI6MTY1NTkwMzk5Nn0.rMP_jEFKL37Lg5La7jPHBEt9BiVTx0uTAyexd7BV67KOE375XCsR6v7dGKHAOz-tFQmZ7Mz_8LvB-C4EEIQggg 
+
+<br/>
+
+200 메시지를 확인하면 데이터가 정상적으로 삭제가 된 것을 알 수 있습니다.  
 
 <br/>
 
 ###  React JS Dockerfile 구성
+
+<br/>
 
 React js의 도커 파일 구성은 아래와 같다.   
 
@@ -1315,8 +1333,11 @@ CMD ["nginx", "-g", "daemon off;"]
 - Build stage : 빌드하여 도커 파일을 만든다.
 - package stage : 도커 이미지를 실행하며 nginx 를 앞에 붙인다.
 
+<br/>
 
 ###  SpringBoot Dockerfile 구성
+
+<br/>ew
 
 SpringBoot 의 도커 파일 구성은 아래와 같다.   
 
