@@ -34,7 +34,7 @@ React 와 SpringBoot를 연동하면서 security 활용 방법에 대해서 실�
   - jwt + oauth 2.0 : https://velog.io/@tmdgh0221/Spring-Security-%EC%99%80-OAuth-2.0-%EC%99%80-JWT-%EC%9D%98-%EC%BD%9C%EB%9D%BC%EB%B3%B4
   - 토큰인증 vs 세션 인증 : https://mangkyu.tistory.com/55
   - React + SpringBoot + oauth2 :  https://dodop-blog.tistory.com/249
-  
+
 <br/>
 
 ## Spring Security
@@ -304,14 +304,14 @@ github 에서 react 소스를 다운 받습니다.
 jakelee@jake-MacBookAir Downloads % git clone https://github.com/shclub/edu12-3.git
 ```  
 
-edu12-3 폴더로 이동하여 빌드 (install ) 하고 start 합니다.  
+edu12-3 폴더로 이동하여 빌드 ( install ) 하고 start 합니다.  
    
 ```bash
 jakelee@jake-MacBookAir edu12-3 % npm install
 jakelee@jake-MacBookAir edu12-3 % npm start
 ```  
 
-브라우저에서 http://localhost:3000을 입력하면 아래와 같은 로그인 화면이 보입니다.  
+브라우저에서 http://localhost:3000 을 입력하면 아래와 같은 로그인 화면이 보입니다.  
 
 <img src="./assets/spring_security3.png" style="width: 80%; height: auto;"/> 
 
@@ -793,7 +793,7 @@ doGenerateToken
   - issuedate : Token 발급 시간
   - expiration : Token 만료 시간
     - milliseconds 기준!
-    - JWT_TOKEN_VALIDITY = 5 60 60 => 5시간
+    - JWT_TOKEN_VALIDITY = 5 * 60 * 60 => 5시간
 - signWith (알고리즘, 비밀키)   
 
 <br/>
