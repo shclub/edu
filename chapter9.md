@@ -21,13 +21,17 @@ kt cloud 에 로그인 하여 D1 존 으로 이동한다.
 
 <img src="./assets/ktcloud_keypair.png" style="width: 80%; height: auto;"/>    
 
+<br/>
+
 키는 바로 생성이 된다. ( edu라는 이름으로 기 생성된 값 사용 )
 
 <img src="./assets/ktcloud_keypair_created.png" style="width: 80%; height: auto;"/>  
 
+<br/>
+
 download 아이콘을 클릭하여 pem 화일을 로컬 pc에 다운 받는다.  
 
-<img src="./assets/ktcloud_keypair_download.png" style="width: 80%; height: auto;"/>  
+<img src="./assets/ktcloud_keypair_download.png" style="width: 40%; height: auto;"/>  
 
 <br/>
 
