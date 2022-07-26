@@ -233,10 +233,12 @@ jdk를  설치한다.
    sudo apt update
    ```    
 
-jenkins를 설치한다.  
+jenkins를 설치한다.   
+
+최신버전에 버그가 있어 아래 버전으로 설치.  
 
    ```bash
-   sudo apt install jenkins 
+   sudo apt install jenkins=2.332.2 -y
    ```  
 
 
@@ -280,6 +282,19 @@ systemctl status jenkins
 <img src="./assets/jenkins_status.png" style="width: 80%; height: auto;"/>  
 
 - ctrl + c 를 눌러 해당 화면에서 나온다.
+
+<br/>
+
+위 방법으로 포트 변경이 안되면 /lib/systemd/system/jenkins.service 를 vi로 오픈 후에 
+아래와 같이 변경하면 됩니다.
+
+```bash
+# Port to listen on for HTTP requests. Set to -1 to disable.
+# To be able to listen on privileged ports (port numbers less than 1024),
+# add the CAP_NET_BIND_SERVICE capability to the AmbientCapabilities
+# directive below.
+Environment="JENKINS_PORT=9000"
+```  
 
 <br/><br/>  
 

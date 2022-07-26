@@ -168,8 +168,9 @@
 
 <br/>
 
-9. Chapter 9 : 9주차  
-     - k8s에 Jenkins 설치 및 설정 ( OKD 4.6 )
+9. Chapter 9 : 9주차  ( [가이드 문서보기](./chapter9.md) )  
+     - OKD 4.7 사용법 ( kt cloud )
+     - k8s에 Jenkins 설치 및 설정 ( OKD 4.7 )
      - Jenkins Master/Slave 구현, GitHub , Podman 연동 
      - skaffold를 사용한 Jenkins 빌드 Pipeline 생성하여 CI 실습 
      - RBAC 실습 
