@@ -361,7 +361,7 @@ Openshift 에서는 Service Account를 통해 권한 변경이 가능
 root 권한이 필요한 경우 권한을 변경하여 사용
 
 
-`oc adm policy add-scc-to-user anyuid system:serviceaccount:<NAMESPAE>:default`  
+`oc adm policy add-scc-to-user anyuid system:serviceaccount:<NAMESPACE>:default`  
 
 <br/>
 
@@ -552,4 +552,266 @@ Last login: Tue Jul 26 02:51:06 2022 from 220.120.16.10
 Failed Units: 1
   systemd-resolved.service
 [root@edu ~]#
+```  
+
+
+
+<br/>
+
+###  SSH 키 생성 
+
+<br/>
+
+
+맥에서 ssh key pair 를 생성한다.  
+- 참고 
+   - https://jojoldu.tistory.com/442  
+   - https://thoonk.tistory.com/81
+      
+Terminal 에서 `ssh-keygen -t ed25519 -C <github 등록 이메일>` 를 사용하여
+public / private 키를 생성 한다.  
+
+```bash
+jakelee@jake-MacBookAir ~ % ssh-keygen -t ed25519 -C "shclub@gmail.com"
+Generating public/private ed25519 key pair.
+Enter file in which to save the key (/Users/jakelee/.ssh/id_ed25519):
+Enter passphrase (empty for no passphrase):
+Enter same passphrase again:
+Your identification has been saved in /Users/jakelee/.ssh/id_ed25519
+Your public key has been saved in /Users/jakelee/.ssh/id_ed25519.pub
+The key fingerprint is:
+SHA256:SDaUkrBr/qeVijeHNjLNMb6VjISg3m6LgNYMHY2WoAA shclub@gmail.com
+The key's randomart image is:
++--[ED25519 256]--+
+|E... ...         |
+|o ..*..          |
+|o .= o+          |
+|..oo.o o         |
+|..+.. . S        |
+|oo=.oo o         |
+|oo.B.+*          |
+|o =+X+o          |
+| .oB*B           |
++----[SHA256]-----+
+```  
+
+두개의 key가 생성 된 것을 확인 할 수 있다.  
+
+- public key : id_ed25519.pub
+- private key : id_ed25519  
+
+
+```bash
+jakelee@jake-MacBookAir ~ % ls /Users/jakelee/.ssh
+id_ed25519			id_ed25519.pub		
+```  
+
+<br/>
+
+public key를 열어 보면 아래와 같고 키 값을 복사한다.  
+
+```bash
+jakelee@jake-MacBookAir .ssh % cat id_ed25519.pub
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILk/b8XVyGXSE0zDquokPfdHVcaiRcXtydUQaCnrhK1t shclub@gmail.com
+```  
+
+웹 브라우저에서  https://github.com/ 로 이동하여 오른쪽 상단의 setting을 클릭한다.  
+
+
+<img src="./assets/github_setting.png" style="width: 40%; height: auto;"/>  
+
+왼쪽 메뉴에 SSH and GPG keys 메뉴로 이동하여 New SSH Key 아이콘을 클릭한다.
+
+<img src="./assets/github_ssh_key.png" style="width: 60%; height: auto;"/>
+
+<br/>
+
+Title을 입력하고 복사한 public key를 붙여 넣기 한다.  
+
+<img src="./assets/github_ssh_key_input.png" style="width: 80%; height: auto;"/>  
+
+아래와 같이 public key 가 등록 된 것을 확인 할 수 있다.  
+
+<img src="./assets/github_new_ssh_key_add.png" style="width: 80%; height: auto;"/>  
+
+이제 Jenkins에 private key 를 등록하기 위하여 젠킨스 메인 화면에서 Manage Jenkins ->  Manage Credentials -> System -> Global credentials로 차례로 이동합니다.   
+
+  - URL : http://211.252.85.148:9000/credentials/store/system/domain/_/    
+
+<br/>  
+
+Add credential을 클릭합니다.  
+
+<img src="./assets/jenkins_add_credential.png" style="width: 80%; height: auto;"/>  
+
+<br/>
+
+비밀키를 복사합니다.  
+
+
+```bash
+jakelee@jake-MacBookAir .ssh % cat id_ed25519
+-----BEGIN OPENSSH PRIVATE KEY-----
+b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
+QyNTUxOQAAACC5P2/F1chl0hNMw6rqJD33R1XGokXF7cnVEGgp64StbQAAAJhSqE5TUqhO
+UwAAAAtzc2gtZWQyNTUxOQAAACC5P2/F1chl0hNMw6rqJD33R1XGokXF7cnVEGgp64StbQ
+xxxxxxxxVcaiRcXtydUQaCnrhK1tAAAAEHNoY2x1YkBnbWFpbC5jb20BAgMEBQ==
+-----END OPENSSH PRIVATE KEY-----
+```  
+
+<br/>
+
+복사가 되셨다면 아래와 같이 항목을 등록합니다.
+
+<img src="./assets/jenkins_ssh_key.png" style="width: 80%; height: auto;"/>   
+
+<br/>
+
+- Kind
+   인증 방식을 선택합니다.
+   여기선 비밀키 방식을 선택해야 Github과 공개키/비밀키로 인증이 가능합니다.  
+
+- Username
+   각 젠킨스 Job에서 보여줄 인증키 이름 입니다.
+   전 키 이름 그대로 사용했습니다.  생략해도 됨.
+
+- Private Key
+   좀전에 복사한 비밀키를 그대로 붙여넣습니다.
+   젠킨스 설정도 다 끝났습니다.  
+
+- passphrase
+   ssh-keygen으로 인증키 생성시 입력한 password. 
+
+
+Jenkins pipeline 에서는 아래와 같이 사용 할 수 있습니다.    
+
+- 참고 : https://github.com/shclub/edu13/blob/master/Jenkinsfile  
+
+<br/>
+
+아래에서 `keyFileVariable: 'keyFile'` 구문은 keyFile이 화일 이름이고 readFile을 하면 private key를 가져 올 수 있다.  
+
+
+```bash
+      stage('GitOps update : kustomize') {
+            steps{
+                print "======kustomization.yaml tag update====="
+                script{
+                   withCredentials([sshUserPrivateKey(credentialsId: 'github_ssh',keyFileVariable: 'keyFile')]) {                       
+                    def  GITHUB_SSH_KEY = readFile(keyFile) 
+                    sh """   
+                        cd ~
+                        rm -rf ./${GIT_OPS_NAME}
+                        mkdir -p .ssh         
+                        set +x
+                        echo  '${GITHUB_SSH_KEY}' > ~/.ssh/id_rsa
+                        chmod 600 ~/.ssh/id_rsa
+                        git config --global core.sshCommand "ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no"
+                        git clone ${gitOpsUrl}
+                        cd ./${GIT_OPS_NAME}
+                        git checkout master
+                        kustomize edit set image ${GIT_ACCOUNT}/${PROJECT_NAME}:${TAG}
+                        git config --global user.email "${GIT_EMAIL}"
+                        git config --global user.name "${GIT_ACCOUNT}"                   
+                        git add .
+                        git commit -am 'update image tag ${TAG}'
+                        git push origin master
+                    """
+                      }            
+                }
+                        
+                print "git push finished !!!"
+            }
+        }
+```
+
+<br/>
+
+위와 같이 push를 하면 Jenkins Console output 에 아래와 같은 메시지가 나오고
+해당 링크를 클릭해서 들어간다.  
+
+<img src="./assets/jenkins_ssh_git.png" style="width: 80%; height: auto;"/>   
+
+해당 github 사이트에 가면 승인 버튼이 활성화 된다.  
+
+<img src="./assets/github_ssh_approve.png" style="width: 80%; height: auto;"/>   
+
+Approve를 하면 연동이 verify 된다.
+
+<img src="./assets/github_ssh_approved.png" style="width: 80%; height: auto;"/>   
+
+
+
+
+nfs 연결 fail 
+
+```bash
+root@newedu-k3s:~# kubectl apply -f nfs-test.yaml
+deployment.apps/nfs-cleaner created
+root@newedu-k3s:~# kubectl get po -n devops
+NAME                           READY   STATUS              RESTARTS   AGE
+nfs-cleaner-84866c649d-xr9lc   0/1     ContainerCreating   0          9s
+root@newedu-k3s:~# kubectl get events -n devops
+LAST SEEN   TYPE      REASON              OBJECT                              MESSAGE
+15s         Normal    ScalingReplicaSet   deployment/nfs-cleaner              Scaled up replica set nfs-cleaner-84866c649d to 1
+15s         Normal    SuccessfulCreate    replicaset/nfs-cleaner-84866c649d   Created pod: nfs-cleaner-84866c649d-xr9lc
+14s         Normal    Scheduled           pod/nfs-cleaner-84866c649d-xr9lc    Successfully assigned devops/nfs-cleaner-84866c649d-xr9lc to newedu-k3s
+7s          Warning   FailedMount         pod/nfs-cleaner-84866c649d-xr9lc    MountVolume.SetUp failed for volume "data" : mount failed: exit status 32...
+```
+
+
+
+```bash
+jakelee@jake-MacBookAir ~ % oc adm policy add-scc-to-user hostmount-anyuid system:serviceaccount:devops:default
+clusterrole.rbac.authorization.k8s.io/system:openshift:scc:hostmount-anyuid added: "default"
+```
+
+<br/>
+
+Service Account의 Source Code Control종류는 다음과 같습니다.
+
+<br/>
+
+|SCC| Description |
+|:--| :-------|  
+| anyuid	| root를 포함한 모든 user로 컨테이너를 실행가능 |
+| hostaccess |	제한된 user권한으로 호스트의 파일시스템 및 네트워크 접근 가능 |
+| hostmount-anyuid	|anyuid의 host mounts를 통한 호스트 파일시스템 접근 가능 |
+| hostnetwork | 호스트의 네트워크, 포트 접근 가능 |
+| node-exporter |	Prometheus의 node exporter를 위한 권한|
+| nonroot |	root를 제외한 모든 user로 컨테이너 실행가능|
+| privileged |	cluster administration만을 위한 권한, 호스트의 모든 기능에 접근 가능 |
+| restricted |	모든 호스트 기능에 접속 불가(Default) |
+
+<br/>
+
+참고 : https://gruuuuu.github.io/ocp/svca-s2i/
+
+
+worker node 로 ssh 접속한다.
+
+NAS ( NFS ) 를 마운트 하여 원하는 폴더는 생성한다.  
+
+
+```bash
+[root@edu ~]# mount -t nfs 172.25.1.162:/share_8c0fade2_649f_4ca5_aeaa_8fd57904f8d5 /mnt
+[root@edu ~]# cd /mnt
+[root@edu mnt]# ls
+image-registry  prometheus-data00  prometheus-data01
+[root@edu mnt]# mkdir jenkins
+[root@edu mnt]# chown -R nfsnobody:nfsnobody jenkins
+[root@edu mnt]# chmod 777 jenkins
+[root@edu mnt]# ls -al
+total 28
+drwxrwxrwx.  6 root      root      4096 Aug  3 08:56 .
+drwxr-xr-x. 24 root      root      4096 Jul 21 03:29 ..
+drwxrwxrwx.  2 root      root      4096 Jun 20 08:23 .snapshot
+drwxrwxrwx.  2 nfsnobody nfsnobody 4096 Jun 20 08:23 image-registry
+drwxrwxrwx.  2 nfsnobody nfsnobody 4096 Aug  3 08:56 jenkins
+drwxrwxrwx.  3 nfsnobody nfsnobody 4096 Jun 20 08:24 prometheus-data00
+drwxrwxrwx.  3 nfsnobody nfsnobody 4096 Jun 20 08:24 prometheus-data01
+[root@edu mnt]# showmount -e 172.25.1.162
+Export list for 172.25.1.162:
+/                                           (everyone)
+/share_8c0fade2_649f_4ca5_aeaa_8fd57904f8d5 (everyone)
 ```  

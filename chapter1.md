@@ -235,12 +235,6 @@ jdk를  설치한다.
 
 jenkins를 설치한다.   
 
-최신버전에 버그가 있어 아래 버전으로 설치.  
-
-   ```bash
-   sudo apt install jenkins=2.332.2 -y
-   ```  
-
 
 ### <a name='Jenkins.-1'></a>Jenkins 서비스 포트를 변경한다.  
 
