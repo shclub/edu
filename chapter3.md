@@ -582,7 +582,7 @@ helm repo add prometheus-community https://prometheus-community.github.io/helm-c
 ```bash
 helm repo update
 ```  
-
+ 
 <img src="./assets/helm_repo_add.png" style="width: 80%; height: auto;"/>    
 
 repository 를 확인합니다.

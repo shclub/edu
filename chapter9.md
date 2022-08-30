@@ -49,7 +49,7 @@ OKD 클러스터 생성을 위한 기본 정보를 입력하다.
 
 <br/>
 
-OKD 4.x 버전 부터는 Centos 대신 CoreOS를 사용한다.  
+OKD 4.x 버전 부터는 Centos 대신 Fedora CoreOS를 사용한다.  
 
 worker node를 생성하기 위해 앞에서 생성한 key pair를 선택하고  
 
@@ -477,7 +477,7 @@ Openshift User 메뉴에서는 해당 계정의 비밀번호를 확인 할 수 �
 
 <br/>
 
-worker node에 접속하기 위해서는 public ip를 할당 하고 port forwarding 과 방화벽을 오픈해야한다.  
+worker node에 접속하기 위해서는 public ip를 할당 하고 port forwarding 과 방화벽을 오픈 해야한다.  
 
 kt cloud 콘솔에서 Server -> Networking 으로 이동하여 IP를 하나 생성한다.
 
@@ -653,8 +653,6 @@ Add credential을 클릭합니다.
 jakelee@jake-MacBookAir .ssh % cat id_ed25519
 -----BEGIN OPENSSH PRIVATE KEY-----
 b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
-QyNTUxOQAAACC5P2/F1chl0hNMw6rqJD33R1XGokXF7cnVEGgp64StbQAAAJhSqE5TUqhO
-UwAAAAtzc2gtZWQyNTUxOQAAACC5P2/F1chl0hNMw6rqJD33R1XGokXF7cnVEGgp64StbQ
 xxxxxxxxVcaiRcXtydUQaCnrhK1tAAAAEHNoY2x1YkBnbWFpbC5jb20BAgMEBQ==
 -----END OPENSSH PRIVATE KEY-----
 ```  
