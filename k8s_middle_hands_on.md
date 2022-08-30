@@ -2,7 +2,7 @@
  
 kubernetes에서 Basic 과정에서 진행하지 못했던 부분 실습을 합니다.
 
-1. Storage Volume ( DB 설치 + NFS )
+1. Storage Volume  ( PV/PVC , DB 설치 + NFS )
 
 2. NFS 라이브러리 설치 ( Native Kubernetes )
 
@@ -385,7 +385,31 @@ PV 와 PVC는 1:1 관계이다.
 
 <br/>
 
-#### 1.2.3 Static Provisioning
+#### 1.2.3 PV, PVC의 LifeCycle
+
+<br/>
+
+PV, PVC의 LifeCycle은 총 4가지 형태를 갖고 변화하게 됩니다.  
+
+
+- Available : PV 생성
+- Bound : PVC에 의해 바인딩 되었을 경우
+- Released : PVC가 삭제되었을 경우
+- Fail : PV에 문제가 발생하였을 경우  
+
+LifeCycle은 Available → Bound → Released → Bound ... 순으로 반복되며, Released 즉 PVC가 삭제되었을 경우 실제 스토리지에 있는 파일을 어떻게 관리할 것인지에 대한 Reclaiming(재활용) 정책을 결정할 수 있습니다. 
+
+
+PV, PVC의 Reclaiming 정책으로는 다음 세가지를 적용할 수 있습니다.  
+- Retain : 삭제하지 않고 PV의 내용 유지
+- Recycle : 재 사용이 가능하며, 재 사용시에는 데이타의 내용을 자동으로 rm -rf 로 삭제한 후 재사용
+- Delete : 볼륨의 사용이 끝나면, 볼륨 삭제 (AWS EBS, GCE PD,Azure Disk 등)
+
+
+
+<br/>
+
+#### 1.2.5 Static Provisioning
 
 <br/>
 
@@ -2053,7 +2077,7 @@ aria_log_control   edu1              ib_logfile0     ibtmp1   mysql             
 
 <br/>
 
-#### 1.2.4 Dynamic Provisioning 
+#### 1.2.6 Dynamic Provisioning 
 
 <br/>
 

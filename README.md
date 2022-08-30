@@ -177,13 +177,24 @@
  
      <br/>
 
-10. Chapter 10 : 10주차 
-     - EFK 설치 및 실습 ( OpenSearch 로 대체)
-     - kibana 화면 구성
+10. Chapter 10 : 10주차
+
+     - k8s hands-on 중급 [ Hands-On 문서보기 ](./k8s_middle_hands_on.md)  
+
+          - Storage Volume  ( PV/PVC , DB 설치 + NFS )
+          - NFS 라이브러리 설치 ( Native Kubernetes )
+          - Service - Headless, Endpoint, ExternalName
+          - EFK APM 설치
+          - EFK APM Agent 설정  ( React / SpringBoot )
+          - Helm 배포 중급 ( Umbrella 패턴 )
+          - ArgoCD 배포 중급 ( Apps-of-Apps 패턴 )
+          - EFK APM 활용 
 
      <br/>
 
-11. Chapter 11 : 11주차 
+
+11. Chapter 11 : 11주차
+      
      - keycloak 설치 및 인증 실습
      - HashiCorp Consul 설치 및 실습
 
@@ -191,7 +202,6 @@
 
 12. Chapter 12 : 12주차 
      - redis/kafka 설치 및 활용 
-     - Storage 설정 방법 ( PV/PVC ) 실습 
      - Object Storage 설치 및 활용 ( Minio )
 
      <br/>
