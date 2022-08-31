@@ -212,7 +212,6 @@ jdk를 먼저 설치한다.
 
    ```bash
    apt install  openjdk-8-jdk
-   apt update
    ```  
 
 jenkins를 설치한다.  
@@ -236,7 +235,7 @@ jdk를  설치한다.
 jenkins를 설치한다.   
 
 
-### <a name='Jenkins.-1'></a>Jenkins 서비스 포트를 변경한다.  
+### Jenkins 서비스 포트를 변경한다.  
 
    아래 화일을 vi 에디터를 사용하여 포트를 변경 ( 8080 ->  9000 )
 
@@ -263,7 +262,7 @@ jenkins를 설치한다.
      :set nocp : 라인 밀리는 현상 방지
    ``` 
     
-### <a name='-1'></a>서비스 재시작 및 상태 확인
+### 서비스 재시작 및 상태 확인
 ```bash
 service jenkins restart
 ```
@@ -290,9 +289,30 @@ systemctl status jenkins
 Environment="JENKINS_PORT=9000"
 ```  
 
-<br/><br/>  
+<br/>
 
-### <a name='JenkinsAdmin'></a>Jenkins Admin 초기 패스워드 확인 및 복사
+데몬를 reload 한다.  
+
+
+```bash
+systemctl daemon-reload
+```  
+
+<br/>
+
+서비스를 restart  
+
+```bash
+service jenkins restart
+```  
+
+
+<br/>  
+
+### Jenkins Admin 초기 패스워드 확인 및 복사
+
+<br/>
+
  아래 명령어를 사용하여 password 를 복사하고 저장해 놓는다.
 
 ```bash
