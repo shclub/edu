@@ -8,13 +8,13 @@ kubernetes에서 Basic 과정에서 진행하지 못했던 부분 실습을 합�
 
 3. Service - Headless, Endpoint, ExternalName
 
-3. EFK APM 설치
+4. EFK APM 설치
 
-4. EFK APM Agent 설정  ( React / SpringBoot )
+5. EFK APM Agent 설정  ( React / SpringBoot )
 
-5. EFK APM 활용
+6. EFK APM 활용
 
-6. 참고 사이트 
+7. 참고 사이트 
     - Storage Volume : https://anggeum.tistory.com/m/entry/Kubernetes-Volume-Deep-Dive
     - Ubuntu NFS : https://server-talk.tistory.com/378
     - https://tech.osci.kr/2021/10/06/kubernetes-volume%EC%9D%84-%EA%B3%B5%EB%B6%80%ED%95%B4%EB%B3%B4%EC%9E%90/

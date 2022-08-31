@@ -10,7 +10,6 @@ k8s 고급 기능과 컨테이너 기반의 Jenkins 그리고 skaffold를 사용
 
 ### Cluster 생성 
   
-
 <br/>
 
 kt cloud 에 로그인 하여 D1 존 으로 이동한다.  
