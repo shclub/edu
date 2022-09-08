@@ -2,11 +2,19 @@
  
 Redhat Openshift 의 오픈소스 버전인 OKD 4.7 를 사용하여 
 k8s 고급 기능과 컨테이너 기반의 Jenkins 그리고 skaffold를 사용한
-개발 환경을 구성해 본다. 
+개발 환경을 구성해 본다.   
+
+<br/>
+
+1. OKD Cluster
+
+2. OKD 에  ArgoCD 설치
 
 <br/>
 
 ## OKD Cluster   
+
+<br/>
 
 ### Cluster 생성 
 
@@ -132,7 +140,7 @@ Using project "default".
 
 cluster 권한 ( root ) 으로 구성이 필요하며 우리가 구성할 내용은 아래와 같다.    
 
-- 워커 노드 edu.worker01~04 : 교육용 namespace 배치 ( edu로 시작 )
+- 워커 노드 edu.worker01~04,06~07 : 교육용 namespace 배치 ( edu로 시작 )
 - 워커 노드 edu.worker05 : Jenkins 및 기타 솔루션 설치. ( 교육용 namespace 배치 불가 설정 )  
 
 <br/>
@@ -215,7 +223,7 @@ taint가 걸린 노드에 포드들을 스케쥴링 하려면 toleration을 이�
 
 먼저 각 worker node 에 label을 설정한다.    
 
-- edu.worker01~04 
+- edu.worker01~04 ,07~08
    - edu: "true"
 - edu.worker05 
    - devops: "true"
@@ -260,7 +268,9 @@ metadata:
   name: edu.worker01
 ```  
 
-worker node 4번까지 같은 방식으로 Label를 추가한다.  
+<br/>
+
+worker node 4번, 그리고 6~7번 까지 같은 방식으로 Label를 추가한다.  
 
 worker node 5번은 아래와 같이 추가한다.  
 
@@ -336,7 +346,6 @@ edu로 시작하는 namespace에는  `openshift.io/node-selector: edu=true` 로 
 - 참고 : https://access.redhat.com/documentation/ko-kr/openshift_container_platform/4.6/html/nodes/nodes-scheduler-node-selectors
 
 
-
 <br/>
 
 oc 명령어로 namespace 를 생성하면 3개의 Service Account 가 생성된다.  
@@ -386,6 +395,8 @@ Login successful.
 
 You have one project on this server: "devops"
 ```  
+
+<br/>
 
 로그인을 하면 devops namespace 로 설정이 되고 권한은 devops namespace로 제한이 된다.  
 - 비밀번호 변경은 Cluster 권한 만 가능.
@@ -680,6 +691,7 @@ xxxxxxxxVcaiRcXtydUQaCnrhK1tAAAAEHNoY2x1YkBnbWFpbC5jb20BAgMEBQ==
 - passphrase
    ssh-keygen으로 인증키 생성시 입력한 password. 
 
+<br/>
 
 Jenkins pipeline 에서는 아래와 같이 사용 할 수 있습니다.    
 
@@ -739,34 +751,9 @@ Approve를 하면 연동이 verify 된다.
 <img src="./assets/github_ssh_approved.png" style="width: 80%; height: auto;"/>   
 
 
-
-
-nfs 연결 fail 
-
-```bash
-root@newedu-k3s:~# kubectl apply -f nfs-test.yaml
-deployment.apps/nfs-cleaner created
-root@newedu-k3s:~# kubectl get po -n devops
-NAME                           READY   STATUS              RESTARTS   AGE
-nfs-cleaner-84866c649d-xr9lc   0/1     ContainerCreating   0          9s
-root@newedu-k3s:~# kubectl get events -n devops
-LAST SEEN   TYPE      REASON              OBJECT                              MESSAGE
-15s         Normal    ScalingReplicaSet   deployment/nfs-cleaner              Scaled up replica set nfs-cleaner-84866c649d to 1
-15s         Normal    SuccessfulCreate    replicaset/nfs-cleaner-84866c649d   Created pod: nfs-cleaner-84866c649d-xr9lc
-14s         Normal    Scheduled           pod/nfs-cleaner-84866c649d-xr9lc    Successfully assigned devops/nfs-cleaner-84866c649d-xr9lc to newedu-k3s
-7s          Warning   FailedMount         pod/nfs-cleaner-84866c649d-xr9lc    MountVolume.SetUp failed for volume "data" : mount failed: exit status 32...
-```
-
-
-
-```bash
-jakelee@jake-MacBookAir ~ % oc adm policy add-scc-to-user hostmount-anyuid system:serviceaccount:devops:default
-clusterrole.rbac.authorization.k8s.io/system:openshift:scc:hostmount-anyuid added: "default"
-```
-
 <br/>
 
-Service Account의 Source Code Control종류는 다음과 같습니다.
+Service Account의 Source Code Control 종류는 다음과 같습니다.
 
 <br/>
 
@@ -785,6 +772,8 @@ Service Account의 Source Code Control종류는 다음과 같습니다.
 
 참고 : https://gruuuuu.github.io/ocp/svca-s2i/
 
+
+<br/>
 
 worker node 로 ssh 접속한다.
 
@@ -813,3 +802,641 @@ Export list for 172.25.1.162:
 /                                           (everyone)
 /share_8c0fade2_649f_4ca5_aeaa_8fd57904f8d5 (everyone)
 ```  
+
+<br/>
+
+---
+
+## OKD에 ArgoCD 설치  
+
+<br/>
+
+### ArgoCD의 Namespace 생성   
+
+<br/>
+
+ArgoCD의 Namespace를 생성 합니다.  
+
+```bash
+root@newedu:~# oc new-project argocd --display-name 'argocd'
+Now using project "argocd" on server "https://api.211-34-231-81.nip.io:6443".
+
+You can add applications to this project with the 'new-app' command. For example, try:
+
+    oc new-app rails-postgresql-example
+
+to build a new example application in Ruby. Or use kubectl to deploy a simple Kubernetes application:
+
+    kubectl create deployment hello-node --image=k8s.gcr.io/serve_hostname
+
+```
+<br/>
+
+### ArgoCD의 권한 설정 
+
+<br/> 
+
+```bash
+root@newedu:~# oc adm policy add-scc-to-user anyuid -z default -n argocd
+clusterrole.rbac.authorization.k8s.io/system:openshift:scc:anyuid added: "default"
+root@newedu:~# oc adm policy add-scc-to-user piivileged -z default -n argocd
+clusterrole.rbac.authorization.k8s.io/system:openshift:scc:piivileged added: "default"
+root@newedu:~# oc adm policy add-scc-to-user anyuid -z argocd-application-controller -n argocd
+clusterrole.rbac.authorization.k8s.io/system:openshift:scc:anyuid added: "argocd-application-controller"
+root@newedu:~# oc adm policy add-scc-to-user anyuid -z argocd-applicationset-controller -n argocd
+clusterrole.rbac.authorization.k8s.io/system:openshift:scc:anyuid added: "argocd-applicationset-controller"
+root@newedu:~# oc adm policy add-scc-to-user anyuid -z argocd-applications-controller -n argocd
+clusterrole.rbac.authorization.k8s.io/system:openshift:scc:anyuid added: "argocd-applications-controller"
+root@newedu:~# oc adm policy add-scc-to-user anyuid -z argocd-server -n argocd
+clusterrole.rbac.authorization.k8s.io/system:openshift:scc:anyuid added: "argocd-server"
+```
+
+<br/>
+
+
+### 사내망에서 설정
+
+<br/>
+
+인터넷 가능한 오픈 환경이면 아래 과정 ( secret / serviceacoount 설정 ) 을 생략한다.  
+
+<br/>
+
+secret 및 serviceaccount 설정 ( 폐쇄망에서 Nexus를 private registry 사용하는 경우 )  
+
+#### secret 생성  
+
+```bash
+root@newedu:~# kubectl create secret docker-registry <secret 이름> --docker- server=<nexus 서버 url>     --docker-username=<계정> --docker-password=<비밀번호> --docker-email=<이메일> -n argocd
+```  
+<br/>
+
+#### 서비스 어카운트에 적용  
+
+<br/>
+
+```bash
+root@newedu:~# kubectl get secrets <secret 이름> -n argocd 
+root@newedu:~# kubectl patch serviceaccount default -p '{"imagePullSecrets": [{"name": "<secret 이름>"}]}' -n argocd
+```  
+
+<br/>
+
+###  설치
+
+<br/>
+
+해당 링크의 화일을 다운 또는 복사 하여 install_argocd.yaml 화일을 만들고 설치를 진행 합니다.  
+- https://github.com/shclub/edu14/blob/master/argocd/install_argocd.yaml
+
+<br/>
+
+```bash
+root@newedu:~# vi install_argocd.yaml
+root@newedu:~# kubectl apply -f install_argocd.yaml -n argocd
+customresourcedefinition.apiextensions.k8s.io/applications.argoproj.io created
+customresourcedefinition.apiextensions.k8s.io/appprojects.argoproj.io created
+serviceaccount/argocd-application-controller created
+serviceaccount/argocd-dex-server created
+serviceaccount/argocd-redis created
+serviceaccount/argocd-server created
+role.rbac.authorization.k8s.io/argocd-application-controller created
+role.rbac.authorization.k8s.io/argocd-dex-server created
+role.rbac.authorization.k8s.io/argocd-server created
+clusterrole.rbac.authorization.k8s.io/argocd-application-controller created
+clusterrole.rbac.authorization.k8s.io/argocd-server created
+rolebinding.rbac.authorization.k8s.io/argocd-application-controller created
+rolebinding.rbac.authorization.k8s.io/argocd-dex-server created
+rolebinding.rbac.authorization.k8s.io/argocd-redis created
+rolebinding.rbac.authorization.k8s.io/argocd-server created
+clusterrolebinding.rbac.authorization.k8s.io/argocd-application-controller created
+clusterrolebinding.rbac.authorization.k8s.io/argocd-server created
+configmap/argocd-cm created
+configmap/argocd-cmd-params-cm created
+configmap/argocd-gpg-keys-cm created
+configmap/argocd-rbac-cm created
+configmap/argocd-ssh-known-hosts-cm created
+configmap/argocd-tls-certs-cm created
+secret/argocd-secret created
+service/argocd-dex-server created
+service/argocd-metrics created
+service/argocd-redis created
+service/argocd-repo-server created
+service/argocd-server created
+service/argocd-server-metrics created
+deployment.apps/argocd-dex-server created
+deployment.apps/argocd-redis created
+deployment.apps/argocd-repo-server created
+deployment.apps/argocd-server created
+statefulset.apps/argocd-application-controller created
+networkpolicy.networking.k8s.io/argocd-application-controller-network-policy created
+networkpolicy.networking.k8s.io/argocd-dex-server-network-policy created
+networkpolicy.networking.k8s.io/argocd-redis-network-policy created
+networkpolicy.networking.k8s.io/argocd-repo-server-network-policy created
+networkpolicy.networking.k8s.io/argocd-server-network-policy created
+root@newedu:~# kubectl get po -n argocd
+NAME                                  READY   STATUS    RESTARTS   AGE
+argocd-application-controller-0       1/1     Running   0          3m50s
+argocd-dex-server-78c4b7f48d-qmpmn    1/1     Running   0          3m51s
+argocd-redis-68568bc74-xmqkm          1/1     Running   0          3m51s
+argocd-repo-server-5667749479-g7qg2   1/1     Running   0          3m51s
+argocd-server-65dbc886db-5kkjq        1/1     Running   0          3m50s
+```  
+
+<br/>
+
+####   Redis 설치 오류시 조치
+
+<br/>
+
+
+redis가 설치가 안되는 경우는 install_argocd.yaml 에서는 runAsUser 값을 적당한 값으로 수정해야 한다.   
+
+OKD 환경 마다 다르기 때문에 kubectl get events로 에러 내용을 확인하고 range에 있는 적당한 값으로 수정 후 설치하여야 한다.  
+
+```bash
+ 74       securityContext:
+ 75         runAsNonRoot: true
+ 76         runAsUser: 1000740000
+```  
+
+<br/>
+
+POD 기동하기 전 에러 발생시 이벤트 보기   
+
+```bash
+root@newedu:~# kubectl get events -n argocd
+...
+36m         Warning   FailedCreate             replicaset/argocd-redis-8877bd5f            Error creating: pods "argocd-redis-8877bd5f-" is forbidden: unable to validate against any security context constraint: [spec.containers[0].securityContext.runAsUser: Invalid value: 1000840001: must be in the ranges: [1000740000, 1000749999]]
+17m         Warning   FailedCreate             replicaset/argocd-redis-8877bd5f            Error creating: pods "argocd-redis-8877bd5f-" is forbidden: unable to validate against any security context constraint: [spec.containers[0].securityContext.runAsUser: Invalid value: 1000840001: must be in the ranges: [1000740000, 1000749999]]
+...
+```  
+
+<br/>
+
+####  ArgoCD Route 생성
+
+<br/>
+
+해당 링크의 화일을 다운 또는 복사 하여 route_argocd.yaml 화일을 만들고 route를 설정한다.  ( route 는 Openshift 에서만 사용 )  
+- https://github.com/shclub/edu14/blob/master/argocd/route_argocd.yaml  
+
+<br/>
+
+```bash
+root@newedu:~# vi route_argocd.yaml
+root@newedu:~# kubectl apply -f route_argocd.yaml -n argocd
+route.route.openshift.io/argocd-server-route created
+root@newedu:~# kubectl get route -n argocd
+NAME                  HOST/PORT                                 PATH   SERVICES        PORT    TERMINATION            WILDCARD
+argocd-server-route   argocd-argocd.apps.211-34-231-82.nip.io          argocd-server   https   passthrough/Redirect   None
+```  
+
+<br/>
+
+admin 초기 비밀번호를 확인한다.  
+
+```bash
+root@newedu:~# kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d; echo
+AyzY39yr4RLkF0RE
+```  
+<br/>
+
+웹브라우저에서 argocd-argocd.apps.211-34-231-82.nip.io  로 접속하여 userinfo 에서 admin 비밀번호를 변경한다.  
+
+<br/>
+
+####  ArgoCD Client 설치
+
+<br/>
+
+터미널에서 argocd client를 설치합니다.  
+
+```bash
+root@newedu:~#  curl -LO https://github.com/argoproj/argo-rollouts/releases/latest/download/kubectl-argo-rollouts-linux-amd64
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+100 76.7M  100 76.7M    0     0  12.7M      0  0:00:06  0:00:06 --:--:-- 16.0M
+root@newedu:~# chmod +x ./kubectl-argo-rollouts-linux-amd64
+root@newedu:~# sudo mv ./kubectl-argo-rollouts-linux-amd64 /usr/local/bin/kubectl-argo-rollouts
+root@newedu:~# kubectl argo rollouts version
+kubectl-argo-rollouts: v1.2.2+22aff27
+  BuildDate: 2022-07-26T17:24:43Z
+  GitCommit: 22aff273bf95646e0cd02555fbe7d2da0f903316
+  GitTreeState: clean
+  GoVersion: go1.17.6
+  Compiler: gc
+  Platform: linux/amd64
+```  
+
+<br/>
+
+####  Route로 ArgoCD 접속
+
+<br/>
+
+계정 생성및 권한을 주기 위하여 route url로 접속하여 로그인을 합니다.  
+
+
+```bash
+root@newedu:~# argocd login argocd-argocd.apps.211-34-231-82.nip.io
+WARNING: server certificate had error: x509: certificate is valid for localhost, argocd-server, argocd-server.argocd, argocd-server.argocd.svc, argocd-server.argocd.svc.cluster.local, not argocd-argocd.apps.211-34-231-82.nip.io. Proceed insecurely (y/n)? y
+Username: admin
+Password:
+'admin:login' logged in successfully
+Context 'argocd-argocd.apps.211-34-231-82.nip.io' updated
+```  
+
+<br/>
+
+현재 계정을 확인합니다.  
+
+```bash
+root@newedu:~# argocd account list
+NAME   ENABLED  CAPABILITIES
+admin  true     login
+```  
+
+신규 계정을 아래와 같이 생성합니다.  data 를 추가하고 아래와 같이 계정 insert 하고 저장.  
+
+```bash
+root@newedu:~# kubectl -n argocd edit configmap argocd-cm -o yaml
+apiVersion: v1
+data:
+  accounts.edu1: apiKey,login
+  accounts.edu2: apiKey,login
+  accounts.edu3: apiKey,login
+  accounts.edu4: apiKey,login
+  accounts.edu5: apiKey,login
+  accounts.edu6: apiKey,login
+  accounts.edu7: apiKey,login
+  accounts.edu8: apiKey,login
+  accounts.edu9: apiKey,login
+  accounts.edu10: apiKey,login
+  accounts.edu11: apiKey,login
+  accounts.edu12: apiKey,login
+  accounts.edu13: apiKey,login
+  accounts.edu14: apiKey,login
+  accounts.edu15: apiKey,login
+  accounts.edu16: apiKey,login
+  accounts.edu17: apiKey,login
+  accounts.edu18: apiKey,login
+  accounts.edu19: apiKey,login
+  accounts.edu20: apiKey,login
+  accounts.edu21: apiKey,login
+  accounts.edu22: apiKey,login
+  accounts.edu23: apiKey,login
+  accounts.edu24: apiKey,login
+  accounts.edu25: apiKey,login
+  accounts.edu26: apiKey,login
+  accounts.edu27: apiKey,login
+  accounts.edu28: apiKey,login
+  accounts.edu29: apiKey,login
+  accounts.edu30: apiKey,login
+  accounts.edu31: apiKey,login
+  accounts.edu32: apiKey,login
+  accounts.edu33: apiKey,login
+  accounts.edu34: apiKey,login
+  accounts.edu35: apiKey,login
+  accounts.rookie1: apiKey,login
+  accounts.rookie2: apiKey,login
+  accounts.rookie3: apiKey,login
+  accounts.rookie4: apiKey,login
+  accounts.rookie5: apiKey,login
+kind: ConfigMap
+metadata:
+```  
+
+<br/>
+
+이제 권한을 할당합니다.  
+
+```bash
+root@newedu:~# argocd account list
+NAME     ENABLED  CAPABILITIES
+admin    true     login
+edu1     true     apiKey, login
+edu10    true     apiKey, login
+edu11    true     apiKey, login
+edu12    true     apiKey, login
+edu13    true     apiKey, login
+edu14    true     apiKey, login
+edu15    true     apiKey, login
+edu16    true     apiKey, login
+edu17    true     apiKey, login
+edu18    true     apiKey, login
+edu19    true     apiKey, login
+edu2     true     apiKey, login
+edu20    true     apiKey, login
+edu21    true     apiKey, login
+edu22    true     apiKey, login
+edu23    true     apiKey, login
+edu24    true     apiKey, login
+edu25    true     apiKey, login
+edu26    true     apiKey, login
+edu27    true     apiKey, login
+edu28    true     apiKey, login
+edu29    true     apiKey, login
+edu3     true     apiKey, login
+edu30    true     apiKey, login
+edu31    true     apiKey, login
+edu32    true     apiKey, login
+edu33    true     apiKey, login
+edu34    true     apiKey, login
+edu35    true     apiKey, login
+edu5     true     apiKey, login
+edu6     true     apiKey, login
+edu7     true     apiKey, login
+edu8     true     apiKey, login
+edu9     true     apiKey, login
+rookie1  true     apiKey, login
+rookie2  true     apiKey, login
+rookie3  true     apiKey, login
+rookie4  true     apiKey, login
+rookie5  true     apiKey, login
+root@newedu:~# kubectl -n argocd edit configmap argocd-rbac-cm -o yaml
+apiVersion: v1
+data:
+  policy.csv: |
+    p, role:manager, applications, *, */*, allow
+    p, role:manager, clusters, get, *, allow
+    p, role:manager, repositories, *, *, allow
+    p, role:manager, projects, *, *, allow
+    p, role:edu1, applications, *, edu1/*, allow
+    p, role:edu1, clusters, *, *, allow
+    p, role:edu1, repositories, *, *, allow
+    p, role:edu1, projects, *, *, allow
+    p, role:edu2, applications, *, edu2/*, allow
+    p, role:edu2, clusters, *, *, allow
+    p, role:edu2, repositories, *, *, allow
+    p, role:edu2, projects, *, *, allow
+    p, role:edu3, applications, *, edu3/*, allow
+    p, role:edu3, clusters, *, *, allow
+    p, role:edu3, repositories, *, *, allow
+    p, role:edu3, projects, *, *, allow
+    p, role:edu4, applications, *, edu4/*, allow
+    p, role:edu4, clusters, *, *, allow
+    p, role:edu4, repositories, *, *, allow
+    p, role:edu4, projects, *, *, allow
+    p, role:edu5, applications, *, edu5/*, allow
+    p, role:edu5, clusters, *, *, allow
+    p, role:edu5, repositories, *, *, allow
+    p, role:edu5, projects, *, *, allow
+    p, role:edu6, applications, *, edu6/*, allow
+    p, role:edu6, clusters, *, *, allow
+    p, role:edu6, repositories, *, *, allow
+    p, role:edu6, projects, *, *, allow
+    p, role:edu7, applications, *, edu7/*, allow
+    p, role:edu7, clusters, *, *, allow
+    p, role:edu7, repositories, *, *, allow
+    p, role:edu7, projects, *, *, allow
+    p, role:edu8, applications, *, edu8/*, allow
+    p, role:edu8, clusters, *, *, allow
+    p, role:edu8, repositories, *, *, allow
+    p, role:edu8, projects, *, *, allow
+    p, role:edu9, applications, *, edu9/*, allow
+    p, role:edu9, clusters, *, *, allow
+    p, role:edu9, repositories, *, *, allow
+    p, role:edu9, projects, *, *, allow
+    p, role:edu10, applications, *, edu10/*, allow
+    p, role:edu10, clusters, *, *, allow
+    p, role:edu10, repositories, *, *, allow
+    p, role:edu10, projects, *, *, allow
+    p, role:edu11, applications, *, edu11/*, allow
+    p, role:edu11, clusters, *, *, allow
+    p, role:edu11, repositories, *, *, allow
+    p, role:edu11, projects, *, *, allow
+    p, role:edu12, applications, *, edu12/*, allow
+    p, role:edu12, clusters, *, *, allow
+    p, role:edu12, repositories, *, *, allow
+    p, role:edu12, projects, *, *, allow
+    p, role:edu13, applications, *, edu13/*, allow
+    p, role:edu13, clusters, *, *, allow
+    p, role:edu13, repositories, *, *, allow
+    p, role:edu13, projects, *, *, allow
+    p, role:edu14, applications, *, edu14/*, allow
+    p, role:edu14, clusters, *, *, allow
+    p, role:edu14, repositories, *, *, allow
+    p, role:edu14, projects, *, *, allow
+    p, role:edu15, applications, *, edu15/*, allow
+    p, role:edu15, clusters, *, *, allow
+    p, role:edu15, repositories, *, *, allow
+    p, role:edu15, projects, *, *, allow
+    p, role:edu16, applications, *, edu16/*, allow
+    p, role:edu16, clusters, *, *, allow
+    p, role:edu16, repositories, *, *, allow
+    p, role:edu16, projects, *, *, allow
+    p, role:edu17, applications, *, edu17/*, allow
+    p, role:edu17, clusters, *, *, allow
+    p, role:edu17, repositories, *, *, allow
+    p, role:edu17, projects, *, *, allow
+    p, role:edu18, applications, *, edu18/*, allow
+    p, role:edu18, clusters, *, *, allow
+    p, role:edu18, repositories, *, *, allow
+    p, role:edu18, projects, *, *, allow
+    p, role:edu19, applications, *, edu19/*, allow
+    p, role:edu19, clusters, *, *, allow
+    p, role:edu19, repositories, *, *, allow
+    p, role:edu19, projects, *, *, allow
+    p, role:edu20, applications, *, edu20/*, allow
+    p, role:edu20, clusters, *, *, allow
+    p, role:edu20, repositories, *, *, allow
+    p, role:edu20, projects, *, *, allow
+    p, role:edu21, applications, *, edu21/*, allow
+    p, role:edu21, clusters, *, *, allow
+    p, role:edu21, repositories, *, *, allow
+    p, role:edu21, projects, *, *, allow
+    p, role:edu22, applications, *, edu22/*, allow
+    p, role:edu22, clusters, *, *, allow
+    p, role:edu22, repositories, *, *, allow
+    p, role:edu22, projects, *, *, allow
+    p, role:edu23, applications, *, edu23/*, allow
+    p, role:edu23, clusters, *, *, allow
+    p, role:edu23, repositories, *, *, allow
+    p, role:edu23, projects, *, *, allow
+    p, role:edu24, applications, *, edu24/*, allow
+    p, role:edu24, clusters, *, *, allow
+    p, role:edu24, repositories, *, *, allow
+    p, role:edu24, projects, *, *, allow
+    p, role:edu25, applications, *, edu25/*, allow
+    p, role:edu25, clusters, *, *, allow
+    p, role:edu25, repositories, *, *, allow
+    p, role:edu25, projects, *, *, allow
+    p, role:edu26, applications, *, edu26/*, allow
+    p, role:edu26, clusters, *, *, allow
+    p, role:edu26, repositories, *, *, allow
+    p, role:edu26, projects, *, *, allow
+    p, role:edu27, applications, *, edu27/*, allow
+    p, role:edu27, clusters, *, *, allow
+    p, role:edu27, repositories, *, *, allow
+    p, role:edu27, projects, *, *, allow
+    p, role:edu28, applications, *, edu28/*, allow
+    p, role:edu28, clusters, *, *, allow
+    p, role:edu28, repositories, *, *, allow
+    p, role:edu28, projects, *, *, allow
+    p, role:edu29, applications, *, edu29/*, allow
+    p, role:edu29, clusters, *, *, allow
+    p, role:edu29, repositories, *, *, allow
+    p, role:edu29, projects, *, *, allow
+    p, role:edu30, applications, *, edu30/*, allow
+    p, role:edu30, clusters, *, *, allow
+    p, role:edu30, repositories, *, *, allow
+    p, role:edu30, projects, *, *, allow
+    p, role:edu31, applications, *, edu31/*, allow
+    p, role:edu31, clusters, *, *, allow
+    p, role:edu31, repositories, *, *, allow
+    p, role:edu31, projects, *, *, allow
+    p, role:edu32, applications, *, edu32/*, allow
+    p, role:edu32, clusters, *, *, allow
+    p, role:edu32, repositories, *, *, allow
+    p, role:edu32, projects, *, *, allow
+    p, role:edu33, applications, *, edu33/*, allow
+    p, role:edu33, clusters, *, *, allow
+    p, role:edu33, repositories, *, *, allow
+    p, role:edu33, projects, *, *, allow
+    p, role:edu34, applications, *, edu34/*, allow
+    p, role:edu34, clusters, *, *, allow
+    p, role:edu34, repositories, *, *, allow
+    p, role:edu34, projects, *, *, allow
+    p, role:edu35, applications, *, edu35/*, allow
+    p, role:edu35, clusters, *, *, allow
+    p, role:edu35, repositories, *, *, allow
+    p, role:edu35, projects, *, *, allow
+    p, role:rookie1, applications, *, rookie1/*, allow
+    p, role:rookie1, clusters, *, *, allow
+    p, role:rookie1, repositories, *, *, allow
+    p, role:rookie1, projects, *, *, allow
+    p, role:rookie2, applications, *, rookie2/*, allow
+    p, role:rookie2, clusters, *, *, allow
+    p, role:rookie2, repositories, *, *, allow
+    p, role:rookie2, projects, *, *, allow
+    p, role:rookie3, applications, *, rookie3/*, allow
+    p, role:rookie3, clusters, *, *, allow
+    p, role:rookie3, repositories, *, *, allow
+    p, role:rookie3, projects, *, *, allow
+    p, role:rookie4, applications, *, rookie4/*, allow
+    p, role:rookie4, clusters, *, *, allow
+    p, role:rookie4, repositories, *, *, allow
+    p, role:rookie4, projects, *, *, allow
+    p, role:rookie5, applications, *, rookie5/*, allow
+    p, role:rookie5, clusters, *, *, allow
+    p, role:rookie5, repositories, *, *, allow
+    p, role:rookie5, projects, *, *, allow
+    g, edu1, role:edu1
+    g, edu2, role:edu2
+    g, edu3, role:edu3
+    g, edu4, role:edu4
+    g, edu5, role:edu5
+    g, edu6, role:edu6
+    g, edu7, role:edu7
+    g, edu8, role:edu8
+    g, edu9, role:edu9
+    g, edu10, role:edu10
+    g, edu11, role:edu11
+    g, edu12, role:edu12
+    g, edu13, role:edu13
+    g, edu14, role:edu14
+    g, edu15, role:edu15
+    g, edu16, role:edu16
+    g, edu17, role:edu17
+    g, edu18, role:edu18
+    g, edu19, role:edu19
+    g, edu20, role:edu20
+    g, edu21, role:edu21
+    g, edu22, role:edu22
+    g, edu23, role:edu23
+    g, edu24, role:edu24
+    g, edu25, role:edu25
+    g, edu26, role:edu26
+    g, edu27, role:edu27
+    g, edu28, role:edu28
+    g, edu29, role:edu29
+    g, edu30, role:edu30
+    g, edu31, role:edu31
+    g, edu32, role:edu32
+    g, edu33, role:edu33
+    g, edu34, role:edu34
+    g, edu35, role:edu35
+    g, rookie1, role:rookie1
+    g, rookie2, role:rookie2
+    g, rookie3, role:rookie3
+    g, rookie4, role:rookie4
+    g, rookie5, role:rookie5
+  policy.default: role:''
+kind: ConfigMap
+```  
+
+</br>
+
+각 계정의 비밀번호를 설정합니다.  
+
+```bash
+root@newedu:~# argocd account get --account edu1
+Name:               edu1
+Enabled:            true
+Capabilities:       apiKey, login
+
+Tokens:
+NONE
+root@newedu:~# argocd account update-password --account edu1
+*** Enter password of currently logged in user (admin):
+*** Enter new password for user edu1:
+*** Confirm new password for user edu1:
+Password updated
+```  
+
+<br/>
+
+추가적으로 argo-rollout namespace를 생성하고 rollout을 설치합니다.  
+
+아래 링크의 화일을 사용하여 install_argorollouts.yaml을 생성합니다.
+- https://github.com/shclub/edu14/blob/master/argocd/install_argorollouts.yaml  
+
+
+<br/>
+
+```bash
+root@newedu:~# kubectl apply -f install_argorollouts.yaml -n argo-rollouts
+customresourcedefinition.apiextensions.k8s.io/analysisruns.argoproj.io created
+customresourcedefinition.apiextensions.k8s.io/analysistemplates.argoproj.io created
+customresourcedefinition.apiextensions.k8s.io/clusteranalysistemplates.argoproj.io created
+customresourcedefinition.apiextensions.k8s.io/experiments.argoproj.io created
+customresourcedefinition.apiextensions.k8s.io/rollouts.argoproj.io created
+serviceaccount/argo-rollouts created
+clusterrole.rbac.authorization.k8s.io/argo-rollouts created
+clusterrole.rbac.authorization.k8s.io/argo-rollouts-aggregate-to-admin created
+clusterrole.rbac.authorization.k8s.io/argo-rollouts-aggregate-to-edit created
+clusterrole.rbac.authorization.k8s.io/argo-rollouts-aggregate-to-view created
+clusterrolebinding.rbac.authorization.k8s.io/argo-rollouts created
+secret/argo-rollouts-notification-secret created
+service/argo-rollouts-metrics created
+deployment.apps/argo-rollouts created
+root@newedu:~# kubectl get all -n argo-rollouts
+NAME                                 READY   STATUS    RESTARTS   AGE
+pod/argo-rollouts-5c964cb4f5-bq94n   1/1     Running   0          9m34s
+
+NAME                            TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)    AGE
+service/argo-rollouts-metrics   ClusterIP   172.30.44.187   <none>        8090/TCP   9m36s
+
+NAME                            READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/argo-rollouts   1/1     1            1           9m36s
+
+NAME                                       DESIRED   CURRENT   READY   AGE
+replicaset.apps/argo-rollouts-5c964cb4f5   1         1         1       9m35s
+```  
+
+
+
+<br/>
+
+####  ArgoCD 프로젝트 생성 및 추가 설정
+
+<br/>
+
+아래 링크의 뒷부분을 참고합니다.  
+
+- https://github.com/shclub/edu/blob/master/argocd_hands_on.md
+
+<br/>

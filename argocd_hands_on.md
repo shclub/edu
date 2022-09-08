@@ -664,7 +664,7 @@ ArgoCD 화면에 admin 계정으로 생성한 pipeline 을 볼수 있습니다.
 apiVersion: argoproj.io/v1alpha1
 kind: AppProject
 metadata:
-  name: edu-project
+  name: edu1
   namespace: argocd
 spec:
   clusterResourceWhitelist:
@@ -687,13 +687,13 @@ spec:
 root@jakelee:~# kubectl apply -f argocd_proj.yaml
 ```
 
-에러가 없이 발생하면 edu-project 라는 이름으로 project 가 생성된 것을 확인 할 수 있다.  
+에러가 없이 발생하면 edu1 이라는 이름으로 project 가 생성된 것을 확인 할 수 있다.  
 
 ```bash
 root@jakelee:~# kubectl get appproject -n argocd
 NAME           AGE
 default        53d
-edu-project    88m
+edu1    88m
 ```  
 
 <br/>
@@ -714,15 +714,15 @@ edu-project    88m
 
 권한을 세부 적으로 컨트롤 한다.  
 
-edu1 이라는 신규 생성은 edu-project라고 하는 project에 한하여만 전체 권한을 갖는다.  
+edu1 project는 edu1 유저의 project에 한하여만 전체 권한을 갖는다.  
 
-edu-project 이외의 applications 들은 볼수 없습니다.  
+edu1 이외의 applications 들은 볼수 없습니다.  
 
 ```bash
     p, role:edu1, clusters, get, *, allow
     p, role:edu1, repositories, get, *, allow
     p, role:edu1, projects, get, *, allow
-    p, role:edu1, applications, *, edu-project/*, allow
+    p, role:edu1, applications, *, edu1/*, allow
 ```  
 
 <br/> 
@@ -731,7 +731,7 @@ edu-project 이외의 applications 들은 볼수 없습니다.
 
 
 ```bash
-    p, role:edu1, projects, get, edu-project, allow
+    p, role:edu1, projects, get, edu1, allow
 ```
 
 <br/>
@@ -749,11 +749,47 @@ data:
     p, role:edu1, clusters, get, *, allow
     p, role:edu1, repositories, get, *, allow
     p, role:edu1, projects, get, *, allow
-    p, role:edu1, applications, *, edu-project/*, allow
+    p, role:edu1, applications, *, edu1/*, allow
     g, edu1, role:edu1
     g, shclub, role:manager
   policy.default: role:''
 ```
+
+<br/>
+
+Argocd 화면에서 project를 생성하는 방법은 아래와 같다.  
+
+Argocd 화면의 왼쪽 프레임에 톱니 바퀴 아이콘인 관리 메뉴를 클릭하고 project로 진입합니다.  
+
+<img src="./assets/argocd_new_project0.png" style="width: 80%; height: auto;"/>      
+
+<br/>
+
+default 라는 project 는 argocd에서 기본적으로 제공하는 project 이름 이다.  
+
+<img src="./assets/argocd_new_project1.png" style="width: 80%; height: auto;"/>    
+
+<br/>
+
+New Project 아이콘을 클릭하여 신규로 project를 생성한다.
+
+<img src="./assets/argocd_new_project2.png" style="width: 80%; height: auto;"/>    
+
+<br/>
+
+project 생성 이 후에 sources repository 와 destinations 의 Edit 메뉴를 클릭하여 `*` 를 기본으로 설정하면 모든 repository와 destination에 대한 권한이 할당 된다.  
+
+<img src="./assets/argocd_new_project3.png" style="width: 80%; height: auto;"/>    
+
+<br/>
+
+CLUSTER RESOURCE ALLOW LIST 도 edit 하여 설정 한다.  
+
+<img src="./assets/argocd_new_project4.png" style="width: 80%; height: auto;"/>    
+
+<br/>
+
+Project 생성 완료 하고 나면 Deploy Application 생성 할때 Project 콤보 박스를 클릭하여 해당 project를 선택 할 수 있다.   
 
 <br/>
 
@@ -960,7 +996,11 @@ spec:
             cpu: 300m
 ```  
 
+<br/>
+
 kustomize 적용  
+
+<br/>
 
 ```bash
 kubectl apply -k https://github.com/shclub/edu6/overlays/development/

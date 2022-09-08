@@ -467,7 +467,6 @@ spec:
 
 service 생성  
 
-
 nfs-server-service.yaml  
 ```bash
 apiVersion: v1
@@ -1697,4 +1696,520 @@ Explore on my own 을 클릭하고  왼쪽 상단에서 [Observability]-[APM] �
 
 
 
+
+
+
+***
+
+<br/>
+
+## 4. EFK APM 설치  ( OKD 4.7)
+
+<br/>
+
+모니터링을 위해 elastic의 APM 을 설치해 본다.  
+설치를 위해서는 elasticsearch , fluentd , kibana, elastic apm server 4가지를 설치 해야하고  
+APM 서버는  서버 1곳에만 설치하는 무료이고 2개 이상 서버에 설치하면 유료.   
+
+- Elasticsearch 
+  - Apache 루씬 기반의 Java 오프소스 분산 검색엔진이다. 많은 양의 데이터를 보관하고 실시간으로 저장,검색, 분석할 수 있게 해준다.
+- Fluentd 
+  - 로그 데이터를 수집, 변환 후 Elasticsearch의 백엔드로 전송해주는 역할을 하는 오픈소스 데이터 수집기이다. CNCF에서 관리한다.  
+- Kibana 
+  - 그래프, 차트를 제공해주는 Elasticsearch용 데이터 시각화 관리 도구이다.       
+  - Kibana를 사용하여 Elasticsearch 색인에 저장된 데이터를 검색할 수 있다.  
+
+<br/>
+
+oc login 을 root 계정으로 하고 아래 edu-efk 이라는 namespace를 생성한다.  
+
+```bash
+root@newedu:~# oc new-project  edu-efk --display-name 'edu-efk'
+Now using project "edu-efk" on server "https://api.211-34-231-81.nip.io:6443".
+
+You can add applications to this project with the 'new-app' command. For example, try:
+
+    oc new-app rails-postgresql-example
+
+to build a new example application in Ruby. Or use kubectl to deploy a simple Kubernetes application:
+
+    kubectl create deployment hello-node --image=k8s.gcr.io/serve_hostname
+
+```  
+
+<br/>
+
+namespace를 할당하고 node selector를 할당하여 항상 5번 worker node에 pod가 뜨도록 한다.  
+
+`openshift.io/node-selector: devops=true`    
+
+<br/>
+
+```bash
+root@newedu:~# kubectl edit namespace edu-efk
+namespace/edu-monitoring edited
+root@newedu:~# kubectl describe namespace edu-efk
+Name:         edu-efk
+Labels:       <none>
+Annotations:  openshift.io/description:
+              openshift.io/display-name: edu-monitoring
+              openshift.io/node-selector: devops=true
+              openshift.io/requester: root
+              openshift.io/sa.scc.mcs: s0:c27,c14
+              openshift.io/sa.scc.supplemental-groups: 1000730000/10000
+              openshift.io/sa.scc.uid-range: 1000730000/10000
+Status:       Active
+
+No resource quota.
+
+No LimitRange resource.
+```  
+
+Annotation에 설정 된 것을 확인 할 수 있다.  
+
+<br/>
+
+해당 namespace의 serviceaccount 인증을 부여한다.   
+
+```bash
+root@newedu:~# oc adm policy add-scc-to-group anyuid system:serviceaccounts:edu-efk
+clusterrole.rbac.authorization.k8s.io/system:openshift:scc:anyuid added: "system:serviceaccounts:edu-efk"
+```  
+
+<br/>
+
+efk는 bitnami 의 helm chart를 사용합니다.   
+
+이전에 bitnami 를 repository로 추가를 했기 때문에 아래와 같이 elasticsearch로 조회해 봅니다.
+
+<br/>
+
+```bash
+root@newedu:~# helm search repo elasticsearch
+NAME                    	CHART VERSION	APP VERSION	DESCRIPTION
+bitnami/elasticsearch   	19.2.2       	8.3.3      	Elasticsearch is a distributed search and analy...
+bitnami/dataplatform-bp2	12.0.5       	1.0.1      	DEPRECATED This Helm chart can be used for the ...
+bitnami/grafana         	7.6.5        	8.3.4      	Grafana is an open source, feature rich metrics...
+bitnami/kibana          	10.2.1       	8.3.3      	Kibana is an open source, browser based analyti...
+```  
+
+
+<br/>
+
+위에서 우리가 사용할 것은 2가지 이다.
+
+|이름| App Version | Description
+|:--| :-------| :-------| 
+| bitnami/elasticsearch	| 8.3.3 | Elasticsearch is a distributed search and analy... |
+| bitnami/kibana	| 8.3.3 | Kibana is an open source, browser based analyti... |
+
+<br/>
+
+
+먼저 PV/PVC를 생성한다.  
+
+elasticsearch-master는 master.replicas가 기본 '3'으로 설정 되어 있으나 우리는 교육용으로 1개만 생성하기 때문에  1개의 pv/pvc를 생성한다.  
+
+elasticsearch-data는 data.replicas는 기본 '2'로 설정 되어 있으나 우리는 교ㅕ육용으로  1개의 pv/pvc를 생성한다.  
+
+elasticsearch-kibana의 replicaCount가 기본 '1'로 설정 되어 있어 1개의 pv/pvc를 생성한다.
+
+<br/>
+
+총 3개의 yaml 화일을 생성한다. 이전에 NAS ( NFS 서버 ) 에 접속하여
+3개의  폴더를 생성한다.  
+
+|폴더이름| Size 
+|:--| :-------| 
+| elasticsearch-master-0	| 5Gi | 
+| elasticsearch-data-0	| 20Gi | 
+| elasticsearch-kibana | 10Gi | 
+
+<br/>
+
+NFS 서버에 접속한다.  
+
+```bash
+[root@edu ~]# cd /mnt
+[root@edu mnt]# ls
+data  database  edu  image-registry  jenkins  prometheus-data00  prometheus-data01
+[root@edu mnt]# ls
+data  database  edu  image-registry  jenkins  prometheus-data00  prometheus-data01
+[root@edu mnt]# mkdir elasticsearch-master-0
+[root@edu mnt]# chown -R nfsnobody:nfsnobody elasticsearch-master-0
+[root@edu mnt]# chmod 777 elasticsearch-master-0
+[root@edu mnt]# mkdir elasticsearch-data-0
+[root@edu mnt]# chown -R nfsnobody:nfsnobody elasticsearch-data-0
+[root@edu mnt]# chmod 777 elasticsearch-data-0
+[root@edu mnt]# mkdir elasticsearch-kibana
+[root@edu mnt]# chown -R nfsnobody:nfsnobody elasticsearch-kibana
+[root@edu mnt]# chmod 777 elasticsearch-kibana
+[root@edu mnt]# ls -al
+total 52
+drwxrwxrwx. 12 root      root      4096 Sep  5  2022 .
+drwxr-xr-x. 24 root      root      4096 Jul 21 03:29 ..
+drwxrwxrwx.  2 root      root      4096 Jun 20 08:23 .snapshot
+drwxrwxrwx.  2 nfsnobody nfsnobody 4096 Sep  1 04:51 data
+drwxrwxrwx.  2 nfsnobody nfsnobody 4096 Sep  1 10:01 database
+drwxrwxrwx.  3 nfsnobody nfsnobody 4096 Aug 29 05:31 edu
+drwxrwxrwx.  2 nfsnobody nfsnobody 4096 Sep  5 07:30 elasticsearch-data-0
+drwxrwxrwx.  2 nfsnobody nfsnobody 4096 Sep  5  2022 elasticsearch-kibana
+drwxrwxrwx.  2 nfsnobody nfsnobody 4096 Sep  5 07:29 elasticsearch-master-0
+drwxrwxrwx.  2 nfsnobody nfsnobody 4096 Jun 20 08:23 image-registry
+drwxrwxrwx.  2 nfsnobody nfsnobody 4096 Aug 29 05:55 jenkins
+drwxrwxrwx.  3 nfsnobody nfsnobody 4096 Jun 20 08:24 prometheus-data00
+drwxrwxrwx.  3 nfsnobody nfsnobody 4096 Jun 20 08:24 prometheus-data01
+```  
+
+<br/>
+
+elasticsearch-master-0 pv/pvc를 생성한다.  
+
+elasticsearch-master-0.yaml  
+```bash
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: elasticsearch-master-0-pv
+  labels:
+    storage: elasticsearch-master-0-pv
+spec:
+  accessModes:
+  - ReadWriteOnce
+  capacity:
+    storage: 5Gi
+  nfs:
+    path: /share_8c0fade2_649f_4ca5_aeaa_8fd57904f8d5/elasticsearch-master-0
+    server: 172.25.1.162
+  persistentVolumeReclaimPolicy: Retain
+  volumeMode: Filesystem
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: elasticsearch-master-0
+  namespace: edu-efk
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  selector:
+    matchLabels:
+      storage: elasticsearch-master-0-pv
+  volumeName: elasticsearch-master-0-pv
+  volumeMode: Filesystem
+```  
+
+elasticsearch-data-0 pv/pvc를 생성한다.  
+
+elasticsearch-data-0.yaml  
+```bash
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: elasticsearch-data-0-pv
+  labels:
+    storage: elasticsearch-data-0-pv
+spec:
+  accessModes:
+  - ReadWriteOnce
+  capacity:
+    storage: 20Gi
+  nfs:
+    path: /share_8c0fade2_649f_4ca5_aeaa_8fd57904f8d5/elasticsearch-data-0
+    server: 172.25.1.162
+  persistentVolumeReclaimPolicy: Retain
+  volumeMode: Filesystem
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: elasticsearch-data-0
+  namespace: edu-efk
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+  selector:
+    matchLabels:
+      storage: elasticsearch-data-0-pv
+  volumeName: elasticsearch-data-0-pv
+  volumeMode: Filesystem
+```
+
+elasticsearch-kibana pv/pvc를 생성한다.  
+
+elasticsearch-kibana.yaml  
+```bash
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: elasticsearch-kibana-pv
+  labels:
+    storage: elasticsearch-kibana-pv
+spec:
+  accessModes:
+  - ReadWriteOnce
+  capacity:
+    storage: 10Gi
+  nfs:
+    path: /share_8c0fade2_649f_4ca5_aeaa_8fd57904f8d5/elasticsearch-kibana
+    server: 172.25.1.162
+  persistentVolumeReclaimPolicy: Retain
+  volumeMode: Filesystem
+  resources:
+    requests:
+      storage: 10Gi
+  selector:
+    matchLabels:
+      storage: elasticsearch-kibana-pv
+  volumeName: elasticsearch-kibana-pv
+  volumeMode: Filesystem
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: elasticsearch-kibana
+  namespace: edu-efk
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  selector:
+    matchLabels:
+      storage: elasticsearch-kibana-pv
+  volumeName: elasticsearch-kibana-pv
+  volumeMode: Filesystem    
+```   
+
+<br/>
+
+화일이 생성되면 순서대로 설치를 한다.    
+
+
+```bash
+root@newedu:~# vi elasticsearch-master-0.yaml
+root@newedu:~# vi elasticsearch-data-0.yaml
+root@newedu:~# vi elasticsearch-kibana.yaml
+root@newedu:~# vi elasticsearch-kibana.yaml
+root@newedu:~# kubectl apply -f elasticsearch-master-0.yaml
+persistentvolume/elasticsearch-master-0-pv created
+persistentvolumeclaim/elasticsearch-master-0 created
+root@newedu:~# kubectl apply -f elasticsearch-data-0.yaml
+persistentvolume/elasticsearch-data-0-pv created
+persistentvolumeclaim/elasticsearch-data-0 created
+root@newedu:~# vi elasticsearch-kibana.yaml
+root@newedu:~# kubectl apply -f elasticsearch-kibana.yaml
+persistentvolume/elasticsearch-kibana-pv created
+persistentvolumeclaim/elasticsearch-kibana created
+```  
+
+<br/>
+
+생성된 pv/pvc를 확인 합니다.  
+
+```bash
+root@newedu:~# kubectl get pv  -n edu-efk | grep elastic
+elasticsearch-data-0-pv     20Gi       RWO            Retain           Bound       edu-efk/elasticsearch-data-0                                                      80s
+elasticsearch-kibana-pv     10Gi       RWO            Retain           Bound       edu-efk/elasticsearch-kibana                                                      31s
+elasticsearch-master-0-pv   5Gi        RWO            Retain           Bound       edu-efk/elasticsearch-master-0                                                    118s
+root@newedu:~# kubectl get pvc  -n edu-efk
+NAME                     STATUS   VOLUME                      CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+elasticsearch-data-0     Bound    elasticsearch-data-0-pv     20Gi       RWO                           92s
+elasticsearch-kibana     Bound    elasticsearch-kibana-pv     10Gi       RWO                           43s
+elasticsearch-master-0   Bound    elasticsearch-master-0-pv   5Gi        RWO
+```  
+
+정상적으로 생성이 되면 STATUS가 Bound 로 설정이 됩니다.  
+
+
+<br/>
+
+NAS에 폴더가 생성이 되고 PV / PVC 가 생성이 되면 elasticSearch를 설치를 합니다.  
+
+먼저 아래 명령어로 values.yaml 화일을 생성합니다ㅏ.  
+
+
+```bash
+root@newedu:~# helm show values bitnami/elasticsearch > es-values.yaml
+```  
+
+<br/>
+
+elasticsearch 를 설치한다.  ( 옵션을 사용하여 kibana 와 같이 설치 )  
+  
+```bash
+root@newedu:~# helm  install elastic bitnami/elasticsearch -f es-values.yaml -n edu-efk  \
+    --set global.kibanaEnabled=true \
+    --set image.tag=7.17.1-debian-10-r9 \
+    --set master.replicaCount=1 \
+    --set master.heapSize=2096m \
+    --set master.persistence.enabled=true \
+    --set master.persistence.existingClaim=elasticsearch-master-0 \
+    --set master.podSecurityContext.fsGroup=1000660000 \
+    --set master.containerSecurityContext.runAsUser=1000660000 \
+    --set coordinating.replicaCount=1 \
+    --set data.replicaCount=1 \
+    --set data.persistence.enabled=true \
+    --set data.persistence.existingClaim=elasticsearch-data-0 \
+    --set kibana.persistence.enabled=false
+```
+- heapsize : elasticsearch의 heapsize를 조정해 준다 ( 운영은 권장사항은 16G 이상이다 ) 기본 설치시 2G정도로 설정했다.  
+- global.kibanaEnabled=true : elasticsearch 설치시 같이 설치한다
+
+<br/>
+
+위와 같이 설치하면 OKD의 경우 권한이 적용 되지 않아 정상적으로 설치가 되지 않는다.   
+
+<br/>
+
+```bash
+root@newedu:~# kubectl get sa -n edu-efk
+NAME             SECRETS   AGE
+builder          2         144m
+default          2         144m
+deployer         2         144m
+elastic-kibana   2         4m17s
+root@newedu:~# oc adm policy add-scc-to-user anyuid -z default -n edu-efk
+clusterrole.rbac.authorization.k8s.io/system:openshift:scc:anyuid added: "default"
+root@newedu:~# oc adm policy add-scc-to-user privileged -z default -n edu-efk
+clusterrole.rbac.authorization.k8s.io/system:openshift:scc:privileged added: "default"
+root@newedu:~# oc adm policy add-scc-to-user anyuid -z elastic-kibana -n edu-efk
+clusterrole.rbac.authorization.k8s.io/system:openshift:scc:anyuid added: "elastic-kibana"
+root@newedu:~# oc adm policy add-scc-to-user privileged -z elastic-kibana -n edu-efk
+clusterrole.rbac.authorization.k8s.io/system:openshift:scc:privileged added: "elastic-kibana"
+```  
+
+<br/>
+
+삭제하고 권한을 다시 준다.
+
+<br/>
+
+
+```bash
+root@newedu:~# helm list
+NAME   	NAMESPACE	REVISION	UPDATED                                	STATUS  	CHART               	APP VERSION
+elastic	edu-efk  	1       	2022-09-05 17:10:18.512784096 +0900 KST	deployed	elasticsearch-19.2.2	8.3.3
+root@newedu:~# helm delete elastic
+release "elastic" uninstalled
+root@newedu:~# helm  install elastic bitnami/elasticsearch -f es-values.yaml -n edu-efk      --set global.kibanaEnabled=true     --set master.replicaCount=1     --set master.heapSize=2096m     --set master.persistence.enabled=true     --set master.podSecurityContext.fsGroup=1000660000     --set master.containerSecurityContext.runAsUser=1000660000     --set coordinating.replicaCount=2     --set data.replicaCount=1     --set data.persistence.enabled=true
+NAME: elastic
+LAST DEPLOYED: Mon Sep  5 17:18:00 2022
+NAMESPACE: edu-efk
+STATUS: deployed
+REVISION: 1
+TEST SUITE: None
+NOTES:
+CHART NAME: elasticsearch
+CHART VERSION: 19.2.2
+APP VERSION: 8.3.3
+
+-------------------------------------------------------------------------------
+ WARNING
+
+    Elasticsearch requires some changes in the kernel of the host machine to
+    work as expected. If those values are not set in the underlying operating
+    system, the ES containers fail to boot with ERROR messages.
+
+    More information about these requirements can be found in the links below:
+
+      https://www.elastic.co/guide/en/elasticsearch/reference/current/file-descriptors.html
+      https://www.elastic.co/guide/en/elasticsearch/reference/current/vm-max-map-count.html
+
+    This chart uses a privileged initContainer to change those settings in the Kernel
+    by running: sysctl -w vm.max_map_count=262144 && sysctl -w fs.file-max=65536
+
+** Please be patient while the chart is being deployed **
+
+  Elasticsearch can be accessed within the cluster on port 9200 at elastic-elasticsearch.edu-efk.svc.cluster.local
+
+  To access from outside the cluster execute the following commands:
+
+    kubectl port-forward --namespace edu-efk svc/elastic-elasticsearch 9200:9200 &
+    curl http://127.0.0.1:9200/
+```  
+
+<br/>
+
+2분 정도의 시간이 경과되면 아래와 같이 POD 들이 정상적으로 기동이 된다.  
+
+```bash
+root@newedu:~# kubectl get po -n edu-efk
+NAME                                   READY   STATUS    RESTARTS   AGE
+elastic-elasticsearch-coordinating-0   1/1     Running   0          115s
+elastic-elasticsearch-data-0           1/1     Running   0          115s
+elastic-elasticsearch-ingest-0         1/1     Running   0          113s
+elastic-elasticsearch-ingest-1         1/1     Running   0          113s
+elastic-elasticsearch-master-0         1/1     Running   0          115s
+elastic-kibana-57df9df4bf-4cph6        1/1     Running   0          115s
+```  
+
+
+<br/>
+
+이제 데이터 수집을 위해 fluentd 를 설치한다.  
+fluentd 버전을 조회한다.  ( 뒤에 -l 을 추가한다. )  
+
+
+```bash
+root@newedu:~# helm search repo fluentd -l
+NAME           	CHART VERSION	APP VERSION	DESCRIPTION
+...
+bitnami/fluentd	5.0.6        	1.14.5     	Fluentd collects events from various data sourc...
+bitnami/fluentd	5.0.4        	1.14.5     	Fluentd collects events from various data sourc...
+bitnami/fluentd	5.0.3        	1.14.5     	Fluentd collects events from various data sourc...
+bitnami/fluentd	5.0.2        	1.14.5     	Fluentd collects events from various data sourc...
+bitnami/fluentd	5.0.1        	1.14.4     	Fluentd is an open source data collector for un...
+...
+```  
+
+<br/>
+
+fluentd 는 elasticsearch 7.x 버전과 호환성이 있는 fluentd version: 1.14.4 버전(chart:5.0.1)으로 설치해야 한다.  
+
+fluentd Demonset 권한부여를 먼저 한다.  
+
+```bash
+root@newedu:~# oc adm policy add-scc-to-user anyuid -z fluentd-forwarder -n edu-efk
+clusterrole.rbac.authorization.k8s.io/system:openshift:scc:anyuid added: "fluentd-forwarder"
+root@newedu:~# oc adm policy add-scc-to-user privileged -z fluentd-forwarder -n edu-efk
+clusterrole.rbac.authorization.k8s.io/system:openshift:scc:privileged added: "fluentd-forwarder"
+```  
+
+
+
+폐쇄망에서 설치를 위해서는 helm chart를 로컬에 저장하는 방법이 필요하며 pull 명령어를 통하여 저장 할수 있다.  
+ 
+```bash
+root@newedu:~/test# helm pull bitnami/elasticsearch
+root@newedu:~/test# ls
+elasticsearch-19.2.2.tgz
+root@newedu:~/test# tar xvfz elasticsearch-19.2.2.tgz
+elasticsearch/Chart.yaml
+elasticsearch/Chart.lock
+elasticsearch/values.yaml
+elasticsearch/templates/NOTES.txt
+...
+elasticsearch/charts/common/.helmignore
+elasticsearch/charts/common/README.md
+root@newedu:~/test# ls
+elasticsearch  elasticsearch-19.2.2.tgz
+```  
+
+<br/>
+
+#### helm   
+
+<br/>
+
+https://helm.sh/ko/docs/faq/
+
+<br/>
 
