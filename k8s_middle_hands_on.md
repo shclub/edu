@@ -28,6 +28,40 @@ kubernetes에서 Basic 과정에서 진행하지 못했던 부분 실습을 합�
 
 ***
 
+<br/>
+
+본장 에서는 실습하기에 앞서 Docker Hub의 image pull limit 으로 인하여 테스트용 도커 이미지는 GitHub의 Private Docker Registry에 Push를 하고 진행을 합니다.  
+
+
+<br/>
+
+
+## Docker Hub Rate Limit  
+
+<br/>
+
+Docker Hub 정책은 다음과 같습니다.  
+
+
+|유저| 제한 |
+|:--| :-------|  
+| 익명 유저(docker login 안함)	| IP 기반으로 6시간동안 100번 request 제한 |
+| 로그인 유저(docker login 함)	| 계정 기반으로 6시간동안 200번 request 가능 |
+| 지불 계정 유저(docker login 한 Paid 유저)	| 제한 없음 (IP기반 제한은 있음 )|
+
+<br/>
+
+GitHub Container Registry에  도커 이미지 Push 하기.  
+
+참고 : https://qiita.com/leechungkyu/items/f95998506d45feb15393
+
+
+<br/>
+
+
+***
+
+
 ##  1. Storage Volume 
 
 <br/>
@@ -46,6 +80,8 @@ volume 은 컨테이너에서 사용 가능 하지만 접근하려는 컨테이�
 
 <br/>
 
+***
+
 ### 1.1 로컬 볼륨
 
 로컬 볼륨의 형태는 2가지가 있고 휘발성으로 인하여 자주 사용하지는 않는다.  
@@ -56,8 +92,8 @@ volume 은 컨테이너에서 사용 가능 하지만 접근하려는 컨테이�
 - hostPath : Node ( VM인 경우 VM 서버 ) 에 있는 파일 시스템을  Pod의 디렉토리로   마운트 하는데 사용한다. pod가 다른 Node에 실행되면 사용 불가.  
 
 
-
 <br/>
+
 
 #### 1.1.1 emptyDir 
 
@@ -90,13 +126,13 @@ metadata:
   name: emp-storage-pod
 spec:
   containers:
-    - image: ubuntu:18.04
+    - image: ghcr.io/shclub/ubuntu:18.04
       name: ubuntu-container
       command: ["tail","-f", "/dev/null"]
       volumeMounts:
         - mountPath: /logs
           name: emptydir-volume
-    - image: nginx:latest
+    - image: ghcr.io/shclub/nginx:latest
       name: nginx-container
       volumeMounts:
         - mountPath: /logs
@@ -242,7 +278,6 @@ emptyDir test
 # exit
 ```  
 
-
 <br/>
 
 #### 1.1.2 hostPath 
@@ -273,16 +308,28 @@ vi hostpath.yaml
 
 <br/>
 
+hostpath를 사용하기 위해서는 securityContext를 설정해야 합니다.  
+
 
 ```bash
-apiVersion: v1
+      securityContext:
+        privileged: true
+```  
+
+<br/>
+
+hostpath.yaml
+```bash
+piVersion: v1
 kind: Pod
 metadata:
   name: hostpath-storage-pod
 spec:
   containers:
-    - image: nginx:latest
+    - image: ghcr.io/shclub/nginx:latest
       name: nginx-container
+      securityContext:
+        privileged: true
       volumeMounts:
         - mountPath: /hostdir
           name: hostdir-volume
@@ -292,7 +339,6 @@ spec:
       path: /root
       type: Directory
 ```  
-
 
 <br/>
 
@@ -307,6 +353,8 @@ NAME                   READY   STATUS    RESTARTS   AGE
 emp-storage-pod        2/2     Running   0          18m
 hostpath-storage-pod   1/1     Running   0          13s
 ```  
+
+<br/>
 
 생성된 hostpath-storage-pod 에 shell 로 접근합니다.  
 
@@ -323,13 +371,31 @@ boot  docker-entrypoint.d  etc			 hostdir  lib64  mnt	proc  run   srv   tmp  var
 hostdir로 이동을 하고 화일을 조회 해보면 현재 서버의 화일들이 있는 것을 확인 할 수 있다.    
 
 ```bash
-# cd /hostdir
 # ls
-argo-cd.yaml	       emptyDir.yaml  nfs-pv-test.yaml	nfs-pvc.yaml   nginx.yaml  pvc.yaml
-cloud-init-setting.sh  hostpath.yaml  nfs-pv.yaml	nfs-test.yaml  pv.yaml
-```    
+bin   dev		   docker-entrypoint.sh  home	  lib	 media	opt   root  sbin  sys  usr
+boot  docker-entrypoint.d  etc			 hostdir  lib64  mnt	proc  run   srv   tmp  var
+# cd hostdir
+# ls -al
+total 12
+drwx------. 4 root root  89 Jul 21 23:42 .
+dr-xr-xr-x. 1 root root  54 Sep 15 06:12 ..
+-rw-r--r--. 1 root root  18 Jun 20 08:04 .bash_logout
+-rw-r--r--. 1 root root 141 Jun 20 08:04 .bash_profile
+-rw-r--r--. 1 root root 376 Jun 20 08:04 .bashrc
+drwx------. 3 root root  20 Jul 21 23:39 .config
+drwx------. 2 root root  29 Jul 21 23:43 .ssh
+# cd .ssh
+# ls
+authorized_keys
+# cat authorized_keys
+ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCuhPmv3xdhU7JbMoc/ecBTDxiGqFNKbe564p4aNT6JbYWjNwZ5z6E4iQQDQ0bEp7uBtB0aut0apqDF/SL7pN5ybh2X44aCwDaSEB6bJuJi0yMkZwIvenmtCA1LMAr2XifvGS/Ulac7Qh5vFzfw562cWC+IOI+LyQZAcPgr+CXphJhm8QQ+O454ItXurQX6oPlA2rNfF36fnxYss1ZvUYC80wWTi9k2+/XR3IoQXZHKCFsJiwyKO2CY+jShBbDBbtdOX3/ksHNVNStA/
+```  
+
+<br/>
 
 즉 호스트 OS의 /root 디렉토리가 Pod 내부에서 /hostdir 디렉토리 위치에 마운트 된것을 확인할 수 있습니다.  
+
+`위에 경우를 보면 알수 있듯 hostpath 권한을 허용 하면 안되는 이유 입니다.`  
 
 hostPath 경우 ReadWriteOnce로만 적용이 가능하므로 Container 또는 서비스 별로 특정 디렉토리를 지정하여 로그에이전트가 수집하는 로그를 모으는 역할로 사용할 수 있습니다.  
 
@@ -351,6 +417,8 @@ Pod가 어떤 노드에 Scheduling 되느냐에 따라 민감하기 때문에 �
 <img src="./assets/k8s_volume4.png" style="width: 60%; height: auto;"/>   
 
 <br/>
+
+***
 
 ### 1.2 네트웍 볼륨
 
@@ -489,10 +557,11 @@ spec:
 
 kt cloud 에서 FlyingCube를 생성 하면 NAS가 할당이 되고 nfs 서버가 활성화 되어 NAS에 연결 할 수 있다.  
 
-nfs에 연결하기 위한 pod 를 아래 yaml 을 이용하여 생성한다.   
-- nfs 연동하기 전에 nfs 에 mount 하여 폴더를 생성 해야 한다. ( database 폴더 생성. chapter9.md 참고 )  
+nfs에 연결하여 NAS 폴더를 보기 위한 pod 를 아래 yaml 을 이용하여 생성한다.   
+- nfs 연동하기 전에 nfs 에 mount 하여 폴더를 생성 해야 한다. ( database 폴더 생성. https://github.com/shclub/edu/blob/master/chapter9.md 참고 )  
 
 <br/>
+
 vi 에디터로 생성한다.    
 
 ```bash
@@ -525,7 +594,7 @@ spec:
     spec:
       containers:
       - name: busybox
-        image: busybox:1.28
+        image: ghcr.io/shclub/busybox:1.28
         command: ["/bin/sleep", "365d"]
         imagePullPolicy: IfNotPresent
         volumeMounts:
@@ -567,6 +636,10 @@ edu1-data-my-release-mariadb-0-pvc-1e585a5a-d211-4b1a-ba17-6e0f07dfa99c
 edu2
 /data #
 ```  
+
+<br/>
+
+---
 
 <br/>
 
@@ -642,6 +715,9 @@ prometheus-k8s-db01-pv   100Gi      RWO            Retain           Bound       
 <br/>
 
 이제 일반 유저로 로그인을 하고 pvc 를 생성합니다.  
+이미 로그인 되어 있으면 생략.  
+
+<br/>
 
 ```bash  
 root@newedu:~# oc login https://api.211-34-231-81.nip.io:6443 -u edu1-admin -p New1234! --insecure-skip-tls-verify
@@ -664,12 +740,16 @@ pvc 가  정상적으로 pv에 연결되면 STATUS가 Bound 로 표시됩니다.
 
 <br/>
 
+helm repository를 추가 합니다.  
+
+<br/>
 
 ```bash
 root@newedu:~# helm repo update
 Hang tight while we grab the latest from your chart repositories...
 ...Successfully got an update from the "bitnami" chart repository
 Update Complete. ⎈Happy Helming!⎈
+root@newedu:~# helm repo add bitnami https://charts.bitnami.com/bitnami
 root@newedu:~# helm repo list
 NAME   	URL
 bitnami	https://charts.bitnami.com/bitnami
@@ -731,7 +811,21 @@ To upgrade this helm chart:
 
 pod가 생성되지 않은 상태에서 에러를 보는 명령어는 `kubectl get events` 입니다.  
 
-helm 으로 생성된 my-release 차트를 삭제합니다.  
+명령어를 실행해 보면  
+
+```bash
+root@newedu:~# kubectl get events -n edu30 | grep mariadb
+my-release-mariadb           create Pod my-release-mariadb-0 in StatefulSet my-release-mariadb failed error: pods "my-release-mariadb-0" is forbidden: unable to validate against any security context constraint: [provider restricted: .spec.securityContext.fsGroup: Invalid value: []int64{1000660000}: 1000660000 is not an allowed group spec.containers[0].securityContext.runAsUser: Invalid value: 1000660000: must be in the ranges: [1001420000, 1001429999]]
+```  
+
+위의 메시지를 보면 fsgroup의 값이 잘못 되어 다고 나오고 range 의 값을 사용하라는 메시지 입니다.  
+
+helm 으로 재설치 할때 fsgroup과 runAsUser의 값을 변경하고 실행 해야 합니다.  
+
+
+<br/>
+
+재설치 하기 위해 helm 으로 생성된 my-release 차트를 삭제합니다.  
 
 ```bash
 root@newedu:~# helm delete my-release

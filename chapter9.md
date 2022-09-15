@@ -945,7 +945,7 @@ argocd-server-65dbc886db-5kkjq        1/1     Running   0          3m50s
 
 <br/>
 
-####   Redis 설치 오류시 조치
+####   ArgoCD의 Redis 설치 오류시 조치
 
 <br/>
 
