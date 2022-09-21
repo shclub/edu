@@ -1,8 +1,6 @@
 # Chapter 9 
  
-Redhat Openshift 의 오픈소스 버전인 OKD 4.7 를 사용하여 
-k8s 고급 기능과 컨테이너 기반의 Jenkins 그리고 skaffold를 사용한
-개발 환경을 구성해 본다.   
+Redhat Openshift 의 오픈소스 버전인 OKD 4.7 설정하는 방법을 알아본다.   
 
 <br/>
 
@@ -140,12 +138,73 @@ Using project "default".
 
 cluster 권한 ( root ) 으로 구성이 필요하며 우리가 구성할 내용은 아래와 같다.    
 
-- 워커 노드 edu.worker01~04,06~07 : 교육용 namespace 배치 ( edu로 시작 )
+- 워커 노드 edu.worker01 ~ 04,06 ~ 07 : 교육용 namespace 배치 ( edu로 시작 )
 - 워커 노드 edu.worker05 : Jenkins 및 기타 솔루션 설치. ( 교육용 namespace 배치 불가 설정 )  
 
 <br/>
 
-먼저 master 노드 설정을 확인한다.  
+먼저 master 노드 설정을 확인하기에 앞서  
+
+일반 유저는 node를 볼 수 있는 권한이 없어 ClusterRole을 생성하고 각 사용자에게 RoleBinding을 하여 권한을 부여한다.  
+
+vi 에디터로 아래 내용을 복사하여 node_view_role.yaml을 생성한다.   
+
+```bash
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: node-view-role
+rules:
+- apiGroups: [""]
+  resources: ["nodes"]
+  verbs:
+  - get
+  - list
+  - watch
+```   
+
+<br/>
+
+ClusterRole 생성한다. ( Cluster Admin 이 수행 )
+
+```bash
+root@newedu:~# kubectl apply -f node_view_role.yaml
+clusterrole.rbac.authorization.k8s.io/node-view-role created  
+```  
+
+<br/>
+
+ClusterRoleBinding 을 생성하면서 user를 명시한다.   
+service account 에 권한을 주기 위해서는 user 대신 serviceaccount 를 설정한다.  
+
+```bash
+root@newedu:~# kubectl create clusterrolebinding node-view-rolebinding1 --clusterrole=node-view-role --user=edu1-admin
+```  
+
+<br/>
+
+여기서는 교육생의 권한을 일괄 생성 하기 위해서 아래 script를 만들어서 사용 한다.  
+- 참고 : https://github.com/shclub/edu14-2  
+
+
+node_view_rolebinding.sh
+```bash
+#!/bin/bash
+x=1
+while [ $x -le 35 ]
+do
+  namespace="edu${x}"
+  echo $namespace
+  #namespace+="${x}"
+  k_exec=`kubectl create clusterrolebinding node-view-rolebinding${x} --clusterrole=node-view-role --user=${namespace}-admin`
+  echo $k_exec
+  sleep 1
+  x=$(( $x + 1 ))
+done
+```  
+
+<br/>
+
 
 ```bash
 jakelee@jake-MacBookAir ~ % kubectl get nodes -o wide
@@ -270,7 +329,7 @@ metadata:
 
 <br/>
 
-worker node 4번, 그리고 6~7번 까지 같은 방식으로 Label를 추가한다.  
+worker node 4번, 그리고 6 ~ 7번 까지 같은 방식으로 Label를 추가한다.  
 
 worker node 5번은 아래와 같이 추가한다.  
 

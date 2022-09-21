@@ -702,30 +702,41 @@ spec:
 root@newedu:~# kubectl apply -f db_pv.yaml
 persistentvolume/mariadb-pv created
 root@newedu:~# kubectl get pv
-NAME                     CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS      CLAIM                                                     STORAGECLASS   REASON   AGE
-image-registry-pv        100Gi      RWX            Retain           Bound       openshift-image-registry/image-registry-storage                                   70d
-jenkins-restore-pv       100Gi      RWX            Retain           Bound       devops/jenkins-restore-pvc                                                        26d
-mariadb-pv               600Gi      RWX            Retain           Available                                                                                     10s
-prometheus-k8s-db00-pv   100Gi      RWO            Retain           Bound       openshift-monitoring/prometheus-k8s-db-prometheus-k8s-0                           70d
-prometheus-k8s-db01-pv   100Gi      RWO            Retain           Bound       openshift-monitoring/prometheus-k8s-db-prometheus-k8s-1                           70d
+NAME                        CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS      CLAIM                                                     STORAGECLASS   REASON   AGE
+elasticsearch-data-0-pv     20Gi       RWO            Retain           Bound       edu-efk/elasticsearch-data-0                                                      10d
+elasticsearch-kibana-pv     10Gi       RWO            Retain           Bound       edu-efk/elasticsearch-kibana                                                      10d
+elasticsearch-master-0-pv   5Gi        RWO            Retain           Bound       edu-efk/elasticsearch-master-0                                                    10d
+image-registry-pv           100Gi      RWX            Retain           Bound       openshift-image-registry/image-registry-storage                                   87d
+jenkins-restore-pv          100Gi      RWX            Retain           Bound       devops/jenkins-restore-pvc                                                        43d
+mariadb-pv-ojt1             8Gi        RWX            Retain           Available                                                                                     16d
+mariadb-pv-ojt2             8Gi        RWX            Retain           Available                                                                                     16d
+mariadb-pv-ojt3             8Gi        RWX            Retain           Available                                                                                     16d
+mariadb-pv-ojt4             8Gi        RWX            Retain           Available                                                                                     16d
+mariadb-pv-ojt5             8Gi        RWX            Retain           Available                                                                                     16d
+mariadb-pv-ojt6             8Gi        RWX            Retain           Available                                                                                     16d
+mariadb-pv1                 4Gi        RWX            Retain           Released    edu1/mariadb-pvc                                                                  16d
+mariadb-pv10                4Gi        RWX            Retain           Available                                                                                     16d
+mariadb-pv11                4Gi        RWX            Retain           Bound       edu11/mariadb-pvc                                                                 16d
+mariadb-pv12                4Gi        RWX            Retain           Bound       edu12/mariadb-pvc                                                                 16d
+mariadb-pv13                4Gi        RWX            Retain           Available                                                                                     16d
+mariadb-pv14                4Gi        RWX            Retain           Bound       edu14/mariadb-pvc                                                                 16d
+mariadb-pv15                4Gi        RWX            Retain           Bound       edu15/mariadb-pvc                                                                 16d
+mariadb-pv16                4Gi        RWX            Retain           Bound       edu16/mariadb-pvc                                                                 16d
+mariadb-pv17                4Gi        RWX            Retain           Available
 ```  
 
-정상적으로 mariadb-pv 라는 이름으로 pv가 생성 되었습니다. 
+<br>
+
+정상적으로 mariadb-pv<번호> 라는 이름으로 pv가 생성 되었습니다. 
 
 <br/>
 
-이제 일반 유저로 로그인을 하고 pvc 를 생성합니다.  
-이미 로그인 되어 있으면 생략.  
+위의 과정은 Cluster 권한을 가진 admin 관리자가 수행하며 Namespace 권한을 가진 일반 유저는
+PVC를 생성 합니다.  
 
 <br/>
 
-```bash  
-root@newedu:~# oc login https://api.211-34-231-81.nip.io:6443 -u edu1-admin -p New1234! --insecure-skip-tls-verify
-Login successful.
-
-You have one project on this server: "edu1"
-
-Using project "edu1".
+```bash
 root@newedu:~# kubectl apply -f db_pvc.yaml
 persistentvolumeclaim/mariadb-pvc created
 root@newedu:~# kubectl get pvc
@@ -738,9 +749,9 @@ mariadb-pvc   Bound    mariadb-pv   600Gi      RWX                           6s
 
 pvc 가  정상적으로 pv에 연결되면 STATUS가 Bound 로 표시됩니다.  
 
-<br/>
+<br/><br/><br/>
 
-helm repository를 추가 합니다.  
+이제 helm repository를 추가 합니다.  
 
 <br/>
 
@@ -836,6 +847,36 @@ NAME	NAMESPACE	REVISION	UPDATED	STATUS	CHART	APP VERSION
 
 <br/>
 
+Namespace 마다 sa.scc.uid-rang 값이 다르기 때문에   
+
+아래 명령어로 range 를 확인한다.  
+
+```bash
+kubectl describe namespace <namespace>
+```  
+
+<br/>
+
+
+```bash
+root@newedu:~# kubectl describe namespace edu30
+Name:         edu30
+Labels:       <none>
+Annotations:  openshift.io/description:
+              openshift.io/display-name: edu30
+              openshift.io/node-selector: edu=true
+              openshift.io/sa.scc.mcs: s0:c38,c7
+              openshift.io/sa.scc.supplemental-groups: 1001420000/10000
+              openshift.io/sa.scc.uid-range: 1001420000/10000
+Status:       Active
+
+No resource quota.
+
+No LimitRange resource.
+```  
+
+<br/>
+
 helm chart에서는 values.yaml 화일이 있는데 사용자가 custom 할수 있는
 yaml 화일 입니다.  
 
@@ -882,7 +923,7 @@ root@newedu:~# vi values.yaml
 ...
  301   podSecurityContext:
  302     enabled: true
- 303     fsGroup: 1000660000 #1001
+ 303     fsGroup: 1001420000 #1001
 ...
 
  424   persistence:
@@ -914,8 +955,8 @@ root@newedu:~# helm install my-release bitnami/mariadb -f values.yaml  \
 --set auth.database=edu \
 --set auth.username=edu  \
 --set auth.password=edu1234 \
---set primary.podSecurityContext.fsGroup=1000660000 \
---set primary.containerSecurityContext.runAsUser=1000660000 \
+--set primary.podSecurityContext.fsGroup=1001420000 \
+--set primary.containerSecurityContext.runAsUser=1001420000 \
 --set primary.persistence.existingClaim=mariadb-pvc \
 --set primary.persistence.subPath=edu1/my-mariadb  \
 --set primary.persistence.size=4Gi  \
@@ -926,8 +967,14 @@ root@newedu:~# helm install my-release bitnami/mariadb -f values.yaml  \
 
 정상적으로 동작 하는지 확인한다.  
 
+helm list 명령어로 확인해보고 pod 를 조회한다.  
+
+<br/>
 
 ```bash
+root@newedu:~# helm list
+NAME      	NAMESPACE	REVISION	UPDATED                                	STATUS  	CHART         	APP VERSION
+my-release	edu30    	1       	2022-09-14 16:30:27.937973478 +0900 KST	deployed	mariadb-11.3.0	10.6.9
 root@newedu:~# kubectl get po
 NAME                                READY   STATUS    RESTARTS   AGE
 busybox-nfs-test-54754db755-jnxlh   1/1     Running   0          79m
@@ -1062,9 +1109,19 @@ nfs 서버에 들어가면 아래와 같이 폴더가 생성 된것을 확인 �
 DB를 재기동 하더라도 데이터는 남아 있다.  
 
 ```bash
-[root@edu data]# ls /mnt/database/edu1/my-mariadb/data
-aria_log.00000001  ddl_recovery.log  ib_buffer_pool  ibdata1  multi-master.info  mysql_upgrade_info  sys
-aria_log_control   edu1              ib_logfile0     ibtmp1   mysql              performance_schema  test
+root@newedu:~# kubectl exec -it busybox-nfs-test-687b87878d-25h99
+kubectl exec [POD] [COMMAND] is DEPRECATED and will be removed in a future version. Use kubectl exec [POD] -- [COMMAND] instead.
+/ # ls
+bin   data  dev   etc   home  proc  root  run   sys   tmp   usr   var
+/ # cd data
+/data # ls
+edu12         edu15         edu20         edu30         edu8          edu11         edu14         edu16         edu24         edu4        
+/data/edu30 # ls
+my-mariadb
+/data/edu30 # ls my-mariadb/data
+aria_log.00000001   edu                 ibdata1             mysql               sys
+aria_log_control    ib_buffer_pool      ibtmp1              mysql_upgrade_info  test
+ddl_recovery.log    ib_logfile0         multi-master.info   performance_schema  
 ```  
 
 <br/>
@@ -1120,7 +1177,7 @@ dynamic_values.yaml 에서 변경 내용
 - podSecurityPolicy:  ( OKD 인 경우만 사용 )
   enabled: true
 - podSecurityContext:  ( OKD 인 경우 만 사용 )
-  fsGroup: 1000660000 
+  fsGroup: 1001420000 
 - storageclass 에 reclaimPolicy: Delete를 하면 PVC 삭제시 pv와 nfs에서 생성된 폴더가 같이 삭제 된다.  
 
 <br/>
@@ -1207,7 +1264,7 @@ podAnnotations: {}
 # priorityClassName: ""
 
 podSecurityContext:
-  fsGroup: 1000660000 #1001
+  fsGroup: 1001420000 #1001
 
 securityContext: {}
 
@@ -1331,8 +1388,8 @@ root@newedu:~# helm install my-release bitnami/mariadb -f values.yaml  \
 --set auth.database=edu \
 --set auth.username=edu  \
 --set auth.password=edu1234 \
---set primary.podSecurityContext.fsGroup=1000660000 \
---set primary.containerSecurityContext.runAsUser=1000660000 \
+--set primary.podSecurityContext.fsGroup=1000690000 \
+--set primary.containerSecurityContext.runAsUser=1000690000 \
 --set primary.persistence.existingClaim="" \
 --set primary.persistence.subPath=my-mariadb  \
 --set primary.persistence.size=4Gi  \
@@ -1414,18 +1471,17 @@ apt-get install -y nfs-common
 
 <br/>
 
-## 4. EFK APM 설치 
+## 4. Elastic APM 설치 
 
 <br/>
 
 모니터링을 위해 elastic의 APM 을 설치해 본다.  
-설치를 위해서는 elasticsearch , kibana, elastic apm server 3가지를 설치 해야하고
-하나의 서버 ( 1 VM ) 에만 설치하는 무료이고 2개 이상 서버에 설치하면 유료.   
+설치를 위해서는 elasticsearch , elastic apm server 2가지를 설치 해야하고
+elastic apm server은 하나의 서버 ( 1 VM ) 에만 설치하는 무료이고 2개 이상 서버에 설치하면 유료.   
 
 <br/>
 
 helm 으로 elastic repository를 추가한다.  
-
 
 ```bash
 root@newedu:~# helm repo add elastic https://helm.elastic.co
@@ -1459,7 +1515,9 @@ elastic/metricbeat       	7.17.3       	7.17.3     	Official Elastic helm chart 
 
 <br/>
 
-위에서 우리가 사용할 것은 3가지 이다.
+위에서 우리가 사용할 것은 2가지 이다.  
+kibana는 별도로 설치하지 않고 elastic/apm-server에 내장된 것만 설치한다.  
+
 
 |이름| Chart Version | Description
 |:--| :-------| :-------| 
