@@ -8,9 +8,31 @@ Redhat Openshift 의 오픈소스 버전인 OKD 4.7 설정하는 방법을 알�
 
 2. OKD 에  ArgoCD 설치
 
+3. OKD 에  Elastic APM 설치
+
 <br/>
 
 ## OKD Cluster   
+
+<br>
+
+kubernetes 시스템 구분
+
+<br/>
+
+|이름| 설명 |
+|:--| :-------|  
+| kubernetes (k8s)	| 일반적인 오픈소스 kubernetes |
+| Openshift |	Redhat에서 판매하는 kubernetes 를 위한  PaaS |
+| OKD	| Openshift 의 오픈 소스 버전 |
+| OKD 3.1 | k8s 1.1 버전 사용|
+| OKD 4.7 | k8s 1.2 버전 사용 |
+| FlyingCube 1.0 | KTDS에서 개발한 OKD 3.1 기반의 컨테이너 플랫폼 |
+| FlyingCube 2.0 | KTDS에서 개발한 OKD 4.7 기반의 컨테이너 플랫폼 |
+| k3s | Rancher에서 제공하는 최소사양으로 설치 가능한 경량 kubernetes |
+| microK8S | 많은 기능을 한번에 설치할수 있는 경량 kubernetes |
+
+
 
 <br/>
 
