@@ -144,17 +144,16 @@ spec:
 
 <br/>
 
-storage-test 라는 namespace를 사용하여 pod를 생성합니다.  
-( 실습자는 본인의 namespace에서 실행 )  
+본인의 namespace에 pod를 생성합니다.  
 
 
 ```bash
-root@newedu-k3s:~# kubectl apply -f emptyDir.yaml -n storage-test
+root@newedu-k3s:~# kubectl apply -f emptyDir.yaml 
 pod/emp-storage-pod created
-root@newedu-k3s:~# kubectl get po -n storage-test
+root@newedu-k3s:~# kubectl get po
 NAME              READY   STATUS              RESTARTS   AGE
 emp-storage-pod   0/2     ContainerCreating   0          8s
-root@newedu-k3s:~# kubectl get po -n storage-test
+root@newedu-k3s:~# kubectl get po
 NAME              READY   STATUS    RESTARTS   AGE
 emp-storage-pod   2/2     Running   0          18s
 ```  
@@ -166,9 +165,9 @@ READY를 보면 하나의 pod에 READY 가 2/2로 되어 있는 것을 알 수 �
 <br/>
 
 ```bash
-root@newedu-k3s:~# kubectl describe po emp-storage-pod -n storage-test
+root@newedu-k3s:~# kubectl describe po emp-storage-pod
 Name:         emp-storage-pod
-Namespace:    storage-test
+Namespace:    edu30
 Priority:     0
 Node:         newedu-k3s/172.27.0.41
 Start Time:   Wed, 10 Aug 2022 08:03:16 +0000
@@ -251,7 +250,7 @@ Events:
 이제 ubuntu-container 에 shell 로 접속하여 logs 폴더에 화일을 하나 생성합니다.  
 
 ```bash
-root@newedu-k3s:~# kubectl exec -it emp-storage-pod -c ubuntu-container sh -n storage-test
+root@newedu-k3s:~# kubectl exec -it emp-storage-pod -c ubuntu-container sh
 kubectl exec [POD] [COMMAND] is DEPRECATED and will be removed in a future version. Use kubectl exec [POD] -- [COMMAND] instead.
 # ls
 bin  boot  dev	etc  home  lib	lib64  logs  media  mnt  opt  proc  root  run  sbin  srv  sys  tmp  usr  var
@@ -268,7 +267,7 @@ emptyDir test
 ngix-container 에 shell 로 접속하여 logs 폴더에 생성된 edu.txt 라는 화일을 확인합니다.   
 
 ```bash
-root@newedu-k3s:~# kubectl exec -it emp-storage-pod -c nginx-container sh -n storage-test
+root@newedu-k3s:~# kubectl exec -it emp-storage-pod -c nginx-container sh 
 kubectl exec [POD] [COMMAND] is DEPRECATED and will be removed in a future version. Use kubectl exec [POD] -- [COMMAND] instead.
 # cd /logs
 # ls
@@ -308,9 +307,23 @@ vi hostpath.yaml
 
 <br/>
 
-hostpath를 사용하기 위해서는 securityContext를 설정해야 합니다.  
+hostpath를 사용하기 위해서는 securityContext를 설정해야 하고 ClusterAdmin이 권한을 할당해야 한다.  
 
 
+
+```bash
+oc adm policy add-scc-to-user privileged <유저>
+```  
+
+
+```bash
+root@newedu:~# oc adm policy add-scc-to-user privileged edu1-admin
+clusterrole.rbac.authorization.k8s.io/system:openshift:scc:privileged added: "edu11-admin"
+```  
+
+<br/>
+
+securityContext를 설정
 ```bash
       securityContext:
         privileged: true
@@ -320,7 +333,7 @@ hostpath를 사용하기 위해서는 securityContext를 설정해야 합니다.
 
 hostpath.yaml
 ```bash
-piVersion: v1
+apiVersion: v1
 kind: Pod
 metadata:
   name: hostpath-storage-pod
