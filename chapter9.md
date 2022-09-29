@@ -30,11 +30,15 @@ kubernetes 시스템 구분
 | FlyingCube 1.0 | KTDS에서 개발한 OKD 3.1 기반의 컨테이너 플랫폼 |
 | FlyingCube 2.0 | KTDS에서 개발한 OKD 4.7 기반의 컨테이너 플랫폼 |
 | k3s | Rancher에서 제공하는 최소사양으로 설치 가능한 경량 kubernetes |
-| microK8S | 많은 기능을 한번에 설치할수 있는 경량 kubernetes |
+| microK8S | 많은 기능을 한번에 설치할수 있는 경량 kubernetes |  
 
 
+<br/><br/>
 
-<br/>
+> Openshift 소개 : https://youtu.be/ft9b4bTRtoI 
+
+
+<br/><br/>
 
 ### Cluster 생성 
 

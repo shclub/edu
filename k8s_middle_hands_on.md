@@ -310,7 +310,6 @@ vi hostpath.yaml
 hostpath를 사용하기 위해서는 securityContext를 설정해야 하고 ClusterAdmin이 권한을 할당해야 한다.  
 
 
-
 ```bash
 oc adm policy add-scc-to-user privileged <유저>
 ```  
@@ -318,7 +317,16 @@ oc adm policy add-scc-to-user privileged <유저>
 
 ```bash
 root@newedu:~# oc adm policy add-scc-to-user privileged edu1-admin
-clusterrole.rbac.authorization.k8s.io/system:openshift:scc:privileged added: "edu11-admin"
+clusterrole.rbac.authorization.k8s.io/system:openshift:scc:privileged added: "edu1-admin"
+```  
+<br/>
+
+serviceAccount에 권한을 줄 수도 있다.  
+- default는 serviceAccount 이름  
+- edu1는 namespace 이름
+ 
+```bash
+oc adm policy add-scc-to-user privileged -z default -n edu1
 ```  
 
 <br/>
@@ -1136,6 +1144,41 @@ aria_log.00000001   edu                 ibdata1             mysql               
 aria_log_control    ib_buffer_pool      ibtmp1              mysql_upgrade_info  test
 ddl_recovery.log    ib_logfile0         multi-master.info   performance_schema  
 ```  
+
+<br/>
+
+> TIP :  다른 Namespace 의 서비스 호출 하는 방법
+
+본인의 Namespace 의 curl 명령어가 있는 POD에 들어간다.
+- 예제는 : edu30 namespace 에서 edu9의 특정 서비스 호출   
+
+```bash
+root@newedu:~ # kubectl exec -it hostpath-storage-pod sh -n edu30
+kubectl exec [POD] [COMMAND] is DEPRECATED and will be removed in a future version. Use kubectl exec [POD] -- [COMMAND] instead.
+```  
+
+다른 namesapce의 서비스를 조회해 본다. ( 단, 다른 namespace 접근 권한 필요. 예제는 edu9  namespace 호출 )  
+
+여기서는  flask-edu4-app 서비스의 5000 포트로 접속해 본다.  
+
+```bash
+root@newedu:~# kubectl get svc -n edu9
+NAME                        TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)          AGE
+flask-edu4-app              NodePort    172.30.63.230    <none>        5000:31081/TCP   42h
+```  
+
+<br/>
+
+호출 규칙은 아래와 같다.  
+
+-  <서비스 이름 >.< 호출할 namespace이름>.svc.cluster.local:<서비스 포트>
+
+```bash
+# curl http://flask-edu4-app.edu9.svc.cluster.local:5000
+ Container EDU | POD Working : flask-edu4-app-757bcc87db-mmnz2 | v=2
+```  
+
+다른 namespace 서비스가 호출 되는 것을 볼 수 있다.  
 
 <br/>
 

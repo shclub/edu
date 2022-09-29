@@ -16,7 +16,9 @@ kubernetes 는 light하고 빠른 설치가 가능한 Rancher에서 제공하는
 
 참고 : https://subicura.com/k8s/
 
+<br/>
 
+> kubernetes 소개 : https://youtu.be/Ia8IfowgU7s
  
 <br/>
 

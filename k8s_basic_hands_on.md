@@ -242,6 +242,46 @@ flask-edu4-app-74788b6479-rlght   1/1     Running   0          24m   app=flask-e
 
 <br/>
 
+### yaml 화일 쉽게 만드는 방법
+
+
+<br/>
+
+명령을 사용하여 yaml 화일을 만드는 방법은 dry-run 옵션을 사용한다.   
+
+dry-run=client 를 사용하면 실제 서버에 수행되지는 않고 simulation만 진행 한다. 
+
+```bash 
+root@newedu:~/# kubectl run edu-test --image=nginx --env DB=mysql
+pod/edu-test created (dry run)
+```  
+
+<br/>
+
+-o yaml 옵션을 사용하여 yaml 화일을 볼수 있고 화일로도 저장할수 있다.
+
+```bash
+root@newedu:~/# kubectl run edu-test --image=nginx --env DB=mysql --dry-run=client -o yaml 
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  labels:
+    run: edu-test
+  name: edu-test
+spec:
+  containers:
+  - env:
+    - name: DB
+      value: mysql
+    image: nginx
+    name: edu-test
+    resources: {}
+  dnsPolicy: ClusterFirst
+  restartPolicy: Always
+status: {}
+```  
+
 <br/>
 
 ##  kubernetes 리소스 
@@ -311,6 +351,8 @@ kubectl drain <node>
 ```bash  
 kubectl create deployment --image=shclub/edu4:v1 flask-edu4-app
 ```    
+
+<br/>
 
 Deployment 가 생성되고 Pod 가 정상적으로 실행중인지 확인합니다.
 
