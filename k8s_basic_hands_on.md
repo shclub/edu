@@ -1649,6 +1649,15 @@ horizontalpodautoscaler.autoscaling "php-apache" deleted
 ```
 
 
+<br/>
+
+### CKA ( Certified Kubernetes Administration ) 예상 문제
+
+
+<br/>
+
+-  https://github.com/shclub/cka_question
+
 
 <br/>
 
