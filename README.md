@@ -192,34 +192,41 @@
 
      <br/>
 
-
 11. Chapter 11 : 11주차
-      
-     - keycloak 설치 및 인증 실습
-     - HashiCorp Consul 설치 및 실습
+
+     - AWS 기본 [ Hands-On 문서보기 ](./chapter11.md) 
+          - 기본 설명 ( VPC / Subnet / RoutingTable , N / NLCM / Security Group / ENI ) 및 실습  
+          - EKS 설명 및 생성 ( By 포탈 / CloudFormation / eskctl ) 실습  
+          - EKS 설정 ( Security Group / ALB Ingress / Route53 )
+          - 기본 서비스 배포 실습 (/w Fargate )
 
      <br/>
 
-12. Chapter 12 : 12주차 
-     - redis/kafka 설치 및 활용 
-     - Object Storage 설치 및 활용 ( Minio )
+12. Chapter 12 : 12주차
+     - AWS 기반 솔루션 설치 [ Hands-On 문서보기 ](./chapter12.md) 
+          - Istio 설명, 설치 및 실습
+          - Spring Cloud Gateway 설명, 설치 및 실습
+          - KeyCloak 설치 및 인증 실습 ( /w AWS Aurora )
+          - HashiCorp Consul 설치 및 실습
 
      <br/>
 
 13. Chapter 13 : 13주차
+     - AWS 기본 [ Hands-On 문서보기 ](./chapter13.md) 
+          - Redis/Kafka 설치 및 활용 
+          - S3 Object Storage 설명 및 활용 실습
+          - AWS CodeCommit / CodeDeploy / ECR 사용 방법 실습
+          - ArgoCD 설치 ( 미정 )  
+
+     <br/>
+
+14. Chapter 14 : 14주차
      - SpringBoot 심화 학습  
           - Spring Cloud Stream
      - MSA 패턴 실습
           - API GW
           - SAGA
           - CQRS
-
-     <br/>
-
-14. Chapter 14 : 14주차
-     - kubernetes 심화 학습
-          - ISTIO
-          - CircuitBreak ( Openfeign ) 
 
      <br/>
 

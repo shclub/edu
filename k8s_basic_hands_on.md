@@ -16,7 +16,7 @@ kubernetes에서 kubectl를 사용하여 cli 실습을 한다.
 
 7. 참고 사이트 
     - podman 사용 : https://github.com/chhanz/kubernetes-hands-on-lab
-    - https://github.com/subicura/workshop-k8s-basic/tree/master/guide
+    - https://github.com/subicura/workshop-k8s-basic/tree/master/guide  
 
 
 <br/>
