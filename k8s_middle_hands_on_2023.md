@@ -511,8 +511,7 @@ Pod를 생성할 경우, 생성할 Pod가 어떤 노드에 할당되어야 할�
 
 <br/>
 
-<img src="./assets/node_schedule1.png
-" style="width: 80%; height: auto;"/>  
+<img src="./assets/node_schedule1.png" style="width: 80%; height: auto;"/>  
 
 <br/>
 
@@ -540,8 +539,7 @@ NodeAffinity
           - Preferred Weight : Preferred 옵션에서 조건에 따른 가중치를 부여함  
           <br/>
 
-          <img src="./assets/node_schedule2.png
-" style="width: 60%; height: auto;"/>  
+          <img src="./assets/node_schedule2.png" style="width: 60%; height: auto;"/>  
 
 
 ### Pod간 집중/분산
@@ -553,8 +551,7 @@ Node가 아닌 Pod를 기준으로 할당하는 방법
 
 <br/>
 
-<img src="./assets/node_schedule3.png
-" style="width: 80%; height: auto;"/>  
+<img src="./assets/node_schedule3.png" style="width: 80%; height: auto;"/>  
 
 <br/>
 
@@ -574,8 +571,7 @@ Anti-Affinity
 
 <br/>
 
-<img src="./assets/node_schedule4.png
-" style="width: 80%; height: auto;"/>  
+<img src="./assets/node_schedule4.png" style="width: 80%; height: auto;"/>  
 
 <br/>
 
@@ -586,8 +582,7 @@ Anti-Affinity
 
 <br/>
 
-<img src="./assets/node_schedule5.png
-" style="width: 80%; height: auto;"/>  
+<img src="./assets/node_schedule5.png" style="width: 80%; height: auto;"/>  
 
 <br/>
 
@@ -595,8 +590,7 @@ Anti-Affinity
 
 <br/>
 
-  <img src="./assets/node_schedule6.png
-" style="width: 80%; height: auto;"/>  
+<img src="./assets/node_schedule6.png" style="width: 80%; height: auto;"/>  
 
 
 <br/>
@@ -2427,9 +2421,9 @@ secret 화일을 적용하여 secret을 만들고 확인합니다.
 <br/>
 
 ```bash
-root@newedu:~/dns# kubectl apply -f secret.yaml
+root@newedu:~/# kubectl apply -f secret.yaml
 secret/harbor-ci created
-root@newedu:~/dns# kubectl get secret
+root@newedu:~/# kubectl get secret
 ```  
 
 <br/>
