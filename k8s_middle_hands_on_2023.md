@@ -12,9 +12,13 @@ kubernetes에서 Basic 과정에서 진행하지 못했던 부분 실습을 합�
 
 5. Service - Headless, Endpoint, ExternalName
 
-6. NFS 라이브러리 설치 ( Native Kubernetes )
+6. Daemonset , Job , CronJob
 
-7. 참고 사이트 
+7. configMap , Secret
+
+8. NFS 라이브러리 설치 ( Native Kubernetes )
+
+9. 참고 사이트 
     - Storage Volume : https://anggeum.tistory.com/m/entry/Kubernetes-Volume-Deep-Dive
     - Ubuntu NFS : https://server-talk.tistory.com/378
     - https://tech.osci.kr/2021/10/06/kubernetes-volume%EC%9D%84-%EA%B3%B5%EB%B6%80%ED%95%B4%EB%B3%B4%EC%9E%90/
@@ -1372,9 +1376,11 @@ NAME          STATUS   VOLUME       CAPACITY   ACCESS MODES   STORAGECLASS   AGE
 mariadb-pvc   Bound    mariadb-pv   600Gi      RWX                           6s
 ```  
 
+<br/>
+
 pvc 가  정상적으로 pv에 연결되면 STATUS가 Bound 로 표시됩니다.  
 
-<br/><br/><br/>
+<br/>
 
 이제 helm repository를 추가 합니다.  
 
@@ -2100,14 +2106,333 @@ my-mariadb
 
 <br/>
 
-comming soon
+참고 
+- https://jangcenter.tistory.com/118
 
+<br/>
+
+### 파드의 입장에서 연결 및 외부 서비스에 안정적인 연결방법
+
+<br/>
+
+DNS Server란  
+
+- 쿠버네티스 클러스터 안에 존재하는 서비스의 이름과 IP가 저장되어 있는 존재
+- Pod가 Service에 대한 도메인을 질의하면 해당 Service IP를 알려줌
+- Pod가 유저를 찾으려고 할 때, 쿠버네티스 내부 뿐만 아니라, 상위 DNS 인 내부망 DNS, 외부 네트워크 DNS까지 조회가능
+   * DNS Server는 FQDN(Fully Qualified Domain Name)으로 구성되어 있음
+
+      <img src="./assets/dns1.png" style="width: 80%; height: auto;"/>
+
+<br/>
+
+### 파드의 입장에서 외부 및 다른 서비스/Pod와 연결 가능한 방법
+
+<br/>
+
+Headless
+
+<br/>
+
+  <img src="./assets/dns2.png" style="width: 80%; height: auto;"/>
+
+<br/>
+
+- Pod간의 연결을 위해 사용하는 방법
+- Cluster IP가 None인 Service
+- DNS Server에 Pod의 이름과 Service의 이름이 붙여져서 도메인 이름으로 등록됨
+- 다른 Pod에 접근하기 위해 IP 주소를 알 필요없이, 도메인 이름으로 접근 가능
+
+<br/>
+
+Endpoint
+
+<br/>
+
+  <img src="./assets/dns3.png" style="width: 80%; height: auto;"/>
+
+<br/>
+
+- 사용자의 입장에서 Label을 이용해 Pod와 Service간의 연결을 진행
+- 쿠버네티스측에서는 이러한 연결을 위해 EndPoint를 만들어서 연결고리를 관리함
+- 이러한 EndPoint는 Service와 동일한 이름을 가지고 있고 Pod의 IP정보를 담고 있음
+- EndPoint를 직접 만드는 것으로 Label, Selector를 만들지 않고도 연결이 가능
+- Pod 뿐만 아니라 외부의 IP 주소를 입력하여 외부와도 연결이 가능
+
+<br/>
+
+ExternalName
+
+<br/>
+
+  <img src="./assets/dns4.png" style="width: 80%; height: auto;"/>
+
+<br/>
+
+- 외부 사이트에서 데이터를 가져오려는 경우 사용
+- EndPoint로도 외부와 연결은 가능하지만, IP가 변동될 가능성이 있어 hostname으로 연결하는 방법
+- 쿠버네티스 DNS Server로 부터 상위 DNS Server를 계속 거쳐 외부 네트워크로 접근하는 방법
+* Pod는 Service만 가르키면 되고 Service에서 필요할 때마다 해당 도메인 주소 변경이 가능
+
+     -> 외부 대상 IP가 변경될 때마다 Pod를 수정하고 재배포할 필요가 없어짐
 
 <br/>
 
 ***
 
 <br/>
+
+## Daemonset , Job , CronJob
+
+<br/>
+
+참고 
+- https://jangcenter.tistory.com/108
+
+<br/>
+
+### Daemonset
+
+<br/>
+
+Deployment와 유사하게 Pod를 생성하고 관리하는 컨트롤러  
+
+<br/>
+
+Deployment는 배포 작업을 좀 더 세분화하여 조작하는 반면, DaemonSet은 특정 노드 또는 모든 노드에 항상 실행되어야 할 특정 Pod를 관리  
+
+<br/>
+
+Node의 자원상태와 상관없이 모든 Node 또는 특정 Node에 Pod를 생성
+
+<br/>
+
+
+<img src="./assets/daemonset1.png" style="width: 80%; height: auto;"/>
+
+<br/>
+
+DaemonSet의 구성  
+
+Template를 이용해 동일한 Pod를 생성  
+
+HostPort를 이용하여 Service의 NodePort와 비슷하게 외부에서의 접근가능   
+
+* Nodeport와 다르게 Node의 IP로 접근  
+
+<br/>
+
+<img src="./assets/daemonset2.png" style="width: 80%; height: auto;"/>
+
+<br/>
+
+### Job 이란
+
+<br/>
+
+하나 이상의 Pod를 지정하고 지정한 수의 Pod를 성공적으로 실행하도록 하는 컨트롤러  
+
+백업이나 특정 배치 파일들처럼 한번 실행하고 종료되는 성격의 작업에 사용  
+
+프로세스를 사용하지 않으면 Pod를 중료(삭제X, 자원을 사용하지 않는 상태)  
+
+<br/>
+
+<img src="./assets/job1.png" style="width: 80%; height: auto;"/>
+
+<br/>
+
+Job의 구성  
+
+- Selector를 작성하지 않아도 Job에서 알아서 구성
+- Completions : 파드가 지정한 개수 이상 정상 종료될 경우 성공처리
+- Parallelism : 한번에 지정한 개수의 Pod를 실행
+- ActiveDeadkineSeconds : 지정된 시간이 되면 Job이 종료되고 실행중이던 모든 포드를 종료
+
+
+<br/>
+
+### CronJob 이란
+
+<br/>
+
+Job들을 주기적인 시간에 따라 생성하는 컨트롤러  
+
+Job하나 단위로 사용하는 경우는 드뭄, CronJob을 이용하여 특정 시간에 Job을 생성하는 식으로 사용  
+
+<br/>
+
+CronJob 구성  
+- schedule로 주기를 구성 할 수 있음 
+
+<br/>
+
+<img src="./assets/cronjob1.png" style="width: 80%; height: auto;"/>
+
+<br/>
+
+- 또한, concurrencyPolicy 필드를 이용하여 CronJob에 의해 생긴 Job의 동시 실행처리를 정의 가능  
+
+<br/>
+
+<img src="./assets/cronjob2.png" style="width: 80%; height: auto;"/>
+
+
+<br/><br/>
+
+
+***
+
+<br/>
+
+## ConfigMap , Secret
+
+<br/>
+
+참고 
+- https://jangcenter.tistory.com/102
+
+<br/>
+
+### ConfigMap
+
+<br/>
+
+일반적으로 컨테이너를 사용할 때, 개발과 서비스 사이의 차이로 발생하는 문제점을 방지하기 위해 Dev용, Production용 컨테이너는 같아야함  
+
+하지만, 각각의 컨테이너가 서로 다른 설정이 필요한 경우가 있음 - ex) 개발용의 Test용 DB  
+
+이처럼 서비스마다 다른 설정이 필요할 때 사용하는 것이 ConfigMap이며 환경 설정을 컨테이너와 분리해서 제공하는 방식으로 개발/서비스와 같은 다양한 방식으로 사용가능  
+
+<br/>
+
+- Key, Value로 구성된 탬플릿을 할당하는 것으로 사용
+  - Value값은 기본적으로 String
+    - Boolean값을 사용하기 위해서는 'true'와 같이 ''로 묶어줘야함
+
+
+<br/>
+
+### secret
+
+<br/>
+
+Password, OAuth Token, SSH KEY와 같은 민감한 정보를 저장하는 용도로 사용  
+
+이러한 정보들을 컨테이너 안에 저장하지 않고 별도로 보관, 실제 Pod를 실행할때 Key, Value로 구성된 탬플릿으로 컨테이너에 제공  
+
+ConfigMap을 포함한 일반적인 오브젝트의 값은 쿠버네티스 DB에 저장되는 반면, Secret은 메모리에 저장되며 1Mbyte의 제한을 가짐 -> 너무 많은 Secret은 시스템 환경에 영향을 줌  
+
+<br/>
+
+### configmap 과 secret 이 필요한 이유  
+
+<br/>
+
+Service에는 일반 접근, 보안 접근을 지원  
+
+- 개발 환경에서는 보안 접근을 해제 가능
+- 보안 접근을 한다면 접근 유저와 키를 설정 가능  
+
+<br/>
+
+
+<img src="./assets/configmap_secret1.png" style="width: 80%; height: auto;"/>  
+
+<br/>
+
+    이후
+<br/>
+
+<img src="./assets/configmap_secret3.png" style="width: 80%; height: auto;"/>
+
+<br/>
+
+<br/>
+
+### ConfigMap, Secret의 3가지 사용방법 
+
+<br/>
+
+상수를 환경변수로 사용  
+
+- Secret에서는 바이너리 파일을 value로 구성하기도 하므로 Base64변환을 이용함
+- Secret은 dashboard환경에서 생성할 때 value값을 Base64로 변환해서 기입해야함 
+  - kubernetes 커맨드의 경우에는 자동으로 변환(원본 값만 기입하면 됨)
+
+<br/>
+
+파일을 환경변수로 사용  
+
+- Pod 생성 후, ~.txt파일을 수정해도 수정된 값이 Pod에 반영되지 않음 ( Pod가 재생성되어야지만 수정된 값 반영 )  
+
+<br/>
+
+<img src="./assets/configmap_secret4.png" style="width: 80%; height: auto;"/>  
+
+<br/>  
+
+Pod내부의 파일로 마운트해 사용  
+
+- 마운트는 원본과 연결되있기 때문에 원본 파일인 ~.txt가 수정되면 Pod에도 반영됨
+
+<br/>
+
+<img src="./assets/configmap_secret5.png" style="width: 80%; height: auto;"/>  
+
+<br/>
+
+secret를 생성하기 위해 edu 라는 값으르 base64로 변환합니다. 
+
+```bash
+root@newedu:~/ # echo edu | base64
+ZWR1Cg==
+```  
+<br/>
+
+secret 화일을 하나 생성하고 data 필드에 base64로 된 값을 넣어줍니다.  
+
+<br/>
+
+```bash
+root@newedu:~/# vi secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: harbor-ci
+data:
+  harbor_id: ZWR1Cg==
+```  
+
+<br/>
+
+secret 화일을 적용하여 secret을 만들고 확인합니다.  
+
+<br/>
+
+```bash
+root@newedu:~/dns# kubectl apply -f secret.yaml
+secret/harbor-ci created
+root@newedu:~/dns# kubectl get secret
+```  
+
+<br/>
+
+secret 정보를 가져와서 decode 해보면 위에서 입력한 edu라는 값이 있는 것을 확인 할 수 있습니다.  
+
+<br/>
+
+```bash
+root@newedu:~/# kubectl get secrets/harbor-ci --template={{.data.harbor_id}} | base64 -d
+edu
+```  
+
+<br/>
+
+***
+
+<br/>
+
 
 ## NFS 라이브러리 설치 ( Native Kubernetes )
 
@@ -2120,7 +2445,6 @@ OKD 의 경우  Fedora CoreOS로 되어 있어 별도 라이브러리 설치 없
 ### centos 인 경우 아래 라이브러리 설치
 
 <br/>
-
 
 ```bash
 yum install nfs-utils
@@ -2139,4 +2463,5 @@ apt-get update
 apt-get install -y nfs-common
 ```
 <br/>
+
 
