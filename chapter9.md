@@ -36,7 +36,7 @@ kubernetes 시스템 구분
 <br/><br/>
 
 > Openshift 소개 : https://youtu.be/ft9b4bTRtoI   
-> OKD4 소개 : https://www.skyer9.pe.kr/wordpress/?p=6777
+> OKD4 소개 : https://velog.io/@_gyullbb/OKD-개요-2
 
 <br/><br/>
 
