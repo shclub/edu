@@ -35,8 +35,8 @@ kubernetes 시스템 구분
 
 <br/><br/>
 
-> Openshift 소개 : https://youtu.be/ft9b4bTRtoI 
-
+> Openshift 소개 : https://youtu.be/ft9b4bTRtoI   
+> OKD4 소개 : https://www.skyer9.pe.kr/wordpress/?p=6777
 
 <br/><br/>
 
@@ -649,7 +649,6 @@ Failed Units: 1
   systemd-resolved.service
 [root@edu ~]#
 ```  
-
 
 
 <br/>

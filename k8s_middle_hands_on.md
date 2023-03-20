@@ -2392,7 +2392,6 @@ clusterrole.rbac.authorization.k8s.io/system:openshift:scc:privileged added: "fl
 ```  
 
 
-
 폐쇄망에서 설치를 위해서는 helm chart를 로컬에 저장하는 방법이 필요하며 pull 명령어를 통하여 저장 할수 있다.  
  
 ```bash
