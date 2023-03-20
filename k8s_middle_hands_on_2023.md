@@ -645,7 +645,6 @@ metadata:
   labels:
     app: nginx
 spec:
-  nodeName: edu.worker03  # node 추가
   replicas: 1
   selector:
     matchLabels:
@@ -655,6 +654,7 @@ spec:
       labels:
         app: nginx
     spec:
+      nodeName: edu.worker03  # node 추가
       containers:
       - name: nginx
         image: ghcr.io/shclub/nginx:1.14
@@ -1478,7 +1478,7 @@ NAME	NAMESPACE	REVISION	UPDATED	STATUS	CHART	APP VERSION
 
 <br/>
 
-Namespace 마다 sa.scc.uid-rang 값이 다르기 때문에   
+Namespace 마다 sa.scc.uid-range 값이 다르기 때문에   
 
 아래 명령어로 range 를 확인한다.  
 
@@ -1556,7 +1556,9 @@ root@newedu:~# vi values.yaml
 ...
  301   podSecurityContext:
  302     enabled: true
- 303     fsGroup: 1001420000 #1001
+ 303     fsGroup: 1001420000 # 1001
+       containerSecurityContext:
+         runAsUser: 1001420000 # 1001
 ...
 
  424   persistence:
@@ -2107,7 +2109,6 @@ my-mariadb
 <br/>
 
 과제 : 위에서 생성한 mariaDB를 본인의 로컬 PC 또는 MAC(  vm 아님 ) 에서 port forwarding 명령어를 사용하여 로컬 처럼 연결해 보시오.  
-- 포트는 : 본인의 Node Port 이용
 - 윈도우는 heidiSql , 맥 사용자는 DBeaver 사용
 
 <br/>
