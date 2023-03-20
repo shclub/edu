@@ -1534,6 +1534,8 @@ https://github.com/bitnami/charts/blob/master/bitnami/mariadb/values.yaml 사이
 root@newedu:~# helm show values bitnami/mariadb > values.yaml
 ```  
 
+<br/>
+
 vi 데이터에서 생성된 values.yaml을 연다.  
 
 ```bash
@@ -1977,8 +1979,12 @@ bitnami                        	https://charts.bitnami.com/bitnami
 nfs-subdir-external-provisioner	https://kubernetes-sigs.github.io/nfs-subdir-external-provisioner/
 ```  
 
+<br/>
+
 helm 을 사용하여 NFS subdir external provisioner 를 설치 합니다.  
 수정한 dynamic_values.yaml 를 사용합니다.  
+
+<br/>
 
 ```bash
 root@newedu:~# helm install nfs-subdir-external-provisioner -f dynamic_values.yaml  nfs-subdir-external-provisioner/nfs-subdir-external-provisioner -n devops
@@ -2003,6 +2009,8 @@ root@newedu:~# kubectl get storageclass
 NAME         PROVISIONER                                     RECLAIMPOLICY   VOLUMEBINDINGMODE   ALLOWVOLUMEEXPANSION   AGE
 nfs-client   cluster.local/nfs-subdir-external-provisioner   Delete          Immediate           true                   95s
 ```    
+
+<br/>
 
 오픈 쉬프트는 신규 생성된  service account에 hostmount 권한을 주어야 합니다. ( native K8S는 불필요 )    
 
@@ -2097,6 +2105,13 @@ my-mariadb
 
 
 <br/>
+
+과제 : 위에서 생성한 mariaDB를 본인의 로컬 PC 또는 MAC(  vm 아님 ) 에서 port forwarding 명령어를 사용하여 로컬 처럼 연결해 보시오.  
+- 포트는 : 본인의 Node Port 이용
+- 윈도우는 heidiSql , 맥 사용자는 DBeaver 사용
+
+<br/>
+
 
 ***
 
