@@ -2108,7 +2108,7 @@ my-mariadb
 
 <br/>
 
-과제 : 위에서 생성한 mariaDB를 본인의 로컬 PC 또는 MAC(  vm 아님 ) 에서 port forwarding 명령어를 사용하여 로컬 처럼 연결해 보시오.  
+과제 : 위에서 생성한 mariaDB를 본인의 로컬 PC 또는 MAC(  vm 아님 ) 에서 port forward 명령어를 사용하여 로컬 처럼 연결해 보시오.  
 - 윈도우는 heidiSql , 맥 사용자는 DBeaver 사용
 
 <br/>
