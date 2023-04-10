@@ -1473,7 +1473,7 @@ Password updated
 
 <br/>
 
-추가적으로 argo-rollout namespace를 생성하고 rollout을 설치합니다.  
+추가적으로 argo-rollouts namespace를 생성하고 rollout을 설치합니다.  
 
 아래 링크의 화일을 사용하여 install_argorollouts.yaml을 생성합니다.
 - https://github.com/shclub/edu14/blob/master/argocd/install_argorollouts.yaml  

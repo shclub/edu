@@ -86,7 +86,6 @@
           - AOP
           - Object Mapper   
           - PSA ( Portal Service Abstraction )
-          - Webflux
           
      - SpringBoot Data JPA hands-on [ Hands-On 문서보기 ](./springboot_hands_on_jpa.md)  
 
@@ -179,22 +178,29 @@
 
 10. Chapter 10 : 10주차
 
-     - k8s hands-on 중급 [ Hands-On 문서보기 ](./k8s_middle_hands_on.md)  
+     - k8s hands-on 중급 [ Hands-On 문서보기 ](./k8s_middle_hands_on_2023.md)  
 
           - Storage Volume  ( PV/PVC , DB 설치 + NFS )
           - NFS 라이브러리 설치 ( Native Kubernetes )
           - Service - Headless, Endpoint, ExternalName
-          - EFK APM 설치
-          - EFK APM Agent 설정  ( React / SpringBoot )
-          - Helm 배포 중급 ( Umbrella 패턴 )
-          - ArgoCD 배포 중급 ( Apps-of-Apps 패턴 )
-          - EFK APM 활용 
+          - Helm 배포  ( Umbrella 패턴 )
+          - ArgoCD 배포  ( Apps-of-Apps 패턴 )
 
      <br/>
 
 11. Chapter 11 : 11주차
 
-     - AWS 기본 [ Hands-On 문서보기 ](./chapter11.md) 
+     - 인증 (SSO) [ Hands-On 문서보기 ](./chapter11.md) 
+          - KeyCloak 설치 및 실습
+          - keyCloak 를 이용한 오픈 소스 시스템 연동 ( Jenkins / ArgoCD , Airflow , Kibana 등 )
+          - Spring Backend 연동
+
+     <br/>
+
+
+12. Chapter 12 : 12주차
+
+     - AWS 기본 [ Hands-On 문서보기 ](./chapter12.md) 
           - 기본 설명 ( VPC / Subnet / RoutingTable , N / NLCM / Security Group / ENI ) 및 실습  
           - EKS 설명 및 생성 ( By 포탈 / CloudFormation / eskctl ) 실습  
           - EKS 설정 ( Security Group / ALB Ingress / Route53 )
@@ -202,17 +208,16 @@
 
      <br/>
 
-12. Chapter 12 : 12주차
-     - AWS 기반 솔루션 설치 [ Hands-On 문서보기 ](./chapter12.md) 
+12. Chapter 13 : 13주차
+     - AWS 기반 솔루션 설치 [ Hands-On 문서보기 ](./chapter13.md) 
           - Istio 설명, 설치 및 실습
           - Spring Cloud Gateway 설명, 설치 및 실습
-          - KeyCloak 설치 및 인증 실습 ( /w AWS Aurora )
           - HashiCorp Consul 설치 및 실습
 
      <br/>
 
-13. Chapter 13 : 13주차
-     - AWS 기본 [ Hands-On 문서보기 ](./chapter13.md) 
+13. Chapter 14 : 14주차
+     - AWS 기본 [ Hands-On 문서보기 ](./chapter14.md) 
           - Redis/Kafka 설치 및 활용 
           - S3 Object Storage 설명 및 활용 실습
           - AWS CodeCommit / CodeDeploy / ECR 사용 방법 실습
@@ -220,7 +225,7 @@
 
      <br/>
 
-14. Chapter 14 : 14주차
+14. Chapter 15 : 15주차
      - SpringBoot 심화 학습  
           - Spring Cloud Stream
      - MSA 패턴 실습
@@ -230,13 +235,13 @@
 
      <br/>
 
-15. Chapter 15 : 15주차 
+15. Chapter 16 : 16주차 
      - Prometheus 심화 
      - Airflow ( 배치프레임웍 ) 설치 및 실습
 
      <br/>
 
-16. Chapter 16 : 16주차 
+16. Chapter 17 : 17주차 
      -  Summary
 
      <br/>
