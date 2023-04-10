@@ -839,11 +839,12 @@ SSO를 위해 Client Authentication 을 On 을 하고 저장합니다.
 
 <br/>
 
-Valid redirect URIs , Valid post logout redirect URIs 에 ArgoCD URL을 넣어주고 저장합니다.  
-- Valid redirect URI : https://argocd-argocd.apps.211-34-231-82.nip.io/auth/callback
-- Valid post logout redirect URI : https://argocd-argocd.apps.211-34-231-82.nip.io/auth/callback
+Valid redirect URIs , Valid post logout redirect URIs 에 `*` 를 넣어주고 저장합니다.  
+- Valid redirect URI : *
+- Valid post logout redirect URI : *
+- Web Origin : *
 
-<img src="./assets/keycloak9.png" style="width: 80%; height: auto;"/>  
+<img src="./assets/keycloak9-1.png" style="width: 80%; height: auto;"/>  
 
 <br/>
 
@@ -1032,3 +1033,48 @@ data:
 
 
 <br/>
+
+
+웹브라우저에서 ArgoCD 에 연결하여 로그인을 합니다.  
+https://keycloak-edu30.apps.211-34-231-82.nip.io  
+
+<br/>
+
+<img src="./assets/keycloak19.png" style="width: 80%; height: auto;"/>  
+
+<br/>  
+
+keycloak 에서 생성한 유저 아이디와 비밀번호를 입력하고  Sign In 버튼을 클릭합니다.  
+
+<img src="./assets/keycloak20.png" style="width: 80%; height: auto;"/>  
+
+
+<br/>  
+
+로그인이 성공적으로 수행이 되었으며 전체 ArgoCD 프로젝트를 볼 수 있습니다.  
+
+<img src="./assets/keycloak21.png" style="width: 80%; height: auto;"/>  
+
+<br/>  
+
+사용자 정보를 보면 group이 edu_grp로 되어 있는것을 볼 수 있습니다.
+
+<img src="./assets/keycloak22.png" style="width: 80%; height: auto;"/>  
+
+<br/>
+
+`argocd-rbac-cm` configmap을 보면 앞에서 `edu_grp` 이 all allow 로 설정 되어 있는 것을 볼 수 있습니다.
+
+```bash
+root@newedu:~# kubectl edit configmap argocd-rbac-cm  -n argocd
+```    
+
+<img src="./assets/keycloak23.png" style="width: 80%; height: auto;"/>  
+
+<br/>
+
+이제 logout 을 해봅니다. 
+정상적으로 첫 화면이 나오면 로그 아웃이 된 것입니다. 
+
+<br/>
+
