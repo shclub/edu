@@ -1046,7 +1046,7 @@ https://keycloak-edu30.apps.211-34-231-82.nip.io
 
 keycloak 에서 생성한 유저 아이디와 비밀번호를 입력하고  Sign In 버튼을 클릭합니다.  
 
-<img src="./assets/keycloak20.png" style="width: 80%; height: auto;"/>  
+<img src="./assets/keycloak20.png" style="width: 60%; height: auto;"/>  
 
 
 <br/>  

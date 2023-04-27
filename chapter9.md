@@ -8,7 +8,7 @@ Redhat Openshift 의 오픈소스 버전인 OKD 4.7 설정하는 방법을 알�
 
 2. OKD 에  ArgoCD 설치
 
-3. OKD 에  Elastic APM 설치
+3. OKD 에  Elastic Stack  설치
 
 <br/>
 
@@ -503,6 +503,8 @@ nginx-deployment-66b6c48dd5-2khlh   1/1     Running   0          20s   10.129.6.
 
 ### Cluster GUI ( Container portal )
 
+<br/>
+
 kt cloud 웹 콘솔에서 K2P -> Container 로 이동하면 생성한 OKD 클러스터를 볼수 있다.  
 
 해당 클러스터를 선택을 하고 Container 콘솔을 클릭한다.  
@@ -597,6 +599,72 @@ kt cloud 콘솔에서 Server -> Networking 으로 이동하여 IP를 하나 생�
 
 <br/>
 
+포탈에서 생성한 edu.pem private key 로 public key를 생성한다. 
+
+<br/>
+
+```bash  
+ssh-keygen -f edu.pem -y > edu.pub
+```  
+
+<br/>
+
+oc login 을 하고  machine config 를 조회를 하면 우리가 수정할  컨트롤러 이름 2개가 보인다.   
+
+- 99-master-ssh 
+- 99-worker-ssh
+
+```bash  
+jakelee@jake-MacBookAir Downloads % oc get mc
+NAME                                               GENERATEDBYCONTROLLER                      IGNITIONVERSION   AGE
+00-master                                          664fff942096fc9f357e81776345b3b71000a8a7   3.2.0             24h
+00-worker                                          664fff942096fc9f357e81776345b3b71000a8a7   3.2.0             24h
+01-master-container-runtime                        664fff942096fc9f357e81776345b3b71000a8a7   3.2.0             24h
+01-master-kubelet                                  664fff942096fc9f357e81776345b3b71000a8a7   3.2.0             24h
+01-worker-container-runtime                        664fff942096fc9f357e81776345b3b71000a8a7   3.2.0             24h
+01-worker-kubelet                                  664fff942096fc9f357e81776345b3b71000a8a7   3.2.0             24h
+99-master-generated-registries                     664fff942096fc9f357e81776345b3b71000a8a7   3.2.0             24h
+99-master-okd-extensions                                                                      3.1.0             24h
+99-master-ssh                                                                                 3.2.0             24h
+99-okd-master-disable-mitigations                                                             3.1.0             24h
+99-okd-worker-disable-mitigations                                                             3.1.0             24h
+99-worker-generated-registries                     664fff942096fc9f357e81776345b3b71000a8a7   3.2.0             24h
+99-worker-okd-extensions                                                                      3.1.0             24h
+99-worker-ssh                                                                                 3.2.0             24h
+```  
+
+
+<br/>
+
+참고 : https://cloud.kt.com/portal/user-guide/Container-k2p-enterprise-howto  
+
+<br/>
+
+99-master-ssh 화일에서   
+사전작업 시 생성했던 public key를 기존 machineconfig의 내용 중 “sshAuthorizedKeys” 하위에 추가하고 저장한다.  
+
+```bash  
+oc edit mc 99-master-ssh
+```
+
+<br/>
+
+99-worker-ssh 도 같이 수정을 하고 아래 명령어로 상태를 모니터링한다.
+하나의 노드당 3분 정도 걸린다.     
+- MachineConfigPool이 돌면서 Updating 상태가 보여지고 “UpdatedMachineCount” 대수를 확인하여 설정 적용 현황을 확인해본다
+
+<br/>
+
+```bash
+jakelee@jake-MacBookAir Downloads % oc get mcp
+NAME     CONFIG                                             UPDATED   UPDATING   DEGRADED   MACHINECOUNT   READYMACHINECOUNT   UPDATEDMACHINECOUNT   DEGRADEDMACHINECOUNT   AGE
+master   rendered-master-c4c6115ed2eebe3d16f36062098881d0   True      False      False      3              3                   3                     0                      24h
+worker   rendered-worker-ac8bcafb561a91591dccb86b615cba3a   False     True       False      7              0                   0                     0                      24h
+```  
+
+
+<br/>
+
 로컬 PC의 terminal 에서 다운 받은 SSH Key pair를 이용하여 접속을 한다.  
 - 먼저 edu.pem 화일의 권한을 600 으로 변경한다.
 - coreos의 사용자는 core 이다.
@@ -618,15 +686,16 @@ Failed Units: 1
 
 <br/>
 
-정상적으로 접속이 되면 root의 비밀번호를 설정한다.  
+정상적으로 접속이 되면 core 계정과 root 계정의 비밀번호를 설정한다.  
 
 ```bash
-[core@edu ~]$ sudo passwd
-Changing password for user root.
+[core@edu ~]$ sudo passwd core
+Changing password for user core.
 New password:
-BAD PASSWORD: The password is shorter than 8 characters
 Retype new password:
-Sorry, passwords do not match.
+passwd: all authentication tokens updated successfully.
+[core@edu ~]$ sudo passwd root
+Changing password for user root.
 New password:
 Retype new password:
 passwd: all authentication tokens updated successfully.
@@ -634,7 +703,40 @@ passwd: all authentication tokens updated successfully.
 
 <br/>
 
-pem 화일 없이 root 계정으로 worker node에 접속 가능하다.  
+비밀번호로 접속하기 위해 root로 사용자를 전환하고 sshd config 폴더로 이동한다.  
+
+```bash
+[core@edu ~]$ su -
+Password:
+Last login: Wed Apr 26 07:34:06 UTC 2023 on pts/0
+[systemd]
+Failed Units: 1
+  systemd-resolved.service
+[root@edu ssh]# cd /etc/ssh/sshd_config.d
+[root@edu sshd_config.d]# ls
+10-disable-ssh-key-dir.conf    40-ssh-key-dir.conf
+10-insecure-rsa-keysig.conf  40-disable-passwords.conf  50-redhat.conf
+```  
+
+<br/>
+
+`20-enable-passwords.conf` 라는 화일을 생성하고 안에 `PasswordAuthentication yes` 를 추가하고 저장한다.
+
+```bash
+[root@edu sshd_config.d]# vi 20-enable-passwords.conf
+```  
+
+<br/>
+
+sshd 데몬을 다시 기동한다.  
+
+```bash
+[root@edu sshd_config.d]# systemctl restart sshd
+```  
+
+<br/>
+
+worker node에 접속 가능하다.  
 
 ```bash
 jakelee@jake-MacBookAir ~ % ssh root@211.34.231.85 -p 22222
@@ -649,7 +751,6 @@ Failed Units: 1
   systemd-resolved.service
 [root@edu ~]#
 ```  
-
 
 <br/>
 
@@ -743,7 +844,6 @@ Add credential을 클릭합니다.
 
 비밀키를 복사합니다.  
 
-
 ```bash
 jakelee@jake-MacBookAir .ssh % cat id_ed25519
 -----BEGIN OPENSSH PRIVATE KEY-----
@@ -826,6 +926,8 @@ Jenkins pipeline 에서는 아래와 같이 사용 할 수 있습니다.
 
 <img src="./assets/jenkins_ssh_git.png" style="width: 80%; height: auto;"/>   
 
+<br/>
+
 해당 github 사이트에 가면 승인 버튼이 활성화 된다.  
 
 <img src="./assets/github_ssh_approve.png" style="width: 80%; height: auto;"/>   
@@ -856,7 +958,6 @@ Service Account의 Source Code Control 종류는 다음과 같습니다.
 
 참고 : https://gruuuuu.github.io/ocp/svca-s2i/
 
-
 <br/>
 
 worker node 로 ssh 접속한다.
@@ -865,7 +966,7 @@ NAS ( NFS ) 를 마운트 하여 원하는 폴더는 생성한다.
 
 
 ```bash
-[root@edu ~]# mount -t nfs 172.25.1.162:/share_8c0fade2_649f_4ca5_aeaa_8fd57904f8d5 /mnt
+[root@edu ~]# mount -t nfs 172.25.1.164:/share_aed398f1_3e3e_4d30_8b59_8185229ebde0 /mnt
 [root@edu ~]# cd /mnt
 [root@edu mnt]# ls
 image-registry  prometheus-data00  prometheus-data01
@@ -936,7 +1037,6 @@ clusterrole.rbac.authorization.k8s.io/system:openshift:scc:anyuid added: "argocd
 ```
 
 <br/>
-
 
 ### 사내망에서 설정
 
@@ -1524,3 +1624,644 @@ replicaset.apps/argo-rollouts-5c964cb4f5   1         1         1       9m35s
 - https://github.com/shclub/edu/blob/master/argocd_hands_on.md
 
 <br/>
+
+
+## OKD 에  Elastic Stack  설치   
+
+<br>
+
+참고
+- https://artifacthub.io/packages/helm/elastic/elasticsearch
+
+<br/>
+
+<img src="./assets/elasticstack1.png" style="width: 80%; height: auto;"/>  
+
+<br/>
+
+### 설치 
+
+<br/>
+
+
+VM에 로그인 한 후에 elastic 폴더를 생성한다.  
+
+<br/>
+
+yaml 화일 참고 : https://github.com/shclub/elastic
+
+<br/>
+
+```bash
+root@newedu:~# mkdir -p elastic
+root@newedu:~# cd elastic
+``` 
+
+<br/>
+
+default service account 에 아래와 같이 권한을 부여 한다.  
+
+<br/>
+
+```bash
+root@newedu:~/elastic# oc adm policy add-scc-to-user anyuid -z default -n elastic-system
+clusterrole.rbac.authorization.k8s.io/system:openshift:scc:anyuid added: "default"
+root@newedu:~/elastic# oc adm policy add-scc-to-user privileged -z default -n elastic-system
+clusterrole.rbac.authorization.k8s.io/system:openshift:scc:privileged added: "default"
+```
+
+<br/>
+
+#### Storage 설정
+
+<br/>
+
+
+elastic-snapshop 과 kibana 가 사용하는 stroage를 위해 pv / pvc 를 생성해야 하며
+사전에 NFS 에 접속하여 폴더를 생성한다.     
+
+elastic data 스토리지는 dynamic provisioning 으로 설치 예정이라 별로 세팅은 필요 없다.  
+
+<br/>
+
+elastic-snapshop 은 아래 폴더에 생성되어 있고 수강생은 본인의 폴더 직접 생성.
+
+<br/>
+
+```bash
+[root@edu elastic-snapshop]# pwd
+/mnt/elastic-snapshop
+[root@edu elastic-snapshop]# mkdir -p edu
+```
+
+<br/>
+
+kibana 용 폴더도 생성한다.  (기생성)
+수강생읕 본인은 폴더를 kibana 아래에 생성한다.  
+
+```bash
+[root@edu kibana]# pwd
+/mnt/kibana
+[root@edu kibana]# mkdir -p edu
+...
+```
+
+<br/>
+
+elastic-snapshop / kibana 용 해당 폴더의 권한을 설정한다.
+
+<br/>
+
+worker node에서 mount 해서 폴더 권한을 주는 경우는 아래 처럼 설정하고   
+
+`chown -R nfsnobody:nfsnobody edu`  
+
+pod 내에서 nfs 연결해서 권한을 줄때는  nobody:nogroup 으로 준다.  
+
+`chown -R nobody:nogroup edu`
+
+<br/>
+
+elastic 용 폴더    
+
+
+```bash
+[root@edu elastic-snapshop]# chown -R nfsnobody:nfsnobody edu
+[root@edu elastic-snapshop]# chmod 777 edu
+```  
+
+kibana 용 폴더  
+
+```bash
+[root@edu kibana]# chown -R nfsnobody:nfsnobody edu
+[root@edu kibana]# chmod 777 edu
+```  
+
+
+<br/>
+
+elastic snapshot 용 PV 를 생성한다. 사이즈는 5G로 설정한다.
+
+<br/>
+
+```bash  
+root@newedu:~/elastic#  vi elastic_snapshot_pv.yaml
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: elastic-snapshop-edu-pv
+spec:
+  accessModes:
+  - ReadWriteMany
+  capacity:
+    storage: 5Gi
+  nfs:
+    path: /share_8c0fade2_649f_4ca5_aeaa_8fd57904f8d5/elastic-snapshot/edu
+    server: 172.25.1.162
+  persistentVolumeReclaimPolicy: Retain
+```
+
+<br/>
+
+PV를 생성하고 Status를 확인해보면 Available 로 되어 있는 것을 알 수 있습니다.  
+
+<br/>
+
+```bash
+root@newedu:~/elastic# kubectl apply -f elastic_snapshot_pv.yaml
+```  
+
+PV를 생성하고 Status를 확인해보면 Available 로 되어 있는 것을 알 수 있습니다.  
+
+<br/>
+
+elastic snapshot 용  pvc 를 생성합니다. pvc 이름을 기억합니다.
+
+<br/>
+
+```bash
+root@newedu:~/elastic# vi elastic_snapshot_pvc.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: elastic-snapshot-edu-pvc
+spec:
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 5Gi
+  volumeName: elastic-snapshop-edu-pv
+```
+
+<br/>
+
+```bash
+root@newedu:~/elastic# kubectl apply -f  elastic_snapshot_pvc.yaml -n elastic-system
+persistentvolumeclaim/elastic-snapshot-edu-pvc created
+```
+
+<br/>
+
+kibana 용 PV 를 생성한다. 사이즈는 5G로 설정한다.
+
+<br/>
+
+```bash  
+root@newedu:~/elastic#  vi kibana_pv.yaml
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: kibana-edu-pv
+spec:
+  accessModes:
+  - ReadWriteMany
+  capacity:
+    storage: 5Gi
+  nfs:
+    path: /share_8c0fade2_649f_4ca5_aeaa_8fd57904f8d5/kibana/edu
+    server: 172.25.1.162
+  persistentVolumeReclaimPolicy: Retain
+```
+
+<br/>
+
+```bash
+root@newedu:~/elastic# kubectl apply -f kibana_pv.yaml
+persistentvolume/kibana-edu-pv created
+root@newedu:~/elastic# kubectl get pv kibana-edu-pv
+NAME            CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS      CLAIM   STORAGECLASS   REASON   AGE
+kibana-edu-pv   5Gi        RWX            Retain           Available                                   16s
+```
+
+<br/>
+
+PV를 생성하고 Status를 확인해보면 Available 로 되어 있는 것을 알 수 있습니다.  
+
+<br/>
+
+kibana 용 pvc 를 생성합니다. pvc 이름을 기억합니다.
+
+<br/>
+
+```bash
+root@newedu:~/elastic# vi kibana_pvc.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: kibana-edu-pvc
+spec:
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 5Gi
+  volumeName: kibana-edu-pv
+```
+
+<br/>
+
+PVC 를 생성할 때는 namespace ( 본인의 namespace ) 를 명시해야 합니다.  
+
+<br/>
+
+```bash
+root@newedu:~/elastic# kubectl apply -f kibana_pvc.yaml -n elastic-system
+persistentvolumeclaim/kibana-edu-pvc created
+```  
+
+
+PVC 생성을 확인 해보고 다시 PV를 확인해 보면 Status가 Bound 로 되어 있는 것을 알 수 있습니다.  이제 PV 와 PVC가 연결이 되었습니다.
+
+
+<br/>
+
+
+#### Helm 으로 elastic 설치
+
+<br/>
+
+helm repo 업데이트를 합니다.  
+
+```bash
+root@newedu:~/elastic# helm repo update
+Hang tight while we grab the latest from your chart repositories...
+...Successfully got an update from the "jenkins" chart repository
+...Successfully got an update from the "nfs-subdir-external-provisioner" chart repository
+...Successfully got an update from the "bitnami" chart repository
+Update Complete. ⎈Happy Helming!⎈
+```  
+
+<br/>
+
+
+elastic helm reposiory를 추가합니다.
+
+<br/>
+
+```bash
+root@newedu:~/elastic# helm repo add elastic https://helm.elastic.co
+NAME                 	CHART VERSION	APP VERSION	DESCRIPTION
+bitnami/postgresql   	12.2.6       	15.2.0     	PostgreSQL (Postgres) is an open source object-...
+bitnami/postgresql-ha	11.2.0       	15.2.0     	This PostgreSQL cluster solution includes the P...
+bitnami/supabase     	0.1.4        	0.23.2     	Supabase is an open source Firebase alternative...
+```  
+
+<br/>
+
+elastic 으로 검색을 하여 `elastic/elasticsearch` 를 찾습니다.  
+
+
+```bash
+root@newedu:~/elastic# helm search repo elastic
+NAME                     	CHART VERSION	APP VERSION	DESCRIPTION
+bitnami/elasticsearch    	19.6.0       	8.6.2      	Elasticsearch is a distributed search and analy...
+elastic/eck-elasticsearch	0.3.0        	           	A Helm chart to deploy Elasticsearch managed by...
+elastic/elasticsearch    	8.5.1        	8.5.1      	Official Elastic helm chart for Elasticsearch
+elastic/apm-attacher     	0.1.0        	           	A Helm chart installing the Elastic APM mutatin...
+elastic/apm-server       	8.5.1        	8.5.1      	Official Elastic helm chart for Elastic APM Server
+elastic/eck-agent        	0.3.0        	           	A Helm chart to deploy Elastic Agent managed by...
+elastic/eck-beats        	0.2.0        	           	A Helm chart to deploy Elastic Beats managed by...
+elastic/eck-fleet-server 	0.3.0        	           	A Helm chart to deploy Elastic Fleet Server as ...
+elastic/eck-kibana       	0.3.0        	           	A Helm chart to deploy Kibana managed by the EC...
+elastic/eck-operator     	2.7.0        	2.7.0      	A Helm chart for deploying the Elastic Cloud on...
+elastic/eck-operator-crds	2.7.0        	2.7.0      	A Helm chart for installing the ECK operator Cu...
+elastic/eck-stack        	0.4.0        	           	A Parent Helm chart for all Elastic stack resou...
+elastic/filebeat         	8.5.1        	8.5.1      	Official Elastic helm chart for Filebeat
+elastic/kibana           	8.5.1        	8.5.1      	Official Elastic helm chart for Kibana
+elastic/logstash         	8.5.1        	8.5.1      	Official Elastic helm chart for Logstash
+elastic/metricbeat       	8.5.1        	8.5.1      	Official Elastic helm chart for Metricbeat
+bitnami/dataplatform-bp2 	12.0.5       	1.0.1      	DEPRECATED This Helm chart can be used for the ...
+bitnami/kibana           	10.2.18      	8.7.0      	Kibana is an open source, browser based analyti...
+```  
+
+<br/>
+
+`elastic/elasticsearch` 차트에서 차트의 변수 값을 변경하기 위해 elastic_values.yaml 화일을 추출한다.
+
+<br/>
+
+
+```bash
+root@newedu:~/elastic# helm show values elastic/elasticsearch  > elastic_values.yaml
+```
+
+<br/>
+
+storageclass 이름을 확인합니다.  
+
+
+```bash
+root@newedu:~/elastic# kubectl get storageclass
+NAME         PROVISIONER                                     RECLAIMPOLICY   VOLUMEBINDINGMODE   ALLOWVOLUMEEXPANSION   AGE
+nfs-client   cluster.local/nfs-subdir-external-provisioner   Delete          Immediate           true                   229d
+```
+
+<br/>
+
+elastic_values.yaml 를 수정한다.  
+
+- 24~25 : replicas 2 로 변경
+- 31~34 : 메모리 swapping 설정을 한다. 메모리 부족하면 주석처리. 
+- 90~98 : JVM Option 과 POD 리소스를 설정한다.
+- 108~115 : volumeClaimTemplate 에서 storageClass를 설정하여 Dynamic Provisioning을 한다.
+- 142~157 : 스토리지 사용 유무를 설정하고 snapshot pvc를 설정한다.
+- 222~232 : securityContext를 설정한다.
+
+<br/>
+
+```bash
+ 24 replicas: 2 # 2로 변경 
+ 25 minimumMasterNodes: 1 #2 quorum
+ ... 
+ 31 esConfig:
+ 32   elasticsearch.yml: |  # 주석 풀고 추가 설정
+ 33     #bootstrap.memory_lock: true # disable swapping
+ 34     path.repo: "/usr/share/elasticsearch/snapshot" # snapshot repository
+ 35 #    key:
+ 36 #      nestedkey: value
+ 37 #  log4j2.properties: |
+ 38 #    key = value
+ ...
+ 90 esJavaOpts: "-Xmx2g -Xms2g" # 메모리 설정 일단 2기가  example: "-Xmx1g -Xms1g"
+ 91
+ 92 resources:
+ 93   requests:
+ 94     cpu: "4" # "1000m"  worker node spec 8core 16G
+ 95     memory: "2Gi" #"2Gi"
+ 96   limits:  # limit 제한 없애기
+ 97     cpu: null #"1000m"
+ 98     memory: null # "2Gi"
+ ...
+108 networkHost: "0.0.0.0"
+109
+110 volumeClaimTemplate:
+111   accessModes: ["ReadWriteOnce"]
+112   storageClassName : "nfs-client"
+113   resources:
+114     requests:
+115       storage: 5Gi #30Gi elastic data storage pv
+...
+142 persistence:
+143   enabled: true # pv/pvc use flag
+144   labels:
+145     # Add default labels for the volumeClaimTemplate of the StatefulSet
+146     enabled: false
+147   annotations: {}
+148
+149 extraVolumes:  # snapshot  volume
+150  - name: snapshot
+151    persistentVolumeClaim:
+152      claimName: elastic-snapshot-edu-pvc
+153    #   emptyDir: {}
+154
+155 extraVolumeMounts:
+156  - name: snapshot
+157    mountPath: /usr/share/elasticsearch/snapshot
+...
+222 podSecurityContext:
+223   fsGroup: null #1000 openshfit
+224   runAsUser: null #1000 openshift
+225
+226 securityContext:
+227   capabilities:
+228     drop:
+229       - ALL
+230   # readOnlyRootFilesystem: true
+231   runAsNonRoot: true
+232   runAsUser: 1000  # openshift
+```
+
+<br/>
+
+이제 elasticsearch 를 설치 합니다.
+
+<br/>
+
+```bash
+root@newedu:~/elastic# helm install elastic elastic/elasticsearch -f elastic_values.yaml -n elastic-system
+NAME: elastic
+LAST DEPLOYED: Tue Apr 18 19:35:45 2023
+NAMESPACE: elastic-system
+STATUS: deployed
+REVISION: 1
+NOTES:
+1. Watch all cluster members come up.
+  $ kubectl get pods --namespace=elastic-system -l app=elasticsearch-master -w
+2. Retrieve elastic user's password.
+  $ kubectl get secrets --namespace=elastic-system elasticsearch-master-credentials -ojsonpath='{.data.password}' | base64 -d
+3. Test cluster health using Helm test.
+  $ helm --namespace=elastic-system test elastic
+```
+
+<br/>
+
+pod를 확인한다.
+
+```bash
+root@newedu:~/elastic# kubectl get po -n elastic-system
+NAME                     READY   STATUS    RESTARTS   AGE
+elasticsearch-master-0   1/1     Running   0          3m3s
+elasticsearch-master-1   1/1     Running   0          3m3s
+```
+
+<br/>
+
+NFS 서버에 접속하여 data 폴더가 생성 되었는지 확인한다.  
+
+```bash
+[root@edu database]# pwd
+/mnt/database
+[root@edu database]# ls elastic-system-elasticsearch-master-elasticsearch-master-*
+elastic-system-elasticsearch-master-elasticsearch-master-0-pvc-95ec3eed-e8f9-46b3-b832-362c362724db:
+_state  indices  node.lock  nodes  snapshot_cache
+
+elastic-system-elasticsearch-master-elasticsearch-master-1-pvc-9adfb438-769f-46f8-af62-c456e93920cf:
+_state  indices  node.lock  nodes  snapshot_cache
+```  
+
+<br/>
+
+#### Helm 으로 kibana  설치 및 설정
+
+<br/>
+
+kibana 는 Helm Chart 를 이용하여 설치를 합니다.  
+
+<br/>
+
+현재 로컬의 helm repository 를 확인한다.   
+
+<br/>
+
+```bash
+root@newedu:~/elastic# helm repo list
+NAME                           	URL
+bitnami                        	https://charts.bitnami.com/bitnami
+nfs-subdir-external-provisioner	https://kubernetes-sigs.github.io/nfs-subdir-external-provisioner/
+jenkins                        	https://charts.jenkins.io
+oteemo                         	https://oteemo.github.io/charts/
+elastic                        	https://helm.elastic.co
+```  
+
+<br/>
+
+elastic helm reppository 에서 helm chart를 검색을 하고 kibana chart를 선택합니다.  
+
+<br/>
+
+```bash
+root@newedu:~/elastic# helm search repo kibana
+NAME                     	CHART VERSION	APP VERSION	DESCRIPTION
+bitnami/kibana           	10.2.18      	8.7.0      	Kibana is an open source, browser based analyti...
+elastic/eck-kibana       	0.3.0        	           	A Helm chart to deploy Kibana managed by the EC...
+elastic/kibana           	8.5.1        	8.5.1      	Official Elastic helm chart for Kibana
+elastic/eck-operator     	2.7.0        	2.7.0      	A Helm chart for deploying the Elastic Cloud on...
+elastic/eck-stack        	0.4.0        	           	A Parent Helm chart for all Elastic stack resou...
+bitnami/dataplatform-bp2 	12.0.5       	1.0.1      	DEPRECATED This Helm chart can be used for the ...
+elastic/eck-operator-crds	2.7.0        	2.7.0      	A Helm chart for installing the ECK operator Cu...
+```
+
+<br/>
+
+elastic/kibana 차트에서 차트의 변수 값을 변경하기 위해 kibana_values.yaml 화일을 추출한다.
+
+<br/>
+
+
+```bash
+root@newedu:~/elastic#  helm show values elastic/kibana > kibana_values.yaml
+```
+
+
+<br/>
+
+vi 데이터에서 생성된 kibana_values.yaml을 연다.  
+
+<br/>
+
+```bash
+root@newedu:~/elastic# vi kibana_values.yaml
+```  
+
+라인을 보기 위해 ESC 를 누른 후 `:set nu` 를 입력하면 왼쪽에 라인이 보인다.  
+
+
+<br/>
+수정내용
+ - 105,108 라인 : admin 계정과 비밀번호
+ - 312 라인 : readinessProbe 는 false 로 변경
+ - 1003 라인 : postgresql는  별도 설치된 DB 사용으로 false로 변경
+ - 1022~1026 : 위에서 설정한 postgresql db 로 설정. host는 서비스 이름
+
+<br/>
+
+```bash
+
+```  
+
+<br/>
+
+#### Helm 으로 kibana 설치
+
+<br/>
+
+keycloak_values.yaml 를 사용하여 설치 한다.
+
+<br/>
+
+```bash
+root@newedu:~/keycloak# helm install keycloak bitnami/keycloak -f keycloak_values.yaml -n edu30 --insecure-skip-tls-verify
+NAME: keycloak
+LAST DEPLOYED: Fri Apr  7 11:03:19 2023
+NAMESPACE: edu30
+STATUS: deployed
+REVISION: 1
+TEST SUITE: None
+NOTES:
+CHART NAME: keycloak
+CHART VERSION: 13.4.0
+APP VERSION: 20.0.5
+
+** Please be patient while the chart is being deployed **
+
+Keycloak can be accessed through the following DNS name from within your cluster:
+
+    keycloak.edu30.svc.cluster.local (port 80)
+
+To access Keycloak from outside the cluster execute the following commands:
+
+1. Get the Keycloak URL by running these commands:
+
+  NOTE: It may take a few minutes for the LoadBalancer IP to be available.
+        You can watch its status by running 'kubectl get --namespace edu30 svc -w keycloak'
+
+    export HTTP_SERVICE_PORT=$(kubectl get --namespace edu30 -o jsonpath="{.spec.ports[?(@.name=='http')].port}" services keycloak)
+    export SERVICE_IP=$(kubectl get svc --namespace edu30 keycloak -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+
+    echo "http://${SERVICE_IP}:${HTTP_SERVICE_PORT}/"
+
+2. Access Keycloak using the obtained URL.
+3. Access the Administration Console using the following credentials:
+
+  echo Username: admin
+  echo Password: $(kubectl get secret --namespace edu30 keycloak -o jsonpath="{.data.admin-password}" | base64 -d)
+```   
+
+<br/>
+
+설치가 완료되면 pod를 조회하여 keycloak-0 pod가 있는지 확인한다.    
+
+없으면 event 를 확인해본다.  
+
+<br/>
+
+```bash
+root@newedu:~/keycloak# kubectl get events
+LAST SEEN   TYPE      REASON         OBJECT                           MESSAGE
+keycloak             create Pod keycloak-0 in StatefulSet keycloak failed error: pods "keycloak-0" is forbidden: unable to validate against any security context constraint: [provider restricted: .spec.securityContext.fsGroup: Invalid value: []int64{1001}: 1001 is not an allowed group spec.containers[0].securityContext.runAsUser: Invalid value: 1001: must be in the ranges: [1001420000, 1001429999]]
+124m        Normal    Pulled         pod/
+```
+
+<br/>
+
+권한 관련 에러가 발생한 것을 볼 수 있고 아래와 같이 keycloak 서비스 어카운트에게  권한을 준다.
+
+<br/>
+
+```bash
+root@newedu:~/keycloak# oc adm policy add-scc-to-user anyuid -z  keycloak 
+clusterrole.rbac.authorization.k8s.io/system:openshift:scc:anyuid added: "keycloak"
+root@newedu:~/keycloak# oc adm policy add-scc-to-user privileged -z keycloak
+clusterrole.rbac.authorization.k8s.io/system:openshift:scc:privileged added: "keycloak"
+``` 
+
+<br/>
+
+keycloak 을 삭제 하고 다시 설치해본다.
+
+```bash
+root@newedu:~/keycloak# helm delete keycloak 
+release "keycloak" uninstalled
+root@newedu:~/keycloak# helm install keycloak bitnami/keycloak -f keycloak_values.yaml --insecure-skip-tls-verify
+```  
+<br/>
+
+pod를 확인해봅니다.
+
+<br/>
+
+```bash
+root@newedu:~/keycloak# kubectl get po
+NAME                                        READY   STATUS             RESTARTS   AGE
+keycloak-0                                  1/1     Running            0          34s
+```  
+
+
+<br/>
+
+#### Keycloak 설정
+
+<br/>
+
+
