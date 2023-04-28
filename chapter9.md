@@ -826,7 +826,7 @@ backup-config.yaml 화일을 생성한다.
 
 <br/>
 
-`OCP_BACKUP_SUBDIR` 은 nfs 에 mount 되는 master node의 폴더 이다.  
+`OCP_BACKUP_SUBDIR` 은 nfs 에 신규로 생성 폴더 이름 이다.  
 
 <br/>
 
@@ -836,7 +836,7 @@ apiVersion: v1
 metadata:
   name: backup-config
 data:
-  OCP_BACKUP_SUBDIR: "/mnt"
+  OCP_BACKUP_SUBDIR: "/"
   OCP_BACKUP_DIRNAME: "+etcd-backup-%FT%T%:z"
   OCP_BACKUP_EXPIRE_TYPE: "days"
   OCP_BACKUP_KEEP_DAYS: "30"
@@ -854,6 +854,7 @@ backup-nfs-cronjob.yaml 화일을 생성한다.
 아래 CronJob은 master node 에 pod 를 생성한다.  
 - `runAsUser: 0` : 0은  root로 실행하는 것을 의미.
 - `nodeName : edu.master01` : master 1번 노드에서 생성 
+- `mountPath : /backup` : worker node에서 mount 되는 폴더는 backup 폴더 이다. 변경하지 말것
 
 <br/>
 
@@ -894,7 +895,7 @@ spec:
             - mountPath: /host
               name: host
             - name: etcd-backup
-              mountPath: /mnt
+              mountPath: /backup
           nodeName : edu.master01
           nodeSelector:
             node-role.kubernetes.io/master: ""
@@ -979,15 +980,19 @@ etcd-backup-1682666100   1/1           6s         19s
 
 <br/>
 
-정상적으로 cronjob이 수행이 되면 NAS 에 아래와 같이 백업 화일이 생성 된 것을 확인 할 수 있다.   
+정상적으로 cronjob이 수행이 되면 NAS 에 아래와 같이 날짜별로 폴더가 생성이 되고 그 안에 백업 화일이 생성 된 것을 확인 할 수 있다.   
 
 ```bash
 [core@edu cluster_backup]$ ls -al
-total 180184
-drwxrwxrwx. 2 nfsnobody nfsnobody     4096 Apr 28 06:10 .
-drwxrwxrwx. 7 root      root          4096 Apr 28 01:03 ..
--rw-------. 1 root      root      91807776 Apr 28 06:10 snapshot_2023-04-28_061000.db
--rw-------. 1 root      root         69174 Apr 28 06:10 static_kuberesources_2023-04-28_061000.tar.gz
+total 180200
+drwxrwxrwx. 6 nfsnobody nfsnobody     4096 Apr 28 07:58 .
+drwxrwxrwx. 8 root      root          4096 Apr 28 07:51 ..
+drwxr-x---. 2 root      root          4096 Apr 28 07:55 etcd-backup-2023-04-28T07:55:12+00:00
+drwxr-x---. 2 root      root          4096 Apr 28 07:56 etcd-backup-2023-04-28T07:56:12+00:00
+drwxr-x---. 2 root      root          4096 Apr 28 07:57 etcd-backup-2023-04-28T07:57:12+00:00
+drwxr-x---. 2 root      root          4096 Apr 28 07:58 etcd-backup-2023-04-28T07:58:12+00:00
+[core@edu cluster_backup]$ sudo ls etcd-backup-2023-04-28T07:55:12+00:00
+snapshot_2023-04-28_075512.db  static_kuberesources_2023-04-28_075512.tar.gz
 ```  
 
 <br/>
