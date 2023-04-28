@@ -806,8 +806,12 @@ host 에 백업하는 것 보다는 NAS에 mount 하여  저장하는 것이 좋
 
 <br/>
 
-OKD 자동 백업을 위해서 Cronjob 을 사용한다.        
+참고   
+- https://github.com/adfinis/openshift-etcd-backup
 
+<br/>
+
+OKD 자동 백업을 위해서 Cronjob 을 사용한다.        
 
 <br/>
 
