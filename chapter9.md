@@ -164,8 +164,8 @@ Using project "default".
 
 cluster 권한 ( root ) 으로 구성이 필요하며 우리가 구성할 내용은 아래와 같다.    
 
-- 워커 노드 edu.worker01 ~ 04,06 ~ 07 : 교육용 namespace 배치 ( edu로 시작 )
-- 워커 노드 edu.worker05 : Jenkins 및 기타 솔루션 설치. ( 교육용 namespace 배치 불가 설정 )  
+- 워커 노드 edu.worker02 ~ 07 : 교육용 namespace 배치 ( edu로 시작 )
+- 워커 노드 edu.worker01 : Jenkins 및 기타 솔루션 설치. ( 교육용 namespace 배치 불가 설정 )  
 
 <br/>
 
@@ -631,7 +631,7 @@ NAME                                               GENERATEDBYCONTROLLER        
 99-worker-generated-registries                     664fff942096fc9f357e81776345b3b71000a8a7   3.2.0             24h
 99-worker-okd-extensions                                                                      3.1.0             24h
 99-worker-ssh                                                                                 3.2.0             24h
-```  
+``` 
 
 
 <br/>
@@ -755,7 +755,7 @@ Failed Units: 1
 <br/>
 
 
-###  OKD Cluster 백업 방법 
+###  OKD Cluster 백업 방법  ( 수동 )
 
 <br/>
 
@@ -797,6 +797,198 @@ host 에 백업하는 것 보다는 NAS에 mount 하여  저장하는 것이 좋
 ```bash
 [root@edu etc]# /usr/local/bin/cluster-backup.sh /mnt/cluster_backup
 ```    
+
+<br/>
+
+<br/>
+
+###  OKD Cluster 백업 방법  ( 자동 : Crontab )
+
+<br/>
+
+OKD 자동 백업을 위해서 Cronjob 을 사용한다.        
+
+
+<br/>
+
+`etcd-backup` namespace 를 신규로 생성한다.     
+해당 namespace에는 node-selector를 설정하지 않는다.  
+
+
+```bash
+oc new-project etcd-backup
+```
+
+<br/>
+
+backup-config.yaml 화일을 생성한다.  
+사전에 nfs 에 cluster_backup 폴더를 생성한다.    
+
+<br/>
+
+`OCP_BACKUP_SUBDIR` 은 nfs 에 mount 되는 master node의 폴더 이다.  
+
+<br/>
+
+```bash
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: backup-config
+data:
+  OCP_BACKUP_SUBDIR: "/mnt"
+  OCP_BACKUP_DIRNAME: "+etcd-backup-%FT%T%:z"
+  OCP_BACKUP_EXPIRE_TYPE: "days"
+  OCP_BACKUP_KEEP_DAYS: "30"
+  OCP_BACKUP_KEEP_COUNT: "10"
+  OCP_BACKUP_UMASK: "0027"
+```
+
+<br/>
+
+backup-nfs-cronjob.yaml 화일을 생성한다.
+하루 7시 1분에 한번 작동한다.    
+
+<br/>
+
+아래 CronJob은 master node 에 pod 를 생성한다.  
+- `runAsUser: 0` : 0은  root로 실행하는 것을 의미.
+- `nodeName : edu.master01` : master 1번 노드에서 생성 
+
+<br/>
+
+```bash
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: etcd-backup
+spec:
+  schedule: "1 7 * * *"
+  startingDeadlineSeconds: 600
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      template:
+        spec:
+          containers:
+          - command:
+            - /bin/sh
+            - /usr/local/bin/backup.sh
+            image: ghcr.io/adfinis/openshift-etcd-backup
+            imagePullPolicy: Always
+            name: backup-etcd
+            resources:
+              requests:
+                cpu: 500m
+                memory: 128Mi
+              limits:
+                cpu: 1000m
+                memory: 512Mi
+            envFrom:
+            - configMapRef:
+                name: backup-config
+            securityContext:
+              privileged: true
+              runAsUser: 0
+            volumeMounts:
+            - mountPath: /host
+              name: host
+            - name: etcd-backup
+              mountPath: /mnt
+          nodeName : edu.master01
+          nodeSelector:
+            node-role.kubernetes.io/master: ""
+          tolerations:
+            - effect: NoSchedule
+              key: node-role.kubernetes.io/master
+          #hostNetwork: true
+          #hostPID: true
+          restartPolicy: Never
+          dnsPolicy: ClusterFirst
+          volumes:
+          - hostPath:
+              path: /
+              type: Directory
+            name: host
+          - name: etcd-backup
+            nfs:
+              server: 172.25.1.164
+              path: /share_aed398f1_3e3e_4d30_8b59_8185229ebde0/cluster_backup
+```
+
+<br/>
+
+master node 1번에 접속하여 `/usr/local/bin/cluster-backup.sh` 파일의 아래 부분을 주석 처리한다.  ( 주석 처리 안하면  API 호출 에러가 발생함 )
+
+<br/>
+
+```bash
+[core@edu ]$ sudo vi /usr/local/bin/cluster-backup.sh
+```  
+
+<br/>
+
+```bash
+     46 #   progressing=$(oc get co "${operator}" -o jsonpath='{.status.conditions[?(@.type=="Progressing")].status}') || true
+     47 #   if [ "$progressing" == "" ]; then
+     48 #      echo "Could not find the status of the $operator. Check if the API server is running. Pass the --force flag to skip checks."
+     49 #      exit 1
+     50 #   elif [ "$progressing" != "False" ]; then
+     51 #      echo "Currently the $operator operator is progressing. A reliable backup requires that a rollout is not in progress.  Aborting!"
+     52 #      exit 1
+     53 #   fi
+```
+
+<br/>
+
+service account 에  권한을 할당한다.   
+
+```bash
+jakelee@jake-MacBook % oc adm policy add-scc-to-user privileged -z default -n etcd-backup
+clusterrole.rbac.authorization.k8s.io/system:openshift:scc:privileged added: "default"
+```
+
+<br/>
+
+config 를 먼저 적용하고 cronjob을 적용한다.  
+
+```bash
+jakelee@jake-MacBook  % kubectl apply -f backup-config.yaml -n etcd-backup
+jakelee@jake-MacBook  % kubectl apply -f backup-nfs-cronjob.yaml -n etcd-backup
+```  
+
+<br/>
+
+생성된 cronjob을 확인해 본다.  
+
+```bash
+jakelee@jake-MacBook  % kubectl get cronjob -n etcd-backup
+NAME          SCHEDULE    SUSPEND   ACTIVE   LAST SCHEDULE   AGE
+etcd-backup   1 7 * * *   False     0        <none>          21m
+```  
+
+<br/>
+
+창을 하나 더 띄워서 job을 모니터링 한다. 
+
+```bash
+jakelee@jake-MacBook % kubectl get jobs -n etcd-backup --watch
+NAME                     COMPLETIONS   DURATION   AGE
+etcd-backup-1682666100   1/1           6s         19s
+```  
+
+<br/>
+
+정상적으로 cronjob이 수행이 되면 NAS 에 아래와 같이 백업 화일이 생성 된 것을 확인 할 수 있다.   
+
+```bash
+[core@edu cluster_backup]$ ls -al
+total 180184
+drwxrwxrwx. 2 nfsnobody nfsnobody     4096 Apr 28 06:10 .
+drwxrwxrwx. 7 root      root          4096 Apr 28 01:03 ..
+-rw-------. 1 root      root      91807776 Apr 28 06:10 snapshot_2023-04-28_061000.db
+-rw-------. 1 root      root         69174 Apr 28 06:10 static_kuberesources_2023-04-28_061000.tar.gz
+```  
 
 <br/>
 
