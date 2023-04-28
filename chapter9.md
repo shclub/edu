@@ -996,7 +996,8 @@ drwxrwxrwx. 7 root      root          4096 Apr 28 01:03 ..
 
 <br/>  
 
-restore 할 폴더 ( etcd  backup 폴더 ) 에는 백업을 한 화일 하나만  있어야 함.    
+master node 1번에 접속하여 아래와 같이 복구한다.  
+restore 할 폴더 ( etcd  backup 폴더 ) 에는  화일 하나만  있어야 한다.      
 
 ```bash
 [root@edu etc]# /usr/local/bin/cluster-restore.sh /home/core/assets/backup
