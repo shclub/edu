@@ -651,7 +651,7 @@ oc edit mc 99-master-ssh
 
 99-worker-ssh 도 같이 수정을 하고 아래 명령어로 상태를 모니터링한다.
 하나의 노드당 3분 정도 걸린다.     
-- MachineConfigPool이 돌면서 Updating 상태가 보여지고 “UpdatedMachineCount” 대수를 확인하여 설정 적용 현황을 확인해본다
+- MachineConfigPool이 돌면서 Updating 상태가 보여지고 “UpdatedMachineCount” 대수를 확인하여 설정 적용 현황을 확인해본다. ( 반드시 모든 Node가 살아 있어야 함 )
 
 <br/>
 
@@ -750,6 +750,64 @@ Last login: Tue Jul 26 02:51:06 2022 from 220.120.16.10
 Failed Units: 1
   systemd-resolved.service
 [root@edu ~]#
+```  
+
+<br/>
+
+
+###  OKD Cluster 백업 방법 
+
+<br/>
+
+OKD 백업을 위해서는 Master Node에 접속하여 아래 명령어를 root 로 실행한다.      
+
+
+```bash
+[root@edu etc]# /usr/local/bin/cluster-backup.sh /home/core/assets/backup
+b716e30ba5c7bb28eee74a0bdf84eb0b0c8957ce5d485e15a541389e06cec796
+etcdctl version: 3.4.9
+API version: 3.4
+found latest kube-apiserver: /etc/kubernetes/static-pod-resources/kube-apiserver-pod-10
+found latest kube-controller-manager: /etc/kubernetes/static-pod-resources/kube-controller-manager-pod-9
+found latest kube-scheduler: /etc/kubernetes/static-pod-resources/kube-scheduler-pod-8
+found latest etcd: /etc/kubernetes/static-pod-resources/etcd-pod-3
+{"level":"info","ts":1682644705.1011016,"caller":"snapshot/v3_snapshot.go:119","msg":"created temporary db file","path":"/home/core/assets/backup/snapshot_2023-04-28_011823.db.part"}
+{"level":"info","ts":"2023-04-28T01:18:25.109Z","caller":"clientv3/maintenance.go:200","msg":"opened snapshot stream; downloading"}
+{"level":"info","ts":1682644705.1092677,"caller":"snapshot/v3_snapshot.go:127","msg":"fetching snapshot","endpoint":"https://172.25.1.31:2379"}
+{"level":"info","ts":"2023-04-28T01:18:25.663Z","caller":"clientv3/maintenance.go:208","msg":"completed snapshot read; closing"}
+{"level":"info","ts":1682644705.7459,"caller":"snapshot/v3_snapshot.go:142","msg":"fetched snapshot","endpoint":"https://172.25.1.31:2379","size":"92 MB","took":0.644741922}
+{"level":"info","ts":1682644705.746118,"caller":"snapshot/v3_snapshot.go:152","msg":"saved","path":"/home/core/assets/backup/snapshot_2023-04-28_011823.db"}
+Snapshot saved at /home/core/assets/backup/snapshot_2023-04-28_011823.db
+snapshot db and kube resources are successfully saved to /home/core/assets/backup
+```
+
+<br/>
+
+아래 처럼 snapshot db 와 static pod yaml 화일이 백업 됩니다.  
+
+```bash
+[root@edu etc]# ls /home/core/assets/backup
+snapshot_2023-04-28_010032.db  static_kuberesources_2023-04-28_010032.tar.gz
+```    
+
+<br/>
+
+host 에 백업하는 것 보다는 NAS에 mount 하여  저장하는 것이 좋음.  
+
+```bash
+[root@edu etc]# /usr/local/bin/cluster-backup.sh /mnt/cluster_backup
+```    
+
+<br/>
+
+###  OKD Cluster 복구 방법 
+
+<br/>  
+
+restore 할 폴더 ( etcd  backup 폴더 ) 에는 백업을 한 화일 하나만  있어야 함.    
+
+```bash
+[root@edu etc]# /usr/local/bin/cluster-restore.sh /home/core/assets/backup
 ```  
 
 <br/>
