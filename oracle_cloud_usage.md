@@ -1,4 +1,4 @@
-# Orcle cloud 사용법
+# Oracle cloud 사용법
  
 Oracle Cloud의 `평생 무료 계정`을 생성하고 사용해본다.  
 

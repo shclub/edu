@@ -830,7 +830,7 @@ backup-config.yaml 화일을 생성한다.
 
 <br/>
 
-`OCP_BACKUP_SUBDIR` 은 nfs 에 신규로 생성 폴더 이름 이다.  
+`OCP_BACKUP_SUBDIR` 은 nfs 에 신규로 생성되는 폴더 이름 이다.  
 
 <br/>
 
@@ -900,12 +900,12 @@ spec:
               name: host
             - name: etcd-backup
               mountPath: /backup
-          nodeName : edu.master01
-          nodeSelector:
+          nodeSelector:  # node selector 설정 
             node-role.kubernetes.io/master: ""
-          tolerations:
-            - effect: NoSchedule
+          tolerations:  # 모든 master node에 pod 스케줄링 
+            - effect: NoSchedule # taint 설정과 같은 값 설정
               key: node-role.kubernetes.io/master
+          nodeName : edu.master01 # master node 중 하나 지정    
           #hostNetwork: true
           #hostPID: true
           restartPolicy: Never
