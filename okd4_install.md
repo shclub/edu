@@ -1330,7 +1330,7 @@ https://console-openshift-console.apps.okd4.ktdemo.duckdns.org
 
 웹브라우저와 외부에서 접속하기 위해서는 공유기에서 포트포워딩을 해주어 합니다. ( 6443,443 포트)
 
-<img src="./assets/router_portforwarding.png" style="width: 80%; height: auto;"/>
+<img src="./assets/router_port_forwarding.png" style="width: 80%; height: auto;"/>
 
 <br/>
 
@@ -1348,14 +1348,14 @@ nameserver 192.168.1.1
 
 웹 브라우저에서 접속해 보면 정상적인 okd 로그인 화면이 나옵니다.  
 
-<img src="./assets/old_welcome.png" style="width: 80%; height: auto;"/>
+<img src="./assets/okd_welcome.png" style="width: 80%; height: auto;"/>
 
 <br/>
 
 bastion 서버에서 해당 유저로 로그인 합니다.  
 
 ```bash
-[root@bastion ~]# oc login https://api.okd4.ktdemo.duckdns.org:6443 -u shclub -p New1234! --insecure-skip-tls-verify
+[root@bastion ~]# oc login https://api.okd4.ktdemo.duckdns.org:6443 -u shclub -p N********9876! --insecure-skip-tls-verify
 Login successful.
 
 You don't have any projects. You can try to create a new project, by running
