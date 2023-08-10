@@ -605,7 +605,7 @@ Created directory '/root/.ssh'.
 Your identification has been saved in /root/.ssh/id_rsa.
 Your public key has been saved in /root/.ssh/id_rsa.pub.
 The key fingerprint is:
-SHA256:QDIN4njCh9DzWBhgeUu3gye3VldDPb2jsXr7Xetll4o root@bastion.okd4.ktdemo.duckdns.org
+SHA256:QDIN4njCh9DzWBhgeUu3gye3VldDPb2*****jsXr**l4o root@bastion.okd4.ktdemo.duckdns.org
 The key's randomart image is:
 +---[RSA 4096]----+
 |o++o+o.   ... .  |
@@ -679,7 +679,7 @@ pull secret의 포맷은 아래와 같다.
 <br/>
 
 ```bash
-{"auths":{"cloud.openshift.com":{"auth":"b3BlbnNoaWZ0LXJlbGVhc2UtZGV2K29jbV9hY2Nlc3NfODA3Yjc0MDgzODBmNDg4NmE-------zSDdNSTFGRzFPN1hBODRSQjZONTFYSw==","email":"shclub@gmail.com"},"quay.io":{"auth":"b3BlbnNoaWZ0LXJlbGVhc2UtZGV2K29jbV9hY2Nlc3NfODA3Yjc0MDgzODBmNDg4NmExYTE4YWVjMzZjZDc3ZTE6WEhHTVhYWlAzMjEyR0tJUFRaN0Y3MUNSWVRHUEVMM1BBRThQUExWSlEzSDdNSTFGRzFPN1hBODRSQjZONTFYSw==","email":"shclub@gmail.com"},"registry.connect.redhat.com":{"auth":"fHVoYy1wb29sLTYxMTBkMjQyLTQ3MjgtNDBhYS05Zjc5LTdjZTMyNDUyNzJlYzpleUpoYkdjaU9pSlNVelV4TWlKOS5leUp6ZFdJaU9pSXdaamMyTkRRMU4yVXdNREUwT0dJek9EZGpNVGMyTW1GaE9ERTBORGcwTVNKOS5aNXZrTnNTb3NlQ1NfTDZOQ1NiN0I5NTVkUkR4NmVsUWpkZGMwRl9-------wSlRiX0hrUVVoUHE5dEthOVZDOWtsS2tCNVViSEF3OXByNTdnR25QSzFRNzJycDI4NA==","email":"shclub@gmail.com"},"registry.redhat.io":{"auth":"fHVoYy1wb29sLTYxMTBkMjQyLTQ3MjgtNDBhYS05Zjc5LTdjZTMyNDUyNzJlYzpleUpoYkdjaU9pSlNVelV4TWlKOS5leUp6ZFdJaU9pSXdaamMyTkRRMU4yVXdNREUwT0dJek9EZGpNVGMyTW1GaE9ERTBORGcwTVNKOS5aNXZrTnNTb3NlQ1NfTDZOQ1NiN0I5NTVkUkR4NmVsUWpkZGMwRl9-------Da3JnS0xUMEJqYks5Y0FoR0JfRjBZMjZEa3lCOHF2SkdRSGE2VklOQ1Y3dnpRTU1GU3lHeWdZQ2VkWjFSWk9PRUQwSlRiX0hrUVVoUHE5dEthOVZDOWtsS2tCNVViSEF3OXByNTdnR25QSzFRNzJycDI4NA==","email":"shclub@gmail.com"}}}
+{"auths":{"cloud.openshift.com":{"auth":"b3BlbnNoaWZ0LXJlbGVhc2UtZGV2K29jbV9hY2Nlc3NfODA3Yjc0MDgzODBmNDg4NmE-------zSDdNSTFGRzFPN1hBODRSQjZONTFYSw==","email":"shclub@gmail.com"},"quay.io":{"auth":"b3BlbnNoaWZ0LXJlbGVhc2UtZGV2K29jbV9hY2Nlc3NfODA3Yjc0MDgzODBmNDg4NmExYTE4YWVjMzZjZDc3ZTE6WEhHTVhYWlAzMjEyR0tJUFRaN0Y3MUNSWVRHUEVMM1BBRThQUExWSlEzSDdNSTFGRzFPN1hBODRSQjZONTFYSw==","email":"shclub@gmail.com"},"registry.connect.redhat.com":{"auth":"fHVoYy1wb29sLTYxMTBkMjQyLTQ3MjgtNDBhYS05Zjc5LTdjZTMyNDUyNzJlYzpleUpoYkdjaU9pSlNVelV4TWlKOS5leUp6ZFdJaU9pSXdaamMyTkRRMU4yVXdNREUwT0dJek9EZGpNVGMyTW1GaE9ERTBORGcwTVNKOS5aNXZrTnNTb3NlQ1NfTDZOQ1NiN0I5NTVkUkR4NmVsUWpkZGMwRl9-------wSlRiX0hrUVVoUHE5dEthOVZDOWtsS2tCNVViSEF3OXByNTdnR25QSzFRNzJycDI4NA==","email":"shclub@gmail.com"},"registry.redhat.io":{"auth":"-------Da3JnS0xUMEJqYks5Y0FoR0JfRjBZMjZEa3lCOHF2SkdRSGE2VklOQ1Y3dnpRTU1GU3lHeWdZQ2VkWjFSWk9PRUQwSlRiX0hrUVVoUHE5dEthOVZDOWtsS2tCNVViSEF3OXByNTdnR25QSzFRNzJycDI4NA==","email":"shclub@gmail.com"}}}
 ```  
 
 <br/>
