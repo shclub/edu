@@ -1749,6 +1749,13 @@ console   okd-shell-shclub.apps.okd4.ktdemo.duckdns.org          cloudshell-okd-
 ```
 
 <br/>
+브라우저에서 route 인 https://okd-shell-shclub.apps.okd4.ktdemo.duckdns.org 로  접속해 보면 아래와 같이 shell이 생성 된것을 알수 있다.  
+
+<br/>
+
+<img src="./assets/cloud_shell1.png" style="width: 80%; height: auto;"/>
+
+<br/>
 
 ### 7.3 coreos timezone 설정
 
