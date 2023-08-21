@@ -18,13 +18,15 @@ OKD 설명 참고 :  https://velog.io/@_gyullbb/OKD-%EA%B0%9C%EC%9A%94
 
 5. Cluster 생성
 
-6. Cluster 생성 후 할일
+6. Cluster 생성 후 할 일
 
-7. Compute ( Worker Node ) Join 하기
+7. Cloud shell 설치 및 core os 설정
 
-8. NFS 설정하기
+8. Compute ( Worker Node ) Join 하기
 
-9. etcd 백업하기 
+9. NFS 설정하기
+
+10. etcd 백업하기 
 
 <br/>
 
@@ -1330,7 +1332,7 @@ https://console-openshift-console.apps.okd4.ktdemo.duckdns.org
 
 웹브라우저와 외부에서 접속하기 위해서는 공유기에서 포트포워딩을 해주어 합니다. ( 6443,443 포트)
 
-<img src="./assets/router_port_forwarding.png" style="width: 80%; height: auto;"/>
+<img src="./assets/router_port_forwarding.png" style="width: 60%; height: auto;"/>
 
 <br/>
 
@@ -1419,7 +1421,7 @@ Using project "default".
 
 <br/>
 
-shclub 유저에게 shclub namespace의  default service account 권한을 할당합니다.      
+shclub 유저에게 shclub namespace의 default service account 권한을 할당합니다.      
 
 <br/>
 
@@ -1481,7 +1483,7 @@ clusterrole.rbac.authorization.k8s.io/cluster-admin added: "root"
 
 <br/>
 
-### 6.5 Coreos  패스워드로 연결 방법
+### 6.4 Coreos  패스워드로 연결 방법
 
 <br/>
 
@@ -1540,6 +1542,294 @@ sshd 데몬을 재기동한다.
 [root@localhost ssh]# systemctl restart sshd
 ```
 이제 어느 곳에서든 id/password로 접속 가능하다.  
+
+<br/>
+
+## 7 Cloud shell 설치 및 core os 설정
+
+<br/>
+
+
+### 7.1 helm 으로 설치
+
+<br/>
+
+설치를 위해서 cluster admin 권한이 있어야 한다.    
+
+<br/>
+
+
+참고 : https://github.com/shclub/cloudtty
+
+```bash
+jakelee@jake-MacBookAir cloudshell % oc login https://api.okd4.ktdemo.duckdns.org:6443 -u root -p Sh********0 --insecure-skip-tls-verify
+WARNING: Using insecure TLS client config. Setting this option is not supported!
+
+Login successful.
+
+You have access to 68 projects, the list has been suppressed. You can list all projects with 'oc projects'
+
+Using project "shclub".
+jakelee@jake-MacBookAir ~ % helm install cloudtty-operator --version 0.5.0 cloudtty/cloudtty
+NAME: cloudtty-operator
+LAST DEPLOYED: Fri Aug 11 13:19:49 2023
+NAMESPACE: shclub
+STATUS: deployed
+REVISION: 1
+TEST SUITE: None
+NOTES:
+Thank you for installing cloudtty.
+
+Your release is named cloudtty-operator.
+
+To learn more about the release, try:
+
+  $ helm status cloudtty-operator
+  $ helm get all cloudtty-operator
+
+Documention: https://github.com/cloudtty/cloudtty/-/blob/main/README.md
+jakelee@jake-MacBookAir ~ % kubectl wait deployment cloudtty-operator-controller-manager --for=condition=Available=True
+deployment.apps/cloudtty-operator-controller-manager condition met
+```  
+
+<br/>
+
+root/.kube 폴더에 kubeconfig 를 생성한다.     
+
+```bash
+[root@bastion .kube]# vi kubeconfig
+apiVersion: v1
+clusters:
+- cluster:
+    insecure-skip-tls-verify: true
+    server: https://api.okd4.ktdemoduckdns.org:6443
+  name: api-okd4-ktdemoduckdns-org:6443
+contexts:
+- context:
+    cluster: api-okd4-ktdemoduckdns-org:6443
+    user: shclub/api-okd4-ktdemoduckdns-org:6443
+  name: /api-okd4-ktdemoduckdns-org:6443/shclub
+current-context: /api-okd4-ktdemoduckdns-org:6443/root
+kind: Config
+preferences: {}
+users:
+- name: shclub/api-okd4-ktdemoduckdns-org:6443
+  user:
+    token: sha256~********cnLskhIKbwmYwoKAuZ9sowsvSZTsiU
+```   
+
+<br/>
+
+```bash
+[root@bastion .kube]# ls -al
+total 32
+drwxr-x---   3 root root    37 Aug  9 10:44 .
+dr-xr-x---. 11 root root  4096 Aug 20 21:09 ..
+drwxr-x---   4 root root    35 Aug  9 09:53 cache
+-rw-r-----   1 root root 25107 Aug  9 10:44 kubeconfig
+```  
+
+<br/>
+
+my-kubeconfig 라는 이름으로 secret을 생성한다.   
+- 접속 정보를 제한. 
+
+
+<br/>
+
+```bash
+[root@bastion ~]# kubectl create secret generic my-kubeconfig --from-file=/root/.kube/config
+secret/my-kubeconfig created
+```  
+
+<br/>
+
+Dockerfile 을 생성하고 custom 이미지를 생성한다.    
+
+<br/>
+
+https://github.com/shclub/cloudshell 의 Dockerfile를 사용하여 GitHub Action으로 생성한다.  
+-  openshift client 는 Alpine Docker image 에서는 동작하지 않기 때문에 원한다면 ubuntu 이미지를 사용하여야 함.
+
+<br/>
+
+cloudshell 을 생성하기 위한 yaml 화일을 생성하고 적용한다.  
+
+```bash
+[root@bastion cloudshell]# cat cloud_shell.yaml
+apiVersion: cloudshell.cloudtty.io/v1alpha1
+kind: CloudShell
+metadata:
+  name: okd-shell
+spec:
+  secretRef:
+    name: "my-kubeconfig"
+  image: shclub/cloudshell:master
+#  commandAction: "kubectl -n shclub get po && bash"
+  commandAction: "bash"
+  exposureMode: "ClusterIP"
+#  exposureMode: "NodePort"
+  ttl: 555555555555  # ttl 설정된 시간 만큼 pod 유지
+  once: false
+[root@bastion cloudshell]# kubectl apply -f cloud_shell.yaml -n shclub
+cloudshell.cloudshell.cloudtty.io/okd-shell created
+```  
+
+<br/>
+
+아래 명령어로 모니터링을 하고 `Ready` 상태가 되면 정상적으로 생성이 된것 입니다. 
+
+```bash
+jakelee@jake-MacBookAir ~ % kubectl get cloudshell -w
+NAME          USER   COMMAND   TYPE        URL   PHASE   AGE
+okd-shell            bash      ClusterIP                 0s
+okd-shell            bash      ClusterIP                 0s
+okd-shell            bash      ClusterIP         CreatedJob   0s
+okd-shell            bash      ClusterIP   172.30.180.191:7681   CreatedRouteRule   0s
+okd-shell            bash      ClusterIP   172.30.180.191:7681   Ready              3s
+```
+
+<br/>
+
+서비스 이름을 확인한다.  
+
+```bash
+[root@bastion cloudshell]# kubectl get po -n shclub
+NAME                                                    READY   STATUS    RESTARTS   AGE
+cloudshell-okd-shell-llr7q                              1/1     Running   0          5s
+cloudtty-operator-controller-manager-574c45b9df-zg7cf   1/1     Running   0          4m30s
+```
+
+<br/>
+
+### 7.2 route 생성
+
+<br/>
+
+route 생성시 주의 사항은 tls option 설정을 아래와 같이 해야함. (`Allow`, `edge`)
+
+<br/>
+
+```bash
+[root@bastion cloudshell]# cat cloudshell_route.yaml
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  labels:
+    app : okd-shell
+  name: okd-shell
+spec:
+  host: okd-shell-shclub.apps.okd4.ktdemo.duckdns.org
+  port:
+    targetPort: ttyd
+  tls:
+    insecureEdgeTerminationPolicy: Allow
+    termination: edge
+#  tls:
+#    insecureEdgeTerminationPolicy: Redirect
+#    termination: reencrypt
+  to:
+    kind: Service
+    name: cloudshell-okd-shell
+    weight: 100
+  wildcardPolicy: None
+```
+
+<br/>
+
+route를 생성한다.  
+
+<br/>
+
+```bash  
+[root@bastion cloudshell]# kubectl apply -f cloudshell_route.yaml -n shclub
+[root@bastion cloudshell]# kubectl get route -n shclub
+NAME      HOST/PORT                                       PATH   SERVICES               PORT    TERMINATION          WILDCARD
+console   okd-shell-shclub.apps.okd4.ktdemo.duckdns.org          cloudshell-okd-shell   https   reencrypt/Redirect   None
+```
+
+<br/>
+
+### 7.3 coreos timezone 설정
+
+<br/>
+
+```bash
+[root@okd-1 core]# timedatectl set-timezone Asia/Seoul
+[root@okd-1 core]# date
+Mon Aug 21 09:35:38 KST 2023
+```  
+
+
+<br/>
+
+### 7.4 coreos log 화일 사이즈 설정
+
+<br/>
+
+linux는 jounal 로그파일 크기가 많이 차지하면 시간이 엄청 걸립니다.    
+
+systemd-journal로그 서비스는 커널의 로그, 초기 시스템 시작 단계, 시작 및 실행 중 시스템 데몬의 표준 출력 및 오류 메시지, syslog에서 로그를 수집하는 향상된 로그 관리 서비스입니다.    
+
+여러가지 로그를 수집하므로 부피가 엄청 늘어날수 있어 조정이 필요.
+
+<br/>
+
+journal 로그 파일 사이즈 확인   
+
+```bash
+[root@okd-1 core]# journalctl --disk-usage
+Archived and active journals take up 3.9G in the file system.
+```  
+
+<br/>
+
+500M 의 로그만 유지  
+
+```bash
+[root@okd-1 core]# journalctl --vacuum-size=500M
+Vacuuming done, freed 0B of archived journals from /var/log/journal.
+Vacuuming done, freed 0B of archived journals from /run/log/journal.
+Deleted archived journal /var/log/journal/126376a91cbf47ffab943ee1bddd8398/system@26be5bf4a08e49c2beb6cbdceed653fc-00000000012c8827-0006035fa10b7629.journal (128.0M).
+Deleted archived journal /var/log/journal/126376a91cbf47ffab943ee1bddd8398/system@26be5bf4a08e49c2beb6cbdceed653fc-00000000012e44c0-0006035fc78d6328.journal (128.0M).
+Deleted archived journal /var/log/journal/126376a91cbf47ffab943ee1bddd8398/system@26be5bf4a08e49c2beb6cbdceed653fc-0000000001300140-0006035fed1a8a7e.journal (128.0M).
+Deleted archived journal /var/log/journal/126376a91cbf47ffab943ee1bddd8398/system@26be5bf4a08e49c2beb6cbdceed653fc-000000000131bdbe-0006036012a6a507.journal (128.0M).
+Deleted archived journal /var/log/journal/126376a91cbf47ffab943ee1bddd8398/system@26be5bf4a08e49c2beb6cbdceed653fc-0000000001337a32-0006036038a6c081.journal (128.0M).
+Deleted archived journal /var/log/journal/126376a91cbf47ffab943ee1bddd8398/system@26be5bf4a08e49c2beb6cbdceed653fc-00000000013536d8-000603605e0b49c9.journal (128.0M).
+Deleted archived journal /var/log/journal/126376a91cbf47ffab943ee1bddd8398/system@26be5bf4a08e49c2beb6cbdceed653fc-000000000136f355-0006036083a417f6.journal (128.0M).
+Deleted archived journal /var/log/journal/126376a91cbf47ffab943ee1bddd8398/system@26be5bf4a08e49c2beb6cbdceed653fc-000000000138afcf-00060360a8f02351.journal (128.0M).
+Deleted archived journal /var/log/journal/126376a91cbf47ffab943ee1bddd8398/system@26be5bf4a08e49c2beb6cbdceed653fc-00000000013a6c6c-00060360ce699352.journal (128.0M).
+Deleted archived journal /var/log/journal/126376a91cbf47ffab943ee1bddd8398/system@26be5bf4a08e49c2beb6cbdceed653fc-00000000013c28e6-00060360f3f491ba.journal (128.0M).
+Deleted archived journal /var/log/journal/126376a91cbf47ffab943ee1bddd8398/system@26be5bf4a08e49c2beb6cbdceed653fc-00000000013de56f-00060361198158c4.journal (128.0M).
+Deleted archived journal /var/log/journal/126376a91cbf47ffab943ee1bddd8398/system@26be5bf4a08e49c2beb6cbdceed653fc-00000000013fa213-000603613ea5b7d6.journal (128.0M).
+Deleted archived journal /var/log/journal/126376a91cbf47ffab943ee1bddd8398/system@26be5bf4a08e49c2beb6cbdceed653fc-0000000001415e89-0006036163819ecc.journal (128.0M).
+Deleted archived journal /var/log/journal/126376a91cbf47ffab943ee1bddd8398/system@26be5bf4a08e49c2beb6cbdceed653fc-0000000001431afd-0006036188605326.journal (128.0M).
+Deleted archived journal /var/log/journal/126376a91cbf47ffab943ee1bddd8398/system@26be5bf4a08e49c2beb6cbdceed653fc-000000000144d776-00060361ad322dd9.journal (128.0M).
+Deleted archived journal /var/log/journal/126376a91cbf47ffab943ee1bddd8398/system@26be5bf4a08e49c2beb6cbdceed653fc-000000000146941a-00060361d1b0f781.journal (128.0M).
+Deleted archived journal /var/log/journal/126376a91cbf47ffab943ee1bddd8398/system@26be5bf4a08e49c2beb6cbdceed653fc-000000000148509e-00060361f6d10816.journal (128.0M).
+Deleted archived journal /var/log/journal/126376a91cbf47ffab943ee1bddd8398/system@26be5bf4a08e49c2beb6cbdceed653fc-00000000014a0d35-000603621b013193.journal (128.0M).
+Deleted archived journal /var/log/journal/126376a91cbf47ffab943ee1bddd8398/system@26be5bf4a08e49c2beb6cbdceed653fc-00000000014bc9cb-000603623f5a18fa.journal (128.0M).
+Deleted archived journal /var/log/journal/126376a91cbf47ffab943ee1bddd8398/system@26be5bf4a08e49c2beb6cbdceed653fc-00000000014d8636-00060362642d0d3c.journal (128.0M).
+Deleted archived journal /var/log/journal/126376a91cbf47ffab943ee1bddd8398/system@26be5bf4a08e49c2beb6cbdceed653fc-00000000014f42b0-00060362881420b1.journal (128.0M).
+Deleted archived journal /var/log/journal/126376a91cbf47ffab943ee1bddd8398/system@26be5bf4a08e49c2beb6cbdceed653fc-000000000150ff51-00060362abff7e08.journal (128.0M).
+Deleted archived journal /var/log/journal/126376a91cbf47ffab943ee1bddd8398/system@26be5bf4a08e49c2beb6cbdceed653fc-000000000152bbc5-00060362cfac3926.journal (128.0M).
+Deleted archived journal /var/log/journal/126376a91cbf47ffab943ee1bddd8398/system@26be5bf4a08e49c2beb6cbdceed653fc-0000000001547830-00060362f3ef5bf9.journal (128.0M).
+Deleted archived journal /var/log/journal/126376a91cbf47ffab943ee1bddd8398/system@26be5bf4a08e49c2beb6cbdceed653fc-00000000015634c7-0006036317d2f23e.journal (128.0M).
+Deleted archived journal /var/log/journal/126376a91cbf47ffab943ee1bddd8398/system@26be5bf4a08e49c2beb6cbdceed653fc-000000000157f14c-000603633bc0af8e.journal (128.0M).
+Deleted archived journal /var/log/journal/126376a91cbf47ffab943ee1bddd8398/system@26be5bf4a08e49c2beb6cbdceed653fc-000000000159ade2-000603635f64323d.journal (128.0M).
+Deleted archived journal /var/log/journal/126376a91cbf47ffab943ee1bddd8398/system@26be5bf4a08e49c2beb6cbdceed653fc-00000000015b6a85-00060363827b4591.journal (128.0M).
+Vacuuming done, freed 3.5G of archived journals from /var/log/journal/126376a91cbf47ffab943ee1bddd8398.
+Vacuuming done, freed 0B of archived journals from /run/log/journal/cf886e957b874fa6b0133b1043b8a2c4.
+```  
+
+<br/>
+
+에러 발생시 아래 처럼 로그를 다 삭제하고 재기동한다.    
+
+```bash
+[root@okd-1 core]# rm -rf /var/log/journal/*
+[root@okd-1 core]# systemctl restart systemd-journald.service
+```  
 
 <br/><br/><br/>
 
