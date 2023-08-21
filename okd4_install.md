@@ -1649,7 +1649,7 @@ Dockerfile 을 생성하고 custom 이미지를 생성한다.
 <br/>
 
 https://github.com/shclub/cloudshell 의 Dockerfile를 사용하여 GitHub Action으로 생성한다.  
--  openshift client 는 Alpine Docker image 에서는 동작하지 않기 때문에 원한다면 ubuntu 이미지를 사용하여야 함.
+-  openshift client 는 Alpine Docker image 에서는 동작하지 않기 때문에 apk add gcompat  을 추가한다. ( 이미 추가됨 )  
 
 <br/>
 
