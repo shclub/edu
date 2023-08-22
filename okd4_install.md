@@ -22,11 +22,13 @@ OKD 설명 참고 :  https://velog.io/@_gyullbb/OKD-%EA%B0%9C%EC%9A%94
 
 7. Cloud shell 설치 및 core os 설정
 
-8. Compute ( Worker Node ) Join 하기
+8. ArgoCD 설치  
 
-9. NFS 설정하기
+9. Compute ( Worker Node ) Join 하기
 
-10. etcd 백업하기 
+10. NFS 설정하기
+
+11. etcd 백업하기 
 
 <br/>
 
@@ -1260,9 +1262,9 @@ shclub 라는 이름으로 계정을 만들고 비밀번호도 같이 입력합�
 ```bash
 [root@bastion ~]# touch htpasswd
 [root@bastion ~]# htpasswd -Bb htpasswd shclub 'S#123************'
-Adding password for user root
+Adding password for user shclub
 [root@bastion ~]# cat htpasswd
-root:$2y$05$kjWLoagesIMy0.**************
+shclub:$2y$05$kjWLoagesIMy0.**************
 ```
 <br/>
 
@@ -1367,7 +1369,37 @@ You don't have any projects. You can try to create a new project, by running
 
 <br/>
 
-### 6.3 OKD 계정 권한 할당
+### 6.3 OKD 계정 추가
+
+<br/>
+
+계정을 추가하는 경우에는 먼저 htpasswd secret에서 기존 정보를 가져온다.
+
+```bash 
+[root@bastion ]# oc get secret htpasswd -ojsonpath={.data.htpasswd} -n openshift-config | base64 --decode > htpasswd
+```  
+
+<br/>
+
+htpasswd  화일에 기존 계정의 값이 있고 아래와 같이 신규 계정을 추가한다.    
+
+```bash
+[root@bastion ~]# htpasswd -Bb htpasswd edu1 'S#123************'
+Adding password for user edu1
+```  
+
+<br/>
+
+이제 적용하고 web console에서 다시 접속해 본다.
+
+```bash
+[root@bastion argocd]# oc --user=admin create secret generic htpasswd  --from-file=htpasswd -n openshift-config --dry-run=client -o yaml | oc replace -f -
+secret/htpasswd replaced
+```
+
+<br/>
+
+### 6.4 OKD 계정 권한 할당
 
 <br/>
 
@@ -1421,7 +1453,7 @@ Using project "default".
 
 <br/>
 
-shclub 유저에게 shclub namespace의 default service account 권한을 할당합니다.      
+shclub namespace로 접속하기 위해 default service account 에 anyuid 권한을 할당합니다.      
 
 <br/>
 
@@ -1437,7 +1469,7 @@ clusterrole.rbac.authorization.k8s.io/system:openshift:scc:anyuid added: "defaul
 
 <br/>
 
-namespace의 admin 권한을 추가로 부여합니다.   
+admin 권한을 추가로 부여합니다.   
 
 ```bash
 oc adm policy add-role-to-user admin <계정> -n <NAMESPACE> 
@@ -1452,8 +1484,16 @@ clusterrole.rbac.authorization.k8s.io/admin added: "shclub"
 
 <br/>
 
-Pod를 하나 생성해 봅니다.  
+권한 제거는 아래와 같다.  
 
+
+```bash
+oc adm policy remove-role-from-user <role> <username>
+```  
+
+<br/>
+
+Pod를 하나 생성해 봅니다.  
 
 ```bash
 [root@bastion ~]# kubectl run nginx --image=nginx
@@ -1483,7 +1523,7 @@ clusterrole.rbac.authorization.k8s.io/cluster-admin added: "root"
 
 <br/>
 
-### 6.4 Coreos  패스워드로 연결 방법
+### 6.5 Coreos  패스워드로 연결 방법
 
 <br/>
 
@@ -1745,7 +1785,7 @@ route를 생성한다.
 [root@bastion cloudshell]# kubectl apply -f cloudshell_route.yaml -n shclub
 [root@bastion cloudshell]# kubectl get route -n shclub
 NAME      HOST/PORT                                       PATH   SERVICES               PORT    TERMINATION          WILDCARD
-console   okd-shell-shclub.apps.okd4.ktdemo.duckdns.org          cloudshell-okd-shell   https   reencrypt/Redirect   None
+console   okd-shell-shclub.apps.okd4.ktdemo.duckdns.org          cloudshell-okd-shell   https   edge/Allow   None
 ```
 
 <br/>
@@ -1838,7 +1878,161 @@ Vacuuming done, freed 0B of archived journals from /run/log/journal/cf886e957b87
 [root@okd-1 core]# systemctl restart systemd-journald.service
 ```  
 
-<br/><br/><br/>
+
+<br/>
+
+
+## 8 ArgoCD 설치
+
+<br/>
+
+먼저 namespace를 2개를 생성한다.  
+
+```bash
+oc new-project argocd
+oc new-project argo-rollouts
+```  
+
+<br/>
+
+권한을 설정한다.
+
+```bash
+oc adm policy add-scc-to-user anyuid -z default -n argocd
+oc adm policy add-scc-to-user privileged -z default -n argocd
+
+oc adm policy add-scc-to-user privileged -z argocd-redis -n argocd
+oc adm policy add-scc-to-user privileged -z argocd-repo-server -n argocd
+oc adm policy add-scc-to-user privileged -z argocd-dex-server -n argocd
+oc adm policy add-scc-to-user privileged -z argocd-server -n argocd
+oc adm policy add-scc-to-user privileged -z argocd-applicationset-controller -n argocd
+oc adm policy add-scc-to-user privileged -z argocd-notifications-controller -n argocd
+```    
+
+<br/>  
+
+ArgoCD Manifest 화일을 다운 받는다. argo-cd.yaml 화일이 다운로드 된 것을 확인 할 수 있다.  
+
+
+```bash
+curl https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml -o argo-cd.yaml
+```  
+<br/>
+
+이번엔 Argo CD CLI 툴을 다운로드하고, PATH 경로에 추가한다.  
+
+```bash
+VERSION=$(curl --silent "https://api.github.com/repos/argoproj/argo-cd/releases/latest" | grep '"tag_name"' | sed -E 's/.*"([^"]+)".*/\1/')
+```
+<br/>
+
+```bash
+curl -sSL -o /usr/local/bin/argocd https://github.com/argoproj/argo-cd/releases/download/$VERSION/argocd-linux-amd64
+```  
+<br/>
+
+```bash
+chmod +x /usr/local/bin/argocd
+```
+
+<br/>
+
+k8s에 ArgoCD를 설치 합니다.
+
+```bash
+kubectl apply -n argocd -f argo-cd.yaml
+```  
+
+<br/>  
+
+k8s에 argo-rollouts을 설치 합니다.  
+argo-rollouts 은 blue/green 과 canary 배포 방식을 지원합니다.  
+
+
+```bash
+kubectl apply -f https://github.com/argoproj/argo-rollouts/releases/latest/download/install.yaml -n argo-rollouts
+```  
+
+<br/>
+
+redis pod 가 안올라가는 경우는 event를 확인 하는데 아래와 같이 에러가 발생한다.  
+
+deployment에서 runAsUser 값을 ranges 값으로 변경한다.  
+
+<br/>
+
+```bash
+spec.containers[0].securityContext.runAsUser: Invalid value: 999: must be in the ranges: [1000660000, 1000669999], 
+```
+
+<br/>  
+
+route 를 생성하기 위해 서비스 이름을 확인합니다.
+
+```bash
+[root@bastion argocd]# kubectl get svc -n argocd
+NAME                                      TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)                      AGE
+argocd-applicationset-controller          ClusterIP   172.30.169.175   <none>        7000/TCP,8080/TCP            28m
+argocd-dex-server                         ClusterIP   172.30.253.118   <none>        5556/TCP,5557/TCP,5558/TCP   28m
+argocd-metrics                            ClusterIP   172.30.215.134   <none>        8082/TCP                     28m
+argocd-notifications-controller-metrics   ClusterIP   172.30.70.168    <none>        9001/TCP                     28m
+argocd-redis                              ClusterIP   172.30.211.26    <none>        6379/TCP                     28m
+argocd-repo-server                        ClusterIP   172.30.217.222   <none>        8081/TCP,8084/TCP            28m
+argocd-server                             ClusterIP   172.30.172.143   <none>        80/TCP,443/TCP               28m
+```  
+
+<br/>
+
+웹 브라우저에서 접속하기 위해 route 를 생성합니다.  
+
+```bash
+[root@bastion argocd]# vi argocd_route.yaml
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  labels:
+    app : argocd
+  name: argocd
+spec:
+  host: argocd-argocd.apps.okd4.ktdemo.duckdns.org
+  port:
+    targetPort: http
+  tls:
+    insecureEdgeTerminationPolicy: Allow
+    termination: edge
+  to:
+    kind: Service
+    name: argocd-server
+    weight: 100
+  wildcardPolicy: None
+```
+
+<br/>
+
+적용하고 생성된 route를 확인합니다.  
+
+```bash  
+[root@bastion argocd]# kubectl apply -f argocd_route.yaml -n argocd
+[root@bastion argocd]# kubectl get route -n argocd
+NAME            HOST/PORT                                           PATH   SERVICES        PORT   TERMINATION   WILDCARD
+argocd          argocd-argocd.apps.okd4.ktdemo.duckdns.org                 argocd-server   http   edge/Allow    None
+```  
+
+<br/>
+
+웹브라우저에서 http://argocd-argocd.apps.okd4.ktdemo.duckdns.org 로 접속하고 admin 계정으로 로그인 합니다.  
+
+<br/>  
+
+초기 비밀번호 확인    
+
+```bash
+[root@bastion argocd]# kubectl get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" -n argocd | base64 -d && echo
+1jBqpaCukWy58RzT
+```    
+
+
+<br/><br/>
 
 
 참고 자료   
