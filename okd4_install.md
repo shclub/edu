@@ -24,9 +24,9 @@ OKD 설명 참고 :  https://velog.io/@_gyullbb/OKD-%EA%B0%9C%EC%9A%94
 
 8. ArgoCD 설치  
 
-9. Compute ( Worker Node ) Join 하기
+9. Minio Object Stroage 설치 ( w/ NFS )
 
-10. NFS 설정하기
+10. Compute ( Worker Node ) Join 하기
 
 11. etcd 백업하기 
 
@@ -1881,8 +1881,11 @@ Vacuuming done, freed 0B of archived journals from /run/log/journal/cf886e957b87
 
 <br/>
 
-
 ## 8 ArgoCD 설치
+
+<br/>
+
+### 8.1 ArgoCD 설치
 
 <br/>
 
@@ -2018,11 +2021,131 @@ NAME            HOST/PORT                                           PATH   SERVI
 argocd          argocd-argocd.apps.okd4.ktdemo.duckdns.org                 argocd-server   http   edge/Allow    None
 ```  
 
+<br/> 
+
+route 에서 https 인증을 처리하는 경우, argocd 의 https 강제실행을 중지시켜야 할 필요가 있다.  
+
+아래 명령으로 강제 실행을 중지한다.     
+
+```bash  
+[root@bastion argocd]# kubectl edit cm argocd-cmd-params-cm -n argocd
+apiVersion: v1
+data:
+  server.insecure: "true"
+kind: ConfigMap
+```  
 <br/>
 
-웹브라우저에서 http://argocd-argocd.apps.okd4.ktdemo.duckdns.org 로 접속하고 admin 계정으로 로그인 합니다.  
+아래 내용 추가  
+
+```bash
+data:
+  server.insecure: "true"
+```  
+
+<br/>
+
+### 8.2 터미닐 실행 기능 설정
+
+<br/>
+
+argocd 2.4 버전 부터 terminal 기능을 사용 하려면 터미널 실행 기능을 설정한다.  
+   
+
+```bash  
+[root@bastion argocd]# kubectl edit cm argocd-cm -n argocd
+apiVersion: v1
+data:
+  exec.enabled: "true"
+kind: ConfigMap
+```  
+<br/>
+
+아래 내용 추가  
+
+```bash
+data:
+  exec.enabled: "true"
+```     
 
 <br/>  
+
+아래와 같이 터미널이 활성화가 된다.  
+
+<img src="./assets/argocd_terminal.png" style="width: 80%; height: auto;"/>
+
+<br/>
+
+argocd-server pod를 삭제하고 재기동 한다.    
+
+```bash
+[root@bastion argocd]# kubectl get pod -n argocd
+
+NAME                                                READY   STATUS    RESTARTS   AGE
+argocd-application-controller-0                     1/1     Running   0          118m
+argocd-applicationset-controller-6765c74d68-t5jdv   1/1     Running   0          118m
+argocd-dex-server-7d974fc66b-ntz2d                  1/1     Running   0          113m
+argocd-notifications-controller-5df7fddfb7-gqs2w    1/1     Running   0          118m
+argocd-redis-74b8bcc46b-hg22b                       1/1     Running   0          110m
+argocd-repo-server-6db877f7d9-d78qf                 1/1     Running   0          112m
+argocd-server-6c7df9df6b-85vn9                      1/1     Running   0          115m
+[root@bastion argocd]#
+[root@bastion argocd]# kubectl delete po argocd-server-6c7df9df6b-85vn9 -n argocd
+pod "argocd-server-6c7df9df6b-85vn9" deleted
+```  
+
+<br/>
+
+
+### 8.3 트러블 슈팅
+
+<br/>
+
+최신 버전부터는 OKD에 설치시 속도가 느려지고 argocd-redis 서비스 연결 오류가 발생하는 데 이런 경우에는 network policy를 삭제 하면 된다.    
+
+```bash
+[root@bastion argocd]# kubectl get networkpolicy  -n argocd
+NAME                                              POD-SELECTOR                                              AGE
+argocd-application-controller-network-policy      app.kubernetes.io/name=argocd-application-controller      114m
+argocd-applicationset-controller-network-policy   app.kubernetes.io/name=argocd-applicationset-controller   114m
+argocd-dex-server-network-policy                  app.kubernetes.io/name=argocd-dex-server                  114m
+argocd-notifications-controller-network-policy    app.kubernetes.io/name=argocd-notifications-controller    114m
+argocd-redis-network-policy                       app.kubernetes.io/name=argocd-redis                       114m
+argocd-repo-server-network-policy                 app.kubernetes.io/name=argocd-repo-server                 114m
+argocd-server-network-policy                      app.kubernetes.io/name=argocd-server
+```  
+
+<br/>
+
+아래와 같이 삭제한다.  
+
+```bash
+[root@bastion argocd]# kubectl delete networkpolicy argocd-server-79bc95c4-kkhwv argocd-repo-server-network-policy argocd-redis-network-policy argocd-dex-server-network-policy  -n argocd
+networkpolicy.networking.k8s.io "argocd-repo-server-network-policy" deleted
+networkpolicy.networking.k8s.io "argocd-redis-network-policy" deleted
+networkpolicy.networking.k8s.io "argocd-dex-server-network-policy" deleted
+```  
+
+<br/>
+
+deployment 전체 재기동은 아래와 같이 실행한다.  
+
+```bash
+[root@bastion argocd]# kubectl rollout restart deployment -n argocd
+deployment.apps/argocd-applicationset-controller restarted
+deployment.apps/argocd-dex-server restarted
+deployment.apps/argocd-notifications-controller restarted
+deployment.apps/argocd-redis restarted
+deployment.apps/argocd-repo-server restarted
+deployment.apps/argocd-server restarted
+```
+
+<br/>
+
+
+### 8.4 console 접속
+
+<br/>
 
 초기 비밀번호 확인    
 
@@ -2031,9 +2154,406 @@ argocd          argocd-argocd.apps.okd4.ktdemo.duckdns.org                 argoc
 1jBqpaCukWy58RzT
 ```    
 
+<br/>
 
-<br/><br/>
+웹브라우저에서 http://argocd-argocd.apps.okd4.ktdemo.duckdns.org 로 접속하고 admin 계정/초기비밀번호로 로그인 하고  비밀번호를 변경합니다.  
 
+<br/>
+
+<img src="./assets/argocd_okd1.png" style="width: 80%; height: auto;"/>
+
+
+<br/>
+
+### 8.5 계정 생성
+
+<br/>
+
+
+계정 생성을 위해서는 argocd-server를 NodePort 로 expose하고 argocd cli 로 접속한다.  
+
+```bash
+[root@bastion argocd]# kubectl get svc -n argocd
+NAME                                      TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)                      AGE
+argocd-applicationset-controller          ClusterIP   172.30.157.78    <none>        7000/TCP,8080/TCP            162m
+argocd-dex-server                         ClusterIP   172.30.96.19     <none>        5556/TCP,5557/TCP,5558/TCP   162m
+argocd-metrics                            ClusterIP   172.30.216.229   <none>        8082/TCP                     162m
+argocd-notifications-controller-metrics   ClusterIP   172.30.155.71    <none>        9001/TCP                     162m
+argocd-redis                              ClusterIP   172.30.45.66     <none>        6379/TCP                     162m
+argocd-repo-server                        ClusterIP   172.30.178.138   <none>        8081/TCP,8084/TCP            162m
+argocd-server                             NodePort    172.30.154.250   <none>        80:30866/TCP,443:31928/TCP   162m
+argocd-server-metrics                     ClusterIP   172.30.55.105    <none>        8083/TCP                     162m
+[root@bastion argocd]# argocd login 192.168.1.247:30866
+FATA[0000] dial tcp 192.168.1.247:30866: connect: connection refused
+[root@bastion argocd]# argocd login 192.168.1.146:30866
+WARNING: server is not configured with TLS. Proceed (y/n)? y
+Username: admin
+Password:
+'admin:login' logged in successfully
+Context '192.168.1.146:30866' updated
+```  
+
+<br/>
+
+`argocd-cm` configmap에 data 를 생성하고 계정을 아래와 같이 추가합니다.    
+
+```bash
+[root@bastion argocd]# kubectl -n argocd edit configmap argocd-cm -o yaml
+apiVersion: v1
+data:
+  accounts.edu1: apiKey,login
+  accounts.edu2: apiKey,login
+  accounts.edu3: apiKey,login
+  accounts.edu4: apiKey,login
+  accounts.edu5: apiKey,login
+  accounts.haerin: apiKey,login
+  accounts.shclub: apiKey,login
+  exec.enabled: "true"
+kind: ConfigMap
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"v1","kind":"ConfigMap","metadata":{"annotations":{},"labels":{"app.kubernetes.io/name":"argocd-cm","app.kubernetes.io/part-of":"argocd"},"name":"argocd-cm","namespace":"argocd"}}
+  creationTimestamp: "2023-08-22T06:32:36Z"
+  labels:
+    app.kubernetes.io/name: argocd-cm
+    app.kubernetes.io/part-of: argocd
+  name: argocd-cm
+  namespace: argocd
+  resourceVersion: "5057239"
+  uid: 2b5d0dbe-eb9c-41f7-bc26-e93355aa6e48
+```
+
+<br/>
+
+계정 별로 비밀번호를 생성합니다.  
+  
+```bash
+  [root@bastion argocd]# argocd account update-password --account shclub
+*** Enter password of currently logged in user (admin):
+*** Enter new password for user shclub:
+*** Confirm new password for user shclub:
+ERRO[0011] Passwords do not match
+*** Enter new password for user shclub:
+*** Confirm new password for user shclub:
+Password updated
+```
+
+<br/>
+
+`argocd-rbac-cm` configmap에 data 를 생성하고 계정별로 권한을 추가합니다.
+- exec는 terminal 을 사용할수 있는 권한 입니다.  
+
+```bash
+[root@bastion argocd]# kubectl -n argocd edit configmap argocd-rbac-cm -o yaml
+
+data:
+  policy.csv: |
+    p, role:manager, applications, *, */*, allow
+    p, role:manager, clusters, get, *, allow
+    p, role:manager, repositories, *, *, allow
+    p, role:manager, projects, *, *, allow
+    p, role:manager, exec, create , */*, allow
+    p, role:edu1, clusters, get, *, allow
+    p, role:edu1, repositories, get, *, allow
+    p, role:edu1, projects, get, *, allow
+    p, role:edu1, applications, *, edu1/*, allow
+    p, role:edu1, exec, create , edu1/*, allow
+    p, role:edu2, clusters, get, *, allow
+    p, role:edu2, repositories, get, *, allow
+    p, role:edu2, projects, get, *, allow
+    p, role:edu2, applications, *, edu2/*, allow
+    p, role:edu2, exec, create , edu2/*, allow
+    p, role:edu3, clusters, get, *, allow
+    p, role:edu3, repositories, get, *, allow
+    p, role:edu3, projects, get, *, allow
+    p, role:edu3, applications, *, edu3/*, allow
+    p, role:edu3, exec, create , edu3/*, allow
+    p, role:edu4, clusters, get, *, allow
+    p, role:edu4, repositories, get, *, allow
+    p, role:edu4, projects, get, *, allow
+    p, role:edu4, applications, *, edu4/*, allow
+    p, role:edu4, exec, create , edu4/*, allow
+    p, role:edu5, clusters, get, *, allow
+    p, role:edu5, repositories, get, *, allow
+    p, role:edu5, projects, get, *, allow
+    p, role:edu5, applications, *, edu5/*, allow
+    p, role:edu5, exec, create , edu5/*, allow
+    g, edu1, role:edu1
+    g, edu2, role:edu2
+    g, edu3, role:edu3
+    g, edu4, role:edu4
+    g, edu5, role:edu5
+    g, shclub, role:manager
+    g, haerin, role:manager
+  policy.default: role:''
+```
+
+<br/>
+
+## 9. Minio Object Stroage 설치 ( w/ NFS )
+
+<br/>
+
+### 9.1 Minio Object Stroage 설치 
+
+<br/>
+
+minio 이름으로 namespace를 생성하고 `uid-range` 를 확인한다.  
+
+```bash
+[root@bastion minio]# kubectl describe namespace minio
+Name:         minio
+Labels:       kubernetes.io/metadata.name=minio
+Annotations:  openshift.io/description:
+              openshift.io/display-name:
+              openshift.io/requester: system:admin
+              openshift.io/sa.scc.mcs: s0:c27,c4
+              openshift.io/sa.scc.supplemental-groups: 1000710000/10000
+              openshift.io/sa.scc.uid-range: 1000710000/10000
+Status:       Active
+
+No resource quota.
+
+No LimitRange resource.
+```  
+
+<br/>
+
+helm 설정을 한다.  우리는 bitnami 에서 제공하는 chart를 사용한다.    
+
+
+```bash
+[root@bastion minio]# helm repo add bitnami https://charts.bitnami.com/bitnami
+[root@bastion minio]# helm search repo bitnami | grep minio
+WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
+bitnami/minio                               	12.7.0       	2023.7.18    	MinIO(R) is an object storage server, compatibl...
+```  
+
+<br/>
+
+
+minio 에서 사용한 pv 와 pvc를 생성한다.  nfs는 synology nas 에서 생성하였고 과정은 skip.  
+
+```bash
+[root@bastion minio]# vi minio_pv.yaml
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: minio-pv
+spec:
+  accessModes:
+  - ReadWriteMany
+  capacity:
+    storage: 100Gi
+  nfs:
+    path: /volume3/okd/minio
+    server: 192.168.1.79
+  persistentVolumeReclaimPolicy: Retain
+```
+
+<br/>
+
+pvc 생성     
+
+```bash
+[root@bastion minio]# vi minio_pvc.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: minio-pvc
+spec:
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 100Gi
+  volumeName: minio-pv
+```
+
+<br/>
+
+Openshift 에 맞게 values를 수정하기 위해 values.yaml 로 다운 받는다.  
+
+```bash
+[root@bastion minio]# helm show values bitnami/minio > values.yaml
+```  
+
+<br/>
+
+values.yaml 화일에서 아래 부분을 수정한다.    
+
+```bash
+    100   rootUser: admin
+    101   ## @param auth.rootPassword Password for MinIO&reg; root user
+    102   ##
+    103   rootPassword: "hahahaha"  # 본인의 비밀번호 설정
+    ...
+    377   ##  config:
+    378   ##   - name: region
+    379   ##     options:
+    380   ##       name: us-east-1
+    381   config:
+    382     - name: region
+    383       options:
+    384         name: ap-northeast-2  # S3 호환으로 사용하기 위해 region을 설정한다.
+   ...
+    389   ##
+    390   podSecurityContext:
+    391     enabled: true
+    392     fsGroup: 1000710000 #1001  # namespace 의 uid range 값으로 변경한다.
+   ...
+    399   containerSecurityContext:
+    400     enabled: true
+    401     runAsUser: 1000710000 #1001
+    ...
+    426 podSecurityContext:
+    427   enabled: true
+    428   fsGroup: 1000710000 # 1001
+    ...
+    434 ##
+    435 containerSecurityContext:
+    436   enabled: true
+    437   runAsUser: 1000710000 #1001
+    438   runAsNonRoot: true
+    ...
+    899 persistence:
+    900   ## @param persistence.enabled Enable MinIO&reg; data persistence using PVC. If false, use emptyDir
+    901   ##
+    902   enabled: true
+    909   ##
+    910   storageClass: ""
+    911   ## @param persistence.mountPath Data volume mount path
+    912   ##
+    913   mountPath: /data
+    914   ## @param persistence.accessModes PVC Access Modes for MinIO&reg; data volume
+    915   ##
+    916   accessModes:
+    917     - ReadWriteOnce
+    918   ## @param persistence.size PVC Storage Request for MinIO&reg; data volume
+    919   ##
+    920   size: 100Gi # 위에서 설정한 pvc 사이즈
+    925   ##
+    926   existingClaim: "minio-pvc"  # 위에서 설정한 pvc 이름
+```
+
+
+<br/>
+
+이제 위에서 수정한 values.yaml 화일로 설치를 한다.  
+
+```bash    
+[root@bastion minio]# helm install my-minio -f values.yaml bitnami/minio -n minio
+NAME: my-minio
+LAST DEPLOYED: Wed Aug 23 10:04:29 2023
+NAMESPACE: minio
+STATUS: deployed
+REVISION: 1
+TEST SUITE: None
+NOTES:
+CHART NAME: minio
+CHART VERSION: 12.7.0
+APP VERSION: 2023.7.18
+
+** Please be patient while the chart is being deployed **
+
+MinIO&reg; can be accessed via port  on the following DNS name from within your cluster:
+
+   my-minio.minio.svc.cluster.local
+
+To get your credentials run:
+
+   export ROOT_USER=$(kubectl get secret --namespace minio my-minio -o jsonpath="{.data.root-user}" | base64 -d)
+   export ROOT_PASSWORD=$(kubectl get secret --namespace minio my-minio -o jsonpath="{.data.root-password}" | base64 -d)
+
+To connect to your MinIO&reg; server using a client:
+
+- Run a MinIO&reg; Client pod and append the desired command (e.g. 'admin info'):
+
+   kubectl run --namespace minio my-minio-client \
+     --rm --tty -i --restart='Never' \
+     --env MINIO_SERVER_ROOT_USER=$ROOT_USER \
+     --env MINIO_SERVER_ROOT_PASSWORD=$ROOT_PASSWORD \
+     --env MINIO_SERVER_HOST=my-minio \
+     --image docker.io/bitnami/minio-client:2023.7.18-debian-11-r0 -- admin info minio
+
+To access the MinIO&reg; web UI:
+
+- Get the MinIO&reg; URL:
+
+   echo "MinIO&reg; web URL: http://127.0.0.1:9001/minio"
+   kubectl port-forward --namespace minio svc/my-minio 9001:9001
+```    
+<br/>
+
+외부에서 접속하기 위해서 route를 생성한다.       
+
+```bash
+[root@bastion minio]# kubectl get svc -n minio
+NAME       TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)             AGE
+my-minio   ClusterIP   172.30.88.228   <none>        9000/TCP,9001/TCP   84m
+[root@bastion minio]# kubectl describe svc my-minio -n minio
+Name:              my-minio
+Namespace:         minio
+Labels:            app.kubernetes.io/instance=my-minio
+                   app.kubernetes.io/managed-by=Helm
+                   app.kubernetes.io/name=minio
+                   helm.sh/chart=minio-12.7.0
+Annotations:       meta.helm.sh/release-name: my-minio
+                   meta.helm.sh/release-namespace: minio
+Selector:          app.kubernetes.io/instance=my-minio,app.kubernetes.io/name=minio
+Type:              ClusterIP
+IP Family Policy:  SingleStack
+IP Families:       IPv4
+IP:                172.30.88.228
+IPs:               172.30.88.228
+Port:              minio-api  9000/TCP
+TargetPort:        minio-api/TCP
+Endpoints:         10.128.0.48:9000
+Port:              minio-console  9001/TCP
+TargetPort:        minio-console/TCP
+Endpoints:         10.128.0.48:9001
+Session Affinity:  None
+Events:            <none>
+```  
+
+<br/>
+
+`minio-console` 포트로 route와 서비스 포트 매핑이 필요하다.  
+
+
+```bash
+[root@bastion minio]# vi minio_route.yaml
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  labels:
+    app : minio
+  name: minio
+spec:
+  host: minio-minio.apps.okd4.ktdemo.duckdns.org
+  port:
+    targetPort: minio-console
+  tls:
+    insecureEdgeTerminationPolicy: Allow
+    termination: edge
+  to:
+    kind: Service
+    name: my-minio
+    weight: 100
+  wildcardPolicy: None
+```
+
+
+<br/>
+
+웹브라우저에서 http://minio-minio.apps.okd4.ktdemo.duckdns.org 로 접속하고 admin 계정/values.yaml에 설정한 비밀번호로 로그인 한다.  
+
+<br/>
+
+<img src="./assets/okd_minio1.png" style="width: 80%; height: auto;"/>
+
+<br/><br/><br/>
 
 참고 자료   
 
@@ -2051,6 +2571,8 @@ argocd          argocd-argocd.apps.okd4.ktdemo.duckdns.org                 argoc
 - pull secret 설정 : https://www.ibm.com/docs/ko/mas-cd/continuous-delivery?topic=platform-setting-up-bastion-host
 - 오픈쉬프트 사용법 : https://sysdocu.tistory.com/1765 , https://sysdocu.tistory.com/1774
 - OKD 아키텍처 : https://daaa0555.tistory.com/479
+- ArgoCD : https://www.skyer9.pe.kr/wordpress/?p=6845
+- ArgoCD Redis 접속 에러 (networkpolicy) : https://www.xiexianbin.cn/cicd/argo-cd/deploy/index.html
 
 
 <br/>
