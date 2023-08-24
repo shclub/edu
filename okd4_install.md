@@ -26,9 +26,14 @@ OKD 설명 참고 :  https://velog.io/@_gyullbb/OKD-%EA%B0%9C%EC%9A%94
 
 9. Minio Object Stroage 설치 ( w/ NFS )
 
-10. Compute ( Worker Node ) Join 하기
+10. Dynamic Provisioning 설치
 
-11. etcd 백업하기 
+11. Harbor ( Private Registry ) 설치 및 설정
+
+12. etcd 백업하기 
+
+13. Compute ( Worker Node ) Join 하기
+
 
 <br/>
 
@@ -2302,6 +2307,7 @@ data:
 minio 이름으로 namespace를 생성하고 `uid-range` 를 확인한다.  
 
 ```bash
+[root@bastion minio]# oc new-project minio
 [root@bastion minio]# kubectl describe namespace minio
 Name:         minio
 Labels:       kubernetes.io/metadata.name=minio
@@ -2317,7 +2323,16 @@ No resource quota.
 
 No LimitRange resource.
 ```  
+<br/>
 
+minio namespace 에 권한을 할당한다.  
+
+```bash
+[root@bastion minio]# oc adm policy add-scc-to-user anyuid system:serviceaccount:minio:default
+clusterrole.rbac.authorization.k8s.io/system:openshift:scc:anyuid added: "default"
+[root@bastion harbor]# oc adm policy add-scc-to-user privileged system:serviceaccount:minio:default
+clusterrole.rbac.authorization.k8s.io/system:openshift:scc:privileged added: "default"
+```
 <br/>
 
 helm 설정을 한다.  우리는 bitnami 에서 제공하는 chart를 사용한다.    
@@ -2553,7 +2568,682 @@ spec:
 
 <img src="./assets/okd_minio1.png" style="width: 80%; height: auto;"/>
 
+
+<br/>
+
+### 9.2 Minio 설정 ( bucket 생성 )
+
+<br/>
+
+admin으로 로그인을 한 후 Administrator -> Identity -> Users 메뉴에서 계정을 하나 생성하고 권한을 부여한다.    
+
+admin 계정은 로그 아웃 하고 신규 생성한 계정으로 로그인 하고  Object Browser 메뉴로 이동하면 bucket을 생성하라는 화면이 나온다.  
+
+<br/>
+
+<img src="./assets/okd_minio2_bucket1.png" style="width: 80%; height: auto;"/>
+
+<br/>
+
+harbor를 docker private registry 로 설치할 예정이고 스토리지는 minio를 사용할 예정이기 때문에 이름을  `harbor-registry` 라는 이름으로 할당하고 create bucket 버튼을 클릭하여 생성한다.
+- versioning 만 체크 한다.
+
+<img src="./assets/okd_minio2_bucket2.png" style="width: 80%; height: auto;"/>
+
+<br/>
+
+생성된 된 bucket은 다음 과 같다.  read/write 권한이 할당 되어 있다.    
+
+<img src="./assets/okd_minio2_bucket3.png" style="width: 80%; height: auto;"/>
+
+
+<br/>
+
+bucket 이름을 클릭하고 access 를 private 으로 설정한다.  
+
+<img src="./assets/okd_minio2_bucket4.png" style="width: 80%; height: auto;"/>
+
+
+<br/>
+
+### 9.3 Minio 설정 ( Access keys 생성 )
+
+<br/>
+
+위에서 생성한 bucket 에 접근하기 위한 access key를 생성한다.    
+
+create acces key 버튼 클릭.
+
+<br/>
+
+<img src="./assets/okd_minio3.png" style="width: 80%; height: auto;"/>
+
+create 버튼 을 누르면 Access key 와 secret 이 생성이 되고 Download 버튼을 눌러 키를 다운 받을 수 있다.
+
+<br/>
+
+<img src="./assets/okd_minio4.png" style="width: 80%; height: auto;"/>
+
+생성된 key 를 확인 할 수 있다.  
+
+<br/>
+
+<img src="./assets/okd_minio5.png" style="width: 80%; height: auto;"/>
+
+<br/>
+
+## 10. Dynamic Provisioning 설치
+
+<br/>
+
+
+참고   
+- https://github.com/shclub/edu/blob/master/k8s_middle_hands_on_2023.md  
+
+<br/>
+
+PV/PVC 를  자동으로 생성하기 위해서 Dynamic Provisioning 을 사용한다.    
+`nfs-subdir-external-provisioner` 를 사용하기로 한다.    
+
+helm repository를 추가한다.  
+
+```bash
+[root@bastion dynamic_provisioning]# helm repo add nfs-subdir-external-provisioner https://kubernetes-sigs.github.io/nfs-subdir-external-provisioner
+WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
+"nfs-subdir-external-provisioner" has been added to your repositories
+[root@bastion dynamic_provisioning]# helm repo list
+WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
+NAME                           	URL
+bitnami                        	https://charts.bitnami.com/bitnami
+harbor                         	https://helm.goharbor.io
+nfs-subdir-external-provisioner	https://kubernetes-sigs.github.io/nfs-subdir-external-provisioner
+```
+
+<br/>
+ 
+chart를 검색한다.  
+
+```bash
+[root@bastion dynamic_provisioning]# helm search repo nfs-subdir-external-provisioner
+WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
+NAME                                              	CHART VERSION	APP VERSION	DESCRIPTION
+nfs-subdir-external-provisioner/nfs-subdir-exte...	4.0.18       	4.0.2      	nfs-subdir-external-provisioner is an automatic...
+```
+
+<br/>
+
+values 를 변경하기 위해 values.yaml 를 다운 받는다.  
+
+```bash
+[root@bastion dynamic_provisioning]# helm show values nfs-subdir-external-provisioner/nfs-subdir-external-provisioner > values.yaml
+```  
+
+<br/>
+
+values 에서는 아래와 같이 변경한다.    
+
+```bash
+      1 replicaCount: 1
+      2 strategyType: Recreate
+      3
+      4 image:
+      5   repository: registry.k8s.io/sig-storage/nfs-subdir-external-provisioner
+      6   tag: v4.0.2
+      7   pullPolicy: IfNotPresent
+      8 imagePullSecrets: []
+      9
+     10 nfs:
+     11   server: 192.168.1.79  # NAS IP
+     12   path: /volume3/okd/dynamic  # path
+     13   mountOptions:
+     14   volumeName: nfs-subdir-external-provisioner-root
+     15   # Reclaim policy for the main nfs volume
+     16   reclaimPolicy: Retain
+     17
+     18 # For creating the StorageClass automatically:
+     19 storageClass:
+     20   create: true
+     21
+     22   # Set a provisioner name. If unset, a name will be generated.
+     23   # provisionerName:
+     24
+     25   # Set StorageClass as the default StorageClass
+     26   # Ignored if storageClass.create is false
+     27   defaultClass: false
+     28
+     29   # Set a StorageClass name
+     30   # Ignored if storageClass.create is false
+     31   name: nfs-client  # storage class 이름
+     32
+     33   # Allow volume to be expanded dynamically
+     34   allowVolumeExpansion: true
+     35
+     36   # Method used to reclaim an obsoleted volume
+     37   reclaimPolicy: Delete
+     38
+     39   # When set to false your PVs will not be archived by the provisioner upon deletion of the PVC.
+     40   archiveOnDelete: false # archive 안함 
+     41
+     42   # If it exists and has 'delete' value, delete the directory. If it exists and has 'retain' value, save the directory.
+     43   # Overrides archiveOnDelete.
+     44   # Ignored if value not set.
+     ...
+     49   pathPattern:
+     50
+     51   # Set access mode - ReadWriteOnce, ReadOnlyMany or ReadWriteMany
+     52   accessModes: ReadWriteOnce
+     53
+     54   # Set volume bindinng mode - Immediate or WaitForFirstConsumer
+     55   volumeBindingMode: Immediate
+     56
+     57   # Storage class annotations
+     58   annotations: {}
+     59
+     60 leaderElection:
+     61   # When set to false leader election will be disabled
+     62   enabled: true
+     63
+     64 ## For RBAC support:
+     65 rbac:
+     66   # Specifies whether RBAC resources should be created
+     67   create: true
+     68
+     ...
+     71 podSecurityPolicy:
+     72   enabled: true # okd는 설정. 아주 중요
+     73
+     74 # Deployment pod annotations
+     75 podAnnotations: {}
+     76
+     80 #podSecurityContext: {}
+     81
+     82 podSecurityContext:
+     83   fsGroup: 1000670000 #1001 : namespace 의 UID
+```
+
+<br/>
+
+이제 helm 으로 설치를 한다.  
+
+```bash
+[root@bastion dynamic_provisioning]# helm install nfs-subdir-external-provisioner -f values.yaml  nfs-subdir-external-provisioner/nfs-subdir-external-provisioner -n shclub
+WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
+NAME: nfs-subdir-external-provisioner
+LAST DEPLOYED: Wed Aug 23 15:25:10 2023
+NAMESPACE: shclub
+STATUS: deployed
+REVISION: 1
+TEST SUITE: None
+```
+
+<br/>
+
+storageclass 가 nfs-client 이름으로 생성이 된 것을 확인 할 수 있다.  
+
+```bash
+[root@bastion dynamic_provisioning]# kubectl get storageclass
+NAME         PROVISIONER                                     RECLAIMPOLICY   VOLUMEBINDINGMODE   ALLOWVOLUMEEXPANSION   AGE
+nfs-client   cluster.local/nfs-subdir-external-provisioner   Delete          Immediate           true                   12s
+```  
+<br/>
+
+PVC 를 생성하여 테스트 해본다.   
+
+```bash
+[root@bastion dynamic_provisioning]# vi test_claim.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nfs-pvc-test
+spec:
+  storageClassName: nfs-client # SAME NAME AS THE STORAGECLASS
+  accessModes:
+    - ReadWriteMany #  must be the same as PersistentVolume
+  resources:
+    requests:
+      storage: 1Gi
+```
+
+<br/>
+
+정상적으로 PVC 가 자동 생성 된 것을 확인 할 수 있다.  
+
+```bash
+[root@bastion dynamic_provisioning]# kubectl get pvc -n shclub
+NAME           STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+nfs-pvc-test   Bound    pvc-3b872a76-4fe5-4a6d-9c19-9ebdb4c4e58f   1Gi        RWX            nfs-client     6m36s
+```  
+
+<br/>
+
+## 11. Harbor ( Private Registry ) 설치 및 설정
+
+<br/>
+
+## 11.1 Harbor 설치
+
+<br/>
+
+bastion 서버에 harbor 폴더를 생성하고 okd에 harbor namespace를 생성한다.    
+
+```bash
+[root@bastion harbor]# oc new-project harbor
+Now using project "harbor" on server "https://api.okd4.ktdemo.duckdns.org:6443".
+
+You can add applications to this project with the 'new-app' command. For example, try:
+
+    oc new-app rails-postgresql-example
+
+to build a new example application in Ruby. Or use kubectl to deploy a simple Kubernetes application:
+
+    kubectl create deployment hello-node --image=k8s.gcr.io/e2e-test-images/agnhost:2.33 -- /agnhost serve-hostname
+```
+
+<br/>
+
+해당 namespace 에 권한을 부여한다.  
+
+```bash
+[root@bastion harbor]# oc adm policy add-scc-to-user anyuid system:serviceaccount:harbor:default
+clusterrole.rbac.authorization.k8s.io/system:openshift:scc:anyuid added: "default"
+[root@bastion harbor]# oc adm policy add-scc-to-user privileged system:serviceaccount:harbor:default
+clusterrole.rbac.authorization.k8s.io/system:openshift:scc:privileged added: "default"
+```
+
+<br/>
+
+harbor repository 를 추가한다. bitnami 를 사용 시 불 필요.  
+
+아래 과정은 harbor를 사용 하는 예제이다.  
+
+```bash
+[root@bastion harbor]#  helm repo add harbor https://helm.goharbor.io
+WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
+"harbor" has been added to your repositories
+[root@bastion harbor]# helm repo list
+WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
+NAME   	URL
+bitnami	https://charts.bitnami.com/bitnami
+harbor 	https://helm.goharbor.io
+[root@bastion harbor]# helm search repo harbor
+WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
+NAME          	CHART VERSION	APP VERSION	DESCRIPTION
+bitnami/harbor	16.7.4       	2.8.3      	Harbor is an open source trusted cloud-native r...
+harbor/harbor 	1.12.4       	2.8.4      	An open source trusted cloud native registry th...
+```  
+
+<br/>
+
+Openshift 에 맞게 values를 수정하기 위해 harbor_values.yaml 로 다운 받는다.  
+
+```bash
+[root@bastion harbor]# helm show values harbor/harbor > harbor_values.yaml
+```  
+
+<br/>
+
+values.yaml 화일에서 아래 부분을 수정한다.    
+
+```bash
+     1 expose:
+      2   
+      4   type: ingress  # ingress 로 설정
+      5   tls:
+      6     # Enable TLS or not.
+      7     # Delete the "ssl-redirect" annotations in "expose.ingress.annotations" when TLS is disabled and "expose.type" is "ingress"
+      8     # Note: if the "expose.type" is "ingress" and TLS is disabled,
+      9     # the port must be included in the command when pulling/pushing images.
+     10     # Refer to https://github.com/goharbor/harbor/issues/5291 for details.
+     11     enabled: true  # true 로 설정해야 route/ingress에서 tls 설정이 생성됨. 아주 중요
+   ...
+     34   ingress:
+     35     hosts:
+     36       core: myharbor.apps.okd4.ktdemo.duckdns.org # 나의 URL 로 설정
+     37       notary: notray-harbor.apps.okd4.ktdemo.duckdns.org #notary.harbor.domain
+    ...
+    126 # If Harbor is deployed behind the proxy, set it as the URL of proxy
+    127 externalURL: https://myharbor.apps.okd4.ktdemo.duckdns.org # url 이 정상적으로 설정되어야  docker push가 되고 push command가 정상적으로 나옴
+    ...
+    203   resourcePolicy: "keep"  # keep이면 helm 지워도 pvc 삭제 안됨
+    204   persistentVolumeClaim:
+    205     registry:
+    208       existingClaim: ""
+    ...
+    212       storageClass: "nfs-client" # storage class 설정
+    213       subPath: ""
+    214       accessMode: ReadWriteOnce
+    215       size: 5Gi
+    216       annotations: {}
+    217     jobservice:
+    218       jobLog:
+    219         existingClaim: ""
+    220         storageClass: "nfs-client" # storage class 설정
+    221         subPath: ""
+    222         accessMode: ReadWriteOnce
+    223         size: 1Gi
+    224         annotations: {}
+    225     # If external database is used, the following settings for database will
+    226     # be ignored
+    227     database:
+    228       existingClaim: ""
+    229       storageClass: "nfs-client" # storage class 설정
+    230       subPath: ""
+    231       accessMode: ReadWriteOnce
+    232       size: 1Gi
+    233       annotations: {}
+    234     # If external Redis is used, the following settings for Redis will
+    ...
+    236     redis:
+    237       existingClaim: ""
+    238       storageClass: "nfs-client" # storage class 설정
+    239       subPath: ""
+    240       accessMode: ReadWriteOnce
+    241       size: 1Gi
+    242       annotations: {}
+    243     trivy:
+    244       existingClaim: ""
+    245       storageClass: "nfs-client" # storage class 설정
+    246       subPath: ""
+    247       accessMode: ReadWriteOnce
+    248       size: 5Gi
+    249       annotations: {}
+    ...
+    267     # Specify the type of storage: "filesystem", "azure", "gcs", "s3", "swift",
+    268     # "oss" and fill the information needed in the corresponding section. The type
+    269     # must be "filesystem" if you want to use persistent volumes for registry
+    270     type: s3 #  스토로지 타입을 선택한다. 우리는 minio object storage를 사용하기 때문에 s3로 설정
+    ...
+    290     s3:
+    291       # Set an existing secret for S3 accesskey and secretkey
+    292       # keys in the secret should be REGISTRY_STORAGE_S3_ACCESSKEY and REGISTRY_STORAGE_S3_SECRETKEY for registry
+    293       region: ap-northeast-2 # minio 에 설정한 region
+    294       bucket: harbor-registry
+    295       accesskey: "xs2Bg88****"
+    296       secretkey: "7A2HdVf*******K"
+    297       regionendpoint: "http://my-minio.minio.svc.cluster.local:9000" # k8s 서비스 url
+    298       #existingSecret: ""
+    299       #region: us-west-1
+    300       #bucket: bucketname
+    301       #accesskey: awsaccesskey
+    302       #secretkey: awssecretkey
+    303       #regionendpoint: http://myobjects.local
+    304       #encrypt: false
+    305       #keyid: mykeyid
+    306       #secure: true
+    307       #skipverify: false
+    308       #v4auth: true
+    309       #chunksize: "5242880"
+    310       #rootdirectory: /s3/object/name/prefix
+    311       #storageclass: STANDARD
+    312       #multipartcopychunksize: "33554432"
+    313       #multipartcopymaxconcurrency: 100
+    314       #multipartcopythresholdsize: "33554432"
+```
+
+
+<br/>
+
+이제 위에서 수정한 harbor_values.yaml 화일로 설치를 한다.  
+
+```bash    
+[root@bastion harbor]# vi harbor_values.yaml
+[root@bastion harbor]# helm install my-harbor -f harbor_values.yaml harbor/harbor -n harbor
+WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
+NAME: my-harbor
+LAST DEPLOYED: Thu Aug 24 15:02:37 2023
+NAMESPACE: harbor
+STATUS: deployed
+REVISION: 1
+TEST SUITE: None
+NOTES:
+Please wait for several minutes for Harbor deployment to complete.
+Then you should be able to visit the Harbor portal at https://core.harbor.domain
+For more details, please visit https://github.com/goharbor/harbor
+```    
+<br/>
+
+service 와 pod 그리고 pvc 생성을 확인한다.  
+
+
+```bash
+[root@bastion harbor]# helm install my-harbor -f harbor_values.yaml harbor/harbor -n harbor
+WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
+NAME: my-harbor
+LAST DEPLOYED: Thu Aug 24 09:07:21 2023
+NAMESPACE: harbor
+STATUS: deployed
+REVISION: 1
+TEST SUITE: None
+NOTES:
+Please wait for several minutes for Harbor deployment to complete.
+Then you should be able to visit the Harbor portal at https://core.harbor.domain
+For more details, please visit https://github.com/goharbor/harbor
+[root@bastion harbor]# kubectl get svc -n harbor
+NAME                      TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)                   AGE
+harbor                    ClusterIP   172.30.232.108   <none>        80/TCP,443/TCP,4443/TCP   9s
+my-harbor-core            ClusterIP   172.30.73.246    <none>        80/TCP                    10s
+my-harbor-database        ClusterIP   172.30.134.241   <none>        5432/TCP                  9s
+my-harbor-jobservice      ClusterIP   172.30.149.250   <none>        80/TCP                    9s
+my-harbor-notary-server   ClusterIP   172.30.112.41    <none>        4443/TCP                  9s
+my-harbor-notary-signer   ClusterIP   172.30.46.231    <none>        7899/TCP                  9s
+my-harbor-portal          ClusterIP   172.30.77.199    <none>        80/TCP                    9s
+my-harbor-redis           ClusterIP   172.30.253.146   <none>        6379/TCP                  9s
+my-harbor-registry        ClusterIP   172.30.83.190    <none>        5000/TCP,8080/TCP         9s
+my-harbor-trivy           ClusterIP   172.30.76.51     <none>        8080/TCP                  9s
+[root@bastion harbor]# kubectl get po -n harbor
+NAME                                       READY   STATUS    RESTARTS        AGE
+my-harbor-core-67587bcbc4-x6whs            1/1     Running   0               6m35s
+my-harbor-database-0                       1/1     Running   0               6m34s
+my-harbor-jobservice-599859fd57-4qvkk      1/1     Running   2 (6m19s ago)   6m35s
+my-harbor-notary-server-bf5f9b94f-pmxd4    1/1     Running   0               6m35s
+my-harbor-notary-signer-55db47f788-srzq8   1/1     Running   0               6m34s
+my-harbor-portal-694bf8c545-p56f6          1/1     Running   0               6m34s
+my-harbor-redis-0                          1/1     Running   0               6m34s
+my-harbor-registry-6c57986d5d-84fzb        2/2     Running   0               6m34s
+my-harbor-trivy-0                          1/1     Running   0               6m34s
+[root@bastion harbor]# kubectl get pvc -n harbor
+NAME                                 STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+data-my-harbor-redis-0               Bound    pvc-8c45a518-871e-4c4c-bd15-e91243ba5ade   1Gi        RWO            nfs-client     12m
+data-my-harbor-trivy-0               Bound    pvc-88724475-62b8-44d7-93c6-70ec4f2b48f8   5Gi        RWO            nfs-client     12m
+database-data-my-harbor-database-0   Bound    pvc-d7c7d316-7d28-4258-b326-925e25c8bb68   1Gi        RWO            nfs-client     12m
+my-harbor-jobservice                 Bound    pvc-e0a9fcf7-d360-4c56-9a4d-0500572cbfc1   1Gi        RWO            nfs-client     12m
+my-harbor-registry                   Bound    pvc-7a0cb3da-87ba-4758-ba4d-aaa78baec07c   5Gi        RWO            nfs-client     12m
+```
+
+<br/>
+
+ingress 와 route 도 확인해 본다.
+
+```bash
+[root@bastion harbor]# kubectl get route -n harbor
+NAME                             HOST/PORT                                    PATH          SERVICES                  PORT       TERMINATION     WILDCARD
+harbor                           harbor-harbor.apps.okd4.ktdemo.duckdns.org                 my-harbor-portal          http-web   edge/Allow      None
+my-harbor-ingress-2cggf          myharbor.apps.okd4.ktdemo.duckdns.org        /service/     my-harbor-core            http-web   edge/Redirect   None
+my-harbor-ingress-5xdrs          myharbor.apps.okd4.ktdemo.duckdns.org        /api/         my-harbor-core            http-web   edge/Redirect   None
+my-harbor-ingress-bxkmn          myharbor.apps.okd4.ktdemo.duckdns.org        /chartrepo/   my-harbor-core            http-web   edge/Redirect   None
+my-harbor-ingress-hqspm          myharbor.apps.okd4.ktdemo.duckdns.org        /v2/          my-harbor-core            http-web   edge/Redirect   None
+my-harbor-ingress-jx9x7          myharbor.apps.okd4.ktdemo.duckdns.org        /c/           my-harbor-core            http-web   edge/Redirect   None
+my-harbor-ingress-notary-6j87b   notray-harbor.apps.okd4.ktdemo.duckdns.org   /             my-harbor-notary-server   <all>      edge/Redirect   None
+my-harbor-ingress-tsr84          myharbor.apps.okd4.ktdemo.duckdns.org        /             my-harbor-portal          <all>      edge/Redirect   None
+[root@bastion harbor]# kubectl get ing -n harbor
+NAME                       CLASS    HOSTS                                        ADDRESS                                       PORTS     AGE
+my-harbor-ingress          <none>   myharbor.apps.okd4.ktdemo.duckdns.org        router-default.apps.okd4.ktdemo.duckdns.org   80, 443   10m
+my-harbor-ingress-notary   <none>   notray-harbor.apps.okd4.ktdemo.duckdns.org   router-default.apps.okd4.ktdemo.duckdns.org   80, 443   10m
+```  
+
+
+<br/>
+
+
+## 11.2 Harbor 설정
+
+<br/>
+
+포탈에 접속하기 위해서 portal 서비스의 host를 찾는다.  
+
+웹브라우저에서 https://myharbor.apps.okd4.ktdemo.duckdns.org 로 접속하고 admin 계정과 초기 비빌번호인 `Harbor12345` 로 로그인 하고 변경한다.    
+
+<br/>
+
+<img src="./assets/okd_harbor1.png" style="width: 80%; height: auto;"/>
+
+<br/>
+
+설정 참고 : https://github.com/shclub/edu_homework/blob/master/homework.md      
+
+계정을 생성을 하고 나서 project 로 이동하여 repository를 생성하고 public 에 체크한다.  
+
+
+<img src="./assets/okd_harbor2.png" style="width: 80%; height: auto;"/>
+
+
+<br/>
+
+생성한 repository 에서 tag / push command 를 확인한다.   
+
+<img src="./assets/okd_harbor3.png" style="width: 80%; height: auto;"/>
+
+<br/>
+
+생성한 repository 에서 tag / push command 를 확인한다.   
+
+<img src="./assets/okd_harbor3.png" style="width: 80%; height: auto;"/>
+
+
+command 로 image를 push 하기 위해서는 insecure registry를 설정 해야 하는데 Mac에서는 도커 데스크의 preferences 로 이동한 후 도커 엔진에서 harbor url을 입력하고 docker 를 재기동한다.   
+
+<img src="./assets/okd_harbor4.png" style="width: 80%; height: auto;"/>
+
+<br/>
+
+ docker 를 재기동한다.   
+
+<img src="./assets/okd_harbor4.png" style="width: 80%; height: auto;"/>
+
+<br/>
+
+> linux 기준   
+
+docker 의 경우 /etc/docker/daemon.json 화일에 아래와 같이 작성하고  도커를 재시작한다.    
+
+```bash
+{
+    "insecure-registries" : ["myharbor.apps.okd4.ktdemo.duckdns.org"]
+}
+```  
+
+<br/>
+
+반드시 재기동한다.  
+
+```bash
+# flush changes
+sudo systemctl daemon-reload
+# restart docker
+sudo systemctl restart docker
+```  
+
+<br/>
+
+podman 의 경우는 `/etc/containers/registries.conf.d` 로 이동하여 `myregistry.conf` 라는 이름으로 화일을 하나 생성한다.  
+
+```bash
+[root@bastion containers]# cd /etc/containers/registries.conf.d
+[root@bastion registries.conf.d]# vi myregistry.conf
+```  
+
+<br/>
+
+`location` 에 harbor 주소를 적어 주고 `insecure` 옵션은 `true` 로 설정한다.  
+
+```bash
+[[registry]]
+location = "myharbor.apps.okd4.ktdemo.duckdns.org"
+insecure = true
+```   
+
+podman의 경우 docker 처럼 재기동 필요가 없다.    
+
+현재 다운 되어 있는 docker image를 조회해 본다.
+
+```bash
+[root@bastion registries.conf.d]# podman images
+REPOSITORY                                             TAG         IMAGE ID      CREATED       SIZE
+docker.io/shclub/edu1                                  master      26efc9f33ac0  24 hours ago  166 MB
+```
+
+<br/>
+
+로그인을 하고 tagging 을 하고 push 를 해봅니다.  
+- 중간에 edu 는 harbor 의 project ( repository ) 이름
+
+```bash
+[root@bastion registries.conf.d]# podman login myharbor.apps.okd4.ktdemo.duckdns.org
+Username: shclub
+Password:
+Login Succeeded!
+
+[root@bastion registries.conf.d]# podman tag docker.io/shclub/edu1 myharbor.apps.okd4.ktdemo.duckdns.org/edu/shclub/edu1
+[root@bastion registries.conf.d]# podman images
+REPOSITORY                                             TAG         IMAGE ID      CREATED       SIZE
+docker.io/shclub/edu1                                  master      26efc9f33ac0  24 hours ago  166 MB
+myharbor.apps.okd4.ktdemo.duckdns.org/edu/shclub/edu1  latest      26efc9f33ac0  24 hours ago  166 MB
+[root@bastion registries.conf.d]# podman push myharbor.apps.okd4.ktdemo.duckdns.org/edu/shclub/edu1
+Getting image source signatures
+Copying blob bc9e2ff0c9d4 done
+Copying blob 870fb40b1d5c done
+Copying blob 690a4af2c9f7 done
+Copying blob 511780f88f80 done
+Copying blob 0048c3fcf4cb done
+Copying blob 5b60283f3630 done
+Copying blob 93b4d35bad0a done
+Copying blob 6c2a89cbf5af done
+Copying blob d404f6c08f8b done
+Copying config 26efc9f33a done
+Writing manifest to image destination
+Storing signatures
+```  
+
+<br/>
+
+정상적으로 push 가 되었고 harbor에서 확인해 봅니다.  
+
+
+<img src="./assets/okd_harbor5.png" style="width: 80%; height: auto;"/>
+
+
+<br/>
+
+우리는 repository 를 minio에 설정 했기 때문에 minio 에서도 확인합니다.     
+
+Object browser 에 보면 용량을 확인 할 수 있다 
+
+<img src="./assets/okd_harbor5_minio.png" style="width: 80%; height: auto;"/>
+
+<br/>
+
+`harbor-registry` 를 클릭해서 들어가면  `harbor-registry/docker/registry/v2` 이경로로 이동하여 repository 항목을 클릭하면 repository 들을 볼 수 있다.  
+
+<img src="./assets/okd_harbor6_minio.png" style="width: 80%; height: auto;"/>
+
+
+<br/>
+
+meta 데이터는 도커이미지 이름의 경로인 `harbor-registry/docker/registry/v2/repositories/edu/shclub/edu1` 로 이동하여 보면 폴더 3개가 보인다.  
+
+<img src="./assets/okd_harbor7_minio.png" style="width: 80%; height: auto;"/>
+
+
+<br/>
+
+데이터는  `harbor-registry/docker/registry/v2/blobs/sha256` 이경로로 이동하여 보면 숫자 폴더가 나오고 데이터가 저장된 것을 볼 수 있다.  
+
+<img src="./assets/okd_harbor8_minio.png" style="width: 80%; height: auto;"/>
+
+<br/>
+
 <br/><br/><br/>
+
 
 참고 자료   
 
@@ -2573,7 +3263,7 @@ spec:
 - OKD 아키텍처 : https://daaa0555.tistory.com/479
 - ArgoCD : https://www.skyer9.pe.kr/wordpress/?p=6845
 - ArgoCD Redis 접속 에러 (networkpolicy) : https://www.xiexianbin.cn/cicd/argo-cd/deploy/index.html
-
+- Harbor 설치 : https://computingforgeeks.com/install-harbor-image-registry-on-kubernetes-openshift-with-helm-chart/?amp
 
 <br/>
 
