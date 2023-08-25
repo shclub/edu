@@ -8,6 +8,9 @@ OKD 설명 참고 :  https://velog.io/@_gyullbb/OKD-%EA%B0%9C%EC%9A%94
 
 <br/>
 
+0. 환경 정보
+   - https://console-openshift-console.apps.okd4.ktdemo.duckdns.org/
+
 1. 도메인 생성
 
 2. 설치 환경 인프라 구성
@@ -3266,4 +3269,8 @@ meta 데이터는 도커이미지 이름의 경로인 `harbor-registry/docker/re
 - Harbor 설치 : https://computingforgeeks.com/install-harbor-image-registry-on-kubernetes-openshift-with-helm-chart/?amp
 
 <br/>
+
+journalctl -b -f -u crio.service
+
+journalctl -xeu kubelet -f
 
