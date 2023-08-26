@@ -9,7 +9,11 @@ OKD 설명 참고 :  https://velog.io/@_gyullbb/OKD-%EA%B0%9C%EC%9A%94
 <br/>
 
 0. 환경 정보
-   - https://console-openshift-console.apps.okd4.ktdemo.duckdns.org/
+   - OKD Console : https://console-openshift-console.apps.okd4.ktdemo.duckdns.org/ 
+   - OKD API : https://api.okd4.ktdemo.duckdns.org:6443
+   - Minio Object Storage : https://minio-minino.apps.okd4.ktdemo.duckdns.org/   
+   - Harbor Private Docker Registry : https://myharbor.apps.okd4.ktdemo.duckdns.org/   
+   
 
 1. 도메인 생성
 
@@ -33,9 +37,9 @@ OKD 설명 참고 :  https://velog.io/@_gyullbb/OKD-%EA%B0%9C%EC%9A%94
 
 11. Harbor ( Private Registry ) 설치 및 설정
 
-12. etcd 백업하기 
+12. Compute ( Worker Node ) Join 하기
 
-13. Compute ( Worker Node ) Join 하기
+13. etcd 백업하기 
 
 
 <br/>
@@ -76,6 +80,7 @@ ktdemo.duckdns.org 로 생성 을 한다. ip 를 변경하고 싶으면 ip를 �
 | VM | proxmox | 192.168.1.1.247 | bastion.okd4.ktdemo.duckdns.org | Bastion(LB,DNS) | Centos 8 Stream | 2 core / 4 G / 30G |
 | VM | proxmox | 192.168.1.1.128 | bootstrap.okd4.ktdemo.duckdns.org |  Bootstrap | Fedora Core OS 35 | 2 core / 6 G / 40G |
 | VM | vmware | 192.168.1.1.146 | okd-1.okd4.ktdemo.duckdns.org | Master/Worker | Fedora Core OS 35 | 8 core / 20 G / 200G | Base OS 윈도우 11 
+| VM | proxmox | 192.168.1.1.148 | okd-2.okd4.ktdemo.duckdns.org |  Worker | Fedora Core OS 35 | 2 core / 16 G / 300G | 워커 노드 추가
 
 
 <br/>
@@ -1116,7 +1121,7 @@ backend ocp_machine_config_server_backend
 
 <br/>
 
-haproxy를  재기동 한다.
+haproxy 를  재기동 한다.
 
 <br/>
 
@@ -3245,6 +3250,414 @@ meta 데이터는 도커이미지 이름의 경로인 `harbor-registry/docker/re
 
 <br/>
 
+## 12. Compute ( Worker Node ) Join 하기
+
+<br/>
+
+### 12.1 Haproxy 에 노드 추가
+
+<br/>
+
+bastion 서버에서 haproxy.cfg 에 신규 노드를 추가한다.    
+
+
+/etc/haproxy/haproxy.cfg  를 아래와 같이 수정한다.  
+
+```bash
+backend openshift_api_backend
+    mode tcp
+    balance source
+    server      bootstrap 192.168.1.128:6443 check # bootstrap 서버
+    server      okd-1 192.168.1.146:6443 check # okd master/worker 설정
+    server      okd-2 192.168.1.148:6443 check  # worker node 추가 
+
+# OKD Machine Config Server
+frontend okd_machine_config_server_frontend
+    mode tcp
+    bind *:22623
+    default_backend okd_machine_config_server_backend
+
+backend okd_machine_config_server_backend
+    mode tcp
+    balance source
+    server      bootstrap 192.168.1.128:22623 check # bootstrap 서버
+    server      okd-1 192.168.1.146:22623 check # okd master/worker 설정
+    server      okd-2 192.168.1.148:22623 check  # worker node 추가 
+
+# OKD Ingress - layer 4 tcp mode for each. Ingress Controller will handle layer 7.
+frontend okd_http_ingress_frontend
+    bind *:80
+    default_backend okd_http_ingress_backend
+    mode tcp
+
+backend okd_http_ingress_backend
+    balance source
+    mode tcp
+    server      okd-1 192.168.1.146:80 check # okd master/worker 설정
+    server      okd-2 192.168.1.148:80 check  # worker node 추가 
+
+frontend okd_https_ingress_frontend
+    bind *:443
+    default_backend okd_https_ingress_backend
+    mode tcp
+
+backend okd_https_ingress_backend
+    mode tcp
+    balance source
+    server      okd-1 192.168.1.146:443 check
+    server      okd-2 192.168.1.148:443 check  # worker node 추가 
+```  
+
+<br/>
+
+haproxy를 재기동 한다.  
+
+```bash
+[root@bastion shclub]# systemctl restart haproxy
+```  
+
+
+<br/>
+
+### 12.2 nameserver 변경
+
+<br/>
+
+/var/named 폴더로 이동한다.
+
+<br/>
+
+```bash
+[root@bastion shclub]# cd /var/named
+```  
+
+<br/>
+
+okd4.ktdemo.duckdns.org.zone 파일 설정 ( DNS 정방향 )  
+- ip와 hostname을 잘 수정한다.  
+
+<br/>
+
+```bash
+[root@bastion named]# ls
+  data  dynamic  named.ca  named.empty  named.localhost  named.loopback   slaves
+[root@bastion named]# vi okd4.ktdemo.duckdns.org.zone
+$TTL 1D
+@ IN SOA @ ns.ktdemo.duckdns.org. (
+				0	; serial
+				1D	; refresh
+				1H	; retry
+				1W	; expire
+				3H )	; minimum
+@ IN NS ns.ktdemo.duckdns.org.
+@ IN A  192.168.1.247	;
+
+; Ancillary services
+lb.okd4 	IN	A       192.168.1.247
+
+; Bastion or Jumphost
+ns	IN	A	192.168.1.247	;
+
+; OKD Cluster
+bastion.okd4    IN      A       192.168.1.247
+bootstrap.okd4	IN	A	192.168.1.128
+
+okd-1.okd4	IN	A	192.168.1.146
+okd-2.okd4	IN	A	192.168.1.148
+
+api.okd4	IN	A	192.168.1.247
+api-int.okd4	IN	A	192.168.1.247
+*.apps.okd4	IN	A	192.168.1.247
+```
+
+
+<br/>
+
+1.168.192.in-addr.rev 파일 설정 ( DNS 역방향 )
+
+<br/>
+
+```bash
+[root@bastion named]# vi 1.168.192.in-addr.rev
+$TTL 1D
+@	IN	SOA	ktdemo.duckdns.org. ns.ktdemo.duckdns.org. (
+						0	; serial
+						1D	; refresh
+						1H	; retry
+						1W	; expire
+						3H )	; minimum
+
+@	IN	NS	ns.
+247	IN	PTR	ns.
+247	IN	PTR	bastion.okd4.ktdemo.duckdns.org.
+128	IN	PTR	bootstrap.okd4.ktdemo.duckdns.org.
+146	IN	PTR	okd-1.okd4.ktdemo.duckdns.org.
+148	IN	PTR	okd-1.okd4.ktdemo.duckdns.org.
+
+247	IN	PTR	api.okd4.ktdemo.duckdns.org.
+247	IN	PTR	api-int.okd4.ktdemo.duckdns.org.
+```
+
+<br/>
+
+zone 파일 권한 설정을 하고 named 서비스를 재기동한다.    
+
+<br/>
+
+```bash
+[root@bastion named]# systemctl restart named
+```  
+<br/> 
+
+### 12.3 worker ( compute ) 노드 생성
+
+<br/>
+
+proxmox 에 coreos 기반의 worker 노드를 생성한다. ( 생성 과정은 생략 )
+
+<br/>
+
+- 다운로드 위치 : 
+https://builds.coreos.fedoraproject.org/browser?stream=stable&arch=x86_64 에서
+- Version : fedora-coreos-35.20220410.3.1-live.x86_64.iso
+
+
+<br/>
+
+먼저 네트웍을 설정을 하기 위해서 network device 이름을 확인한다.  
+
+```bash  
+[root@localhost core]# nmcli device
+DEVICE  TYPE      STATE      CONNECTION
+ens18   ethernet  connected  Wired connection 1
+lo      loopback  unmanaged  --
+```  
+
+<br/>
+
+connection 이름을 ens18으로 생성한다.  
+
+```bash  
+[root@localhost core]# nmcli connection add type ethernet autoconnect yes con-name ens18 ifname ens18
+Connection 'ens18' (c8971315-71e5-40a1-8b16-9c1ef5b354c8) successfully added.
+```  
+
+<br/>
+
+네트웍 설정을 한다.  
+- ip : okd-2 서버는 192.168.1.148/24 로 설정한다.
+- dns : bastion 서버는 192.168.1.247 로 설정한다.
+- gateway : 공유기 ip 인 192.168.1.1 로 설정한다. ( bastion 서버 ip로 해도 상관 없음 )
+- dns-search : okd4.ktdemo.duckdns.org 로 설정 ( cluster 이름 + . + base Domain)
+
+<br/>
+
+```bash  
+[root@localhost core]# nmcli connection modify ens18 ipv4.addresses 192.168.1.148/24 ipv4.method manual
+[root@localhost core]# nmcli connection modify ens18 ipv4.dns 192.168.1.247
+[root@localhost core]# nmcli connection modify ens18 ipv4.gateway 192.168.1.1
+[root@localhost core]# nmcli connection modify ens18 ipv4.dns-search okd4.ktdemo.duckdns.org
+```  
+
+<br/>
+
+worker 노드 ( okd-2 ) 설치를 한다.
+
+<br/>
+
+```bash
+[root@localhost core]# coreos-installer install /dev/sda -I http://192.168.1.247:8080/ign/worker.ign --insecure-ignition --copy-network
+Installing Fedora CoreOS 35.20220410.3.1 x86_64 (512-byte sectors)
+> Read disk 2.5 GiB/2.5 GiB (100%)
+Writing Ignition config
+Copying networking configuration from /etc/NetworkManager/system-connections/
+Copying /etc/NetworkManager/system-connections/ens18.nmconnection to installed system
+Install complete.
+```  
+
+<br/>
+
+hostname을 설정 하고 재기동 한다.
+
+<br/>
+
+```bash
+[root@localhost core]# hostnamectl set-hostname okd-2.okd4.ktdemo.duckdns.org
+[root@localhost core]# reboot now
+``` 
+
+<br/>
+
+bastion 서버에서 아래 명령어로 모니터링을 하고  `It is now safe to remove the bootstrap resources` 가 나오면 정상적으로 master 노드가 설치가 완료 됩니다.   
+
+<br/>
+
+```bash
+[root@bastion ~]# /usr/local/bin/openshift-install --dir=/root/okd4 wait-for bootstrap-complete --log-level=debug
+DEBUG OpenShift Installer 4.10.0-0.okd-2022-03-07-131213
+DEBUG Built from commit 3b701903d96b6375f6c3852a02b4b70fea01d694
+INFO Waiting up to 20m0s (until 11:21AM) for the Kubernetes API at https://api.okd4.ktdemo.duckdns.org:6443...
+INFO API v1.23.3-2003+e419edff267ffa-dirty up
+INFO Waiting up to 30m0s (until 11:31AM) for bootstrapping to complete...
+DEBUG Bootstrap status: complete
+INFO It is now safe to remove the bootstrap resources
+DEBUG Time elapsed per stage:
+DEBUG Bootstrap Complete: 1s
+DEBUG                API: 1s
+INFO Time elapsed: 1s
+```
+
+<br/>
+
+worker node 가 재기동 하기에는 시간이 많이 소요가 되고 완료가 되면 bastion 서버에서 csr를 확인하고 approve를 해야 join이 완료가 된다.      
+
+먼저 node를 확인해 본다 아직 worker node 가 조인 되지 않았다.    
+
+```bash
+[root@bastion ~]# oc get nodes
+NAME                            STATUS   ROLES           AGE   VERSION
+okd-1.okd4.ktdemo.duckdns.org   Ready    master,worker   17d   v1.23.3+759c22b
+```  
+
+<br/>
+
+csr를 조회하고 승인을 한다.  
+
+```bash
+[root@bastion ~]# oc get csr
+NAME        AGE     SIGNERNAME                                    REQUESTOR                                                                   REQUESTEDDURATION   CONDITION
+csr-5lgxl   17s     kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper   <none>              Pending
+csr-vhvjn   3m28s   kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper   <none>
+[root@bastion ~]# oc adm certificate approve csr-5lgxl
+certificatesigningrequest.certificates.k8s.io/csr-5lgxl approved
+[root@bastion ~]# oc adm certificate approve csr-vhvjn
+certificatesigningrequest.certificates.k8s.io/csr-vhvjn approved
+```
+
+<br/>
+
+다시 node를 조회하면  join 된 것을 확인 할수 있고 status 는 `NotReady` 이다.  
+
+```bash
+[root@bastion ~]# oc get nodes
+NAME                            STATUS     ROLES           AGE   VERSION
+okd-1.okd4.ktdemo.duckdns.org   Ready      master,worker   17d   v1.23.3+759c22b
+okd-2.okd4.ktdemo.duckdns.org   NotReady   worker          21s   v1.23.3+759c22b
+```  
+
+<br/>
+
+다시 csr를 조회해 보면 승인 대기 중인 csr 이 있는데 okd 는 machine config 기능이 있어 master node 설정값이 worker node에 적용되는 시간이 필요하다.  
+
+```bash
+[root@bastion ~]# oc get csr
+NAME        AGE     SIGNERNAME                                    REQUESTOR                                                                   REQUESTEDDURATION   CONDITION
+csr-5lgxl   2m29s   kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper   <none>              Approved,Issued
+csr-j2m7b   17s     kubernetes.io/kubelet-serving                 system:node:okd-2.okd4.ktdemo.duckdns.org                                   <none>              Pending
+csr-vhvjn   5m40s   kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper   <none>
+```  
+
+<br/>
+
+시간이 좀 더 지나면 아래와 같이 Ready로 바뀐 것을 확인 할 수 있다.
+
+```bash
+[root@bastion ~]# oc get nodes
+NAME                            STATUS   ROLES           AGE     VERSION
+okd-1.okd4.ktdemo.duckdns.org   Ready    master,worker   17d     v1.23.3+759c22b
+okd-2.okd4.ktdemo.duckdns.org   Ready    worker          5m10s   v1.23.3+759c22b
+```
+
+<br/>
+
+machine config 값을 조회해 본다.  
+
+```bash
+[root@bastion ~]# oc get mc
+NAME                                               GENERATEDBYCONTROLLER                      IGNITIONVERSION   AGE
+00-master                                          14a1ca2cb91ff7e0faf9146b21ba12cd6c652d22   3.2.0             17d
+00-worker                                          14a1ca2cb91ff7e0faf9146b21ba12cd6c652d22   3.2.0             17d
+01-master-container-runtime                        14a1ca2cb91ff7e0faf9146b21ba12cd6c652d22   3.2.0             17d
+01-master-kubelet                                  14a1ca2cb91ff7e0faf9146b21ba12cd6c652d22   3.2.0             17d
+01-worker-container-runtime                        14a1ca2cb91ff7e0faf9146b21ba12cd6c652d22   3.2.0             17d
+01-worker-kubelet                                  14a1ca2cb91ff7e0faf9146b21ba12cd6c652d22   3.2.0             17d
+99-master-generated-registries                     14a1ca2cb91ff7e0faf9146b21ba12cd6c652d22   3.2.0             17d
+99-master-okd-extensions                                                                      3.2.0             17d
+99-master-ssh                                                                                 3.2.0             17d
+99-okd-master-disable-mitigations                                                             3.2.0             17d
+99-okd-worker-disable-mitigations                                                             3.2.0             17d
+99-worker-generated-registries                     14a1ca2cb91ff7e0faf9146b21ba12cd6c652d22   3.2.0             17d
+99-worker-okd-extensions                                                                      3.2.0             17d
+99-worker-ssh                                                                                 3.2.0             17d
+rendered-master-f14cbe675b651ca064299b536d4cf820   14a1ca2cb91ff7e0faf9146b21ba12cd6c652d22   3.2.0             17d
+rendered-worker-f9ec036401f7136f50343298d7955ab9   14a1ca2cb91ff7e0faf9146b21ba12cd6c652d22   3.2.0             17d
+```
+
+<br/>
+
+UPDATING 가 `false` 이면 update 완료
+
+```bash
+[root@bastion ~]# oc get mcp
+NAME     CONFIG                                             UPDATED   UPDATING   DEGRADED   MACHINECOUNT   READYMACHINECOUNT   UPDATEDMACHINECOUNT   DEGRADEDMACHINECOUNT   AGE
+master   rendered-master-f14cbe675b651ca064299b536d4cf820   True      False      False      1              1                   1                     0                      17d
+worker   rendered-worker-f9ec036401f7136f50343298d7955ab9   True      False      False      1              1                   1                     0
+```  
+
+<br/> 
+
+### 12.4 Node Selector 설정
+
+<br/>
+
+기존에 master/worker 겸용 노드에서 생성된 namespace 중 일부는 신규 worker node 로 재기동 시키기 위해서 node selector를 설정한다.  
+
+<br/>
+
+okd-1 , okd-2 node 를 edit 하여 label 을  설정한다.  
+- okd-1 :  `devops: "true"`     
+- okd-2 :  `edu: "true"`       
+
+<br/>
+
+```bash
+[root@bastion ~]# kubectl edit node okd-1.okd4.ktdemo.duckdns.org
+```
+
+<img src="./assets/okd_node_selector1.png" style="width: 80%; height: auto;"/>
+
+
+<br/>
+
+namespace 에 node selector 를 적용한다.     
+- `openshift.io/node-selector: edu=true`  
+
+
+<br/>
+
+```bash
+[root@bastion ~]# kubectl edit namespace edu3
+```
+
+
+<br/> 
+
+<img src="./assets/okd_node_selector2.png" style="width: 80%; height: auto;"/>
+
+<br/>
+
+Pod를 하나 생성해 본다. okd-2 에 pod가 생성된 것을 확인 할 수 있다.  
+
+```bash
+[root@bastion ~]# kubectl run nginx --image=nginx -n edu3
+pod/nginx created
+[root@bastion ~]# kubectl get po -n edu3 -o wide
+NAME    READY   STATUS    RESTARTS   AGE   IP            NODE                            NOMINATED NODE   READINESS GATES
+nginx   1/1     Running   0          20s   10.129.0.10   okd-2.okd4.ktdemo.duckdns.org   <none>           <none>
+```  
+
+<br/>
+
 <br/><br/><br/>
 
 
@@ -3270,7 +3683,11 @@ meta 데이터는 도커이미지 이름의 경로인 `harbor-registry/docker/re
 
 <br/>
 
+## 로그 조회
+
+<br/>
+
+```bash
 journalctl -b -f -u crio.service
-
 journalctl -xeu kubelet -f
-
+```
