@@ -1,6 +1,6 @@
 # OKD  설치 방법
  
-Redhat Openshift 의  `오픈소스 버전`인 OKD Cluster 를  생성하고 사용해본다.   ( OKD 4.12 버전 기준 : k8s 1.25 )     
+Redhat Openshift 의  `오픈소스 버전`인 OKD Cluster 를  생성하고 사용해본다.   ( OKD 4.12 버전  기준  : k8s 1.25)     
 
 <br/>
 
@@ -11,8 +11,7 @@ OKD 설명 참고 :  https://velog.io/@_gyullbb/OKD-%EA%B0%9C%EC%9A%94
 0. 환경 정보
    - OKD Console : https://console-openshift-console.apps.okd4.ktdemo.duckdns.org/ 
    - OKD API : https://api.okd4.ktdemo.duckdns.org:6443
-   - Minio Object Storage : https://minino.apps.okd4.ktdemo.duckdns.org/   
-   - ArgoCD : https://argocd.apps.okd4.ktdemo.duckdns.org/   
+   - Minio Object Storage : https://minio-minino.apps.okd4.ktdemo.duckdns.org/   
    - Harbor Private Docker Registry : https://myharbor.apps.okd4.ktdemo.duckdns.org/   
    
 
@@ -32,9 +31,9 @@ OKD 설명 참고 :  https://velog.io/@_gyullbb/OKD-%EA%B0%9C%EC%9A%94
 
 8. ArgoCD 설치  
 
-9. Dynamic Provisioning 설치
+9. Minio Object Stroage 설치 ( w/ NFS )
 
-10. Minio Object Stroage 설치 ( w/ NFS )
+10. Dynamic Provisioning 설치
 
 11. Harbor ( Private Registry ) 설치 및 설정
 
@@ -79,44 +78,9 @@ ktdemo.duckdns.org 로 생성 을 한다. ip 를 변경하고 싶으면 ip를 �
 | 서버구분 | Hypervisor | IP | hostname | 용도 | OS | Spec | 기타
 |:--------| :-----|:----|  :----|  :----| :----| :----| :----|  
 | VM | proxmox | 192.168.1.1.247 | bastion.okd4.ktdemo.duckdns.org | Bastion(LB,DNS) | Centos 8 Stream | 2 core / 4 G / 30G |
-| VM | proxmox | 192.168.1.1.128 | bootstrap.okd4.ktdemo.duckdns.org |  Bootstrap | Fedora Core OS 37 | 2 core / 8 G / 40G | 메모리 8기가 이상 
-| VM | vmware | 192.168.1.1.146 | okd-1.okd4.ktdemo.duckdns.org | Master/Worker | Fedora Core OS 37 | 8 core / 20 G / 200G | Base OS 윈도우 11 
-| VM | proxmox | 192.168.1.1.148 | okd-2.okd4.ktdemo.duckdns.org |  Worker | Fedora Core OS 37 | 2 core / 16 G / 300G | 워커 노드
-
-<br/>
-
-coreos 버전은 OKD 버전과 일치해야 합니다. 
-- 버전이 일치 하지않으면 설치시 pivot 에러 발생  
-
-https://github.com/okd-project/okd/releases?page=1 에서 확인 합니다.     
-
-<br/>
-
-fedora download 
-- https://builds.coreos.fedoraproject.org/browser?stream=stable&arch=x86_64
-
-<br/>
-
-```bash
-Release Metadata:
-  Version:  4.12.0-0.okd-2023-03-18-084815
-  Upgrades: <none>
-  Metadata:
-
-Component Versions:
-  kubernetes 1.25.7        
-  machine-os 37.20230218.3 Fedora CoreOS
-```  
-
-
-Release Metadata:
-  Version:  4.13.0-0.okd-2023-08-18-135805
-  Upgrades: <none>
-  Metadata:
-
-Component Versions:
-  kubernetes 1.26.7        
-  machine-os 38.20230722.3 Fedora CoreOS
+| VM | proxmox | 192.168.1.1.128 | bootstrap.okd4.ktdemo.duckdns.org |  Bootstrap | Fedora Core OS 35 | 2 core / 6 G / 40G |
+| VM | vmware | 192.168.1.1.146 | okd-1.okd4.ktdemo.duckdns.org | Master/Worker | Fedora Core OS 35 | 8 core / 20 G / 200G | Base OS 윈도우 11 
+| VM | proxmox | 192.168.1.1.148 | okd-2.okd4.ktdemo.duckdns.org |  Worker | Fedora Core OS 35 | 2 core / 16 G / 300G | 워커 노드 추가
 
 
 <br/>
@@ -283,7 +247,7 @@ backend openshift_api_backend
     balance source
     server      bootstrap 192.168.1.128:6443 check # bootstrap 서버
     server      okd-1 192.168.1.146:6443 check # okd master/worker 설정
-    server      okd-2 192.168.1.148:6443 check  # 추가 서버 있다면 설정
+    #server     okd-2 192.168.1.147:6443 check  # 추가 서버 있다면 설정
 
 # OKD Machine Config Server
 frontend okd_machine_config_server_frontend
@@ -319,7 +283,7 @@ backend okd_https_ingress_backend
     mode tcp
     balance source
     server      okd-1 192.168.1.146:443 check
-    server      okd-2 192.168.1.148:443 check  # 추가 서버 있다 면 설정
+    server     okd-2 192.168.1.148:443 check  # 추가 서버 있다 면 설정
 
 ```
 
@@ -347,26 +311,6 @@ bind 에러가 나는 경우 아래와 같이 설정한다.
 [root@bastion shclub]# setsebool -P haproxy_connect_any=1
 [root@bastion shclub]# systemctl restart haproxy
 ```  
-
-<br/>
-
-HAproxy 로드발란서 상태 및 전송량 등 통계를 확인하려면 위에서 설정한대로 아래 URL 및 계정을 이용하여 로그인하면 됩니다.  
-아래는 haproxy.cfg 설정이다.  
-
-```bash
-# Enable HAProxy stats
-listen stats
-    bind :9000
-  stats auth admin:az1@
-  stats uri /stats
-```
-<br/>
-
-브라우저에서 http://192.168.1.247:9000/stats 로 로그인 하고 권한 을 설정했다면 위에 설정한 값으로 로그인 한다.  
-- 계정 : admin / az1@
-
-<img src="./assets/ha_proxy.png" style="width: 80%; height: auto;"/>
-
 
 <br/>
 
@@ -594,7 +538,6 @@ bastion.okd4    IN      A       192.168.1.247
 bootstrap.okd4	IN	A	192.168.1.128
 
 okd-1.okd4	IN	A	192.168.1.146
-okd-1.okd4	IN	A	192.168.1.148
 
 api.okd4	IN	A	192.168.1.247
 api-int.okd4	IN	A	192.168.1.247
@@ -623,7 +566,6 @@ $TTL 1D
 247	IN	PTR	bastion.okd4.ktdemo.duckdns.org.
 128	IN	PTR	bootstrap.okd4.ktdemo.duckdns.org.
 146	IN	PTR	okd-1.okd4.ktdemo.duckdns.org.
-148	IN	PTR	okd-1.okd4.ktdemo.duckdns.org.
 
 247	IN	PTR	api.okd4.ktdemo.duckdns.org.
 247	IN	PTR	api-int.okd4.ktdemo.duckdns.org.
@@ -705,19 +647,16 @@ oc 실행 바이너리 와 openshift-install 바이너리 다운로드 하고 �
 
 <br/>
 
-
 ```bash
-[root@localhost ~]# wget https://github.com/okd-project/okd/releases/download/4.12.0-0.okd-2023-03-18-084815/openshift-client-linux-4.12.0-0.okd-2023-03-18-084815.tar.gz
-
-[root@localhost ~]# wget https://github.com/okd-project/okd/releases/download/4.12.0-0.okd-2023-03-18-084815/openshift-install-linux-4.12.0-0.okd-2023-03-18-084815.tar.gz
-
-[root@bastion ~]# tar xvfz openshift-client-linux-4.12.0-0.okd-2023-03-18-084815.tar.gz
+[root@bastion ~]# wget https://github.com/openshift/okd/releases/download/4.10.0-0.okd-2022-03-07-131213/openshift-install-linux-4.10.0-0.okd-2022-03-07-131213.tar.gz
+[root@bastion ~]# wget https://github.com/openshift/okd/releases/download/4.10.0-0.okd-2022-03-07-131213/openshift-client-linux-4.10.0-0.okd-2022-03-07-131213.tar.gz
+[root@bastion ~]# tar xvfz openshift-install-linux-4.10.0-0.okd-2022-03-07-131213.tar.gz
+README.md
+openshift-install
+[root@bastion ~]# tar xvfz openshift-client-linux-4.10.0-0.okd-2022-03-07-131213.tar.gz
 README.md
 oc
 kubectl
-[root@bastion ~]# tar xvfz openshift-install-linux-4.12.0-0.okd-2023-03-18-084815.tar.gz
-README.md
-openshift-install
 ```
 <br/>
 
@@ -729,8 +668,7 @@ openshift-install
 [root@bastion ~]# mv oc kubectl openshift-install /usr/local/bin/
 [root@bastion ~]# chmod 755 /usr/local/bin/{oc,kubectl,openshift-install}
 [root@bastion ~]# /usr/local/bin/oc version
-Client Version: 4.12.0-0.okd-2023-03-18-084815
-Kustomize Version: v4.5.7
+Client Version: 4.10.0-0.okd-2022-03-07-131213
 ```
 
 <br/>
@@ -742,10 +680,6 @@ Kustomize Version: v4.5.7
 
 OKD를 설치 하는 과정에서 redhat 의 private registry 에서 이미지를 다운을 받는다.  
 private registry 에 접속하기 위해서는 pull secret이 필요하고 아래 redhat 사이트에 접속을 하여 가입을 하고 pull secret를 다운 받는다.  
-
-<br/>
-
-> pull secret 을 받은 후 24시간 안에  master node 설치를 완료 해야 한다.  
 
 <br/>
 
@@ -771,7 +705,7 @@ pull secret의 포맷은 아래와 같다.
 
 <br/>
 
-manifest 와 inition 화일을 생성하기 위하여 install-config.yaml를 만든다.
+manifest 와 ignition 화일을 생성하기 위하여 install-config.yaml를 만든다.
 
 <br/>
 
@@ -785,7 +719,7 @@ baseDomain: ktdemo.duckdns.org  # 베이스 도메인. 본인의 공유기 도�
 compute:
 - hyperthreading: Enabled
   name: worker
-  replicas: 1  # 워커 노드 수
+  replicas: 0  # 워커 노드 수
 controlPlane:
   hyperthreading: Enabled
   name: master
@@ -825,6 +759,7 @@ openshift 폴더가 생성이되고 master/worker 노드 설정 화일들이 있
 ```bash
 [root@bastion ~]# /usr/local/bin/openshift-install create manifests --dir=okd4
 INFO Consuming Install Config from target directory
+WARNING Making control-plane schedulable by setting MastersSchedulable to true for Scheduler cluster settings
 INFO Manifests created in: okd4/manifests and okd4/openshift
 [root@bastion ~]# ls ./okd4
 manifests  openshift
@@ -833,45 +768,8 @@ manifests  openshift
 99_openshift-cluster-api_master-user-data-secret.yaml  99_openshift-machineconfig_99-worker-ssh.yaml
 99_openshift-cluster-api_worker-user-data-secret.yaml  openshift-install-manifests.yaml
 ```
-<br/>
-
-
-master 노드 기능의  구성을 하려면 manifest/cluster-scheduler-02-config.yml의 mastersSchedulable 파라미터를 `false` 로 변경한다.     
-
-```bash
-[root@bastion manifests]# vi cluster-scheduler-02-config.yml
-[root@bastion manifests]# cat cluster-scheduler-02-config.yml
-apiVersion: config.openshift.io/v1
-kind: Scheduler
-metadata:
-  creationTimestamp: null
-  name: cluster
-spec:
-  mastersSchedulable: false
-  policy:
-    name: ""
-status: {}
-```
 
 <br/>
-
-향후 수정할수 있고 master 노드에서 worker role을 삭제하려면 아래 명령어를 통해 삭제 할 수 있습니다.  
-
-```bash
-[root@bastion ]# oc patch schedulers.config.openshift.io/cluster --type merge -p '{"spec":{"mastersSchedulable":false}}'
-scheduler.config.openshift.io/cluster patched
-```  
-
-<br/>
-만일, master 노드에서 다시 worker role을 추가하려면 아래 명령어를 통해 롤을 부여 할 수 있습니다.  
-
-```bash
-[root@bastion ]# oc patch schedulers.config.openshift.io/cluster --type merge -p '{"spec":{"mastersSchedulable":true}}'
-scheduler.config.openshift.io/cluster patched
-```  
-
-<br/>
-
 
 coreos 설정을 위한 ignition 화일을 생성한다.    
 역할 별로 ign 파일이 생성이 되고 auth 폴더 안에는 연결 정보 (kubeconfig) 가 저장이 되어 있다.
@@ -880,11 +778,11 @@ coreos 설정을 위한 ignition 화일을 생성한다.
 
 ```bash
 [root@bastion ~]# /usr/local/bin/openshift-install create ignition-configs --dir=okd4
-INFO Consuming OpenShift Install (Manifests) from target directory
+INFO Consuming Master Machines from target directory
 INFO Consuming Openshift Manifests from target directory
 INFO Consuming Worker Machines from target directory
 INFO Consuming Common Manifests from target directory
-INFO Consuming Master Machines from target directory
+INFO Consuming OpenShift Install (Manifests) from target directory
 INFO Ignition-Configs created in: okd4 and okd4/auth
 [root@bastion ~]# ls ./okd4/
 auth  bootstrap.ign  master.ign  metadata.json  worker.ign
@@ -914,8 +812,8 @@ proxmox 서버에 coreos 기반의 bootstrap 용 서버를 생성한다. ( 생�
 <br.>
 
 - 다운로드 위치 : 
-https://builds.coreos.fedoraproject.org/browser?stream=stable&arch=x86_64
-- Version : fedora-coreos-37.20230218.3.0-live.x86_64.iso
+https://builds.coreos.fedoraproject.org/browser?stream=stable&arch=x86_64 에서
+- Version : fedora-coreos-35.20220410.3.1-live.x86_64.iso
 
 <br/>
 
@@ -926,11 +824,10 @@ https://builds.coreos.fedoraproject.org/browser?stream=stable&arch=x86_64
 <br/>
 
 먼저 네트웍을 설정을 하기 위해서 network device 이름을 확인한다.  
-nmcli 대신 nmtui를 사용하면 gui 모드로 설정 가능하다.   
 
 ```bash  
 [root@localhost core]# nmcli device
-ens160   ethernet  connected  Wired connection 1
+ens18   ethernet  connected  Wired connection 1
 lo      loopback  unmanaged  --
 ```  
 
@@ -939,7 +836,7 @@ lo      loopback  unmanaged  --
 connection 이름을 ens18로 생성한다.  
 
 ```bash  
-[root@localhost core]# nmcli connection add type ethernet autoconnect yes con-name ens160 ifname ens160
+[root@localhost core]# nmcli connection add type ethernet autoconnect yes con-name ens18 ifname ens18
 ```  
 
 <br/>
@@ -953,15 +850,15 @@ connection 이름을 ens18로 생성한다.
 <br/>
 
 ```bash  
-[root@localhost core]# nmcli connection modify ens160 ipv4.addresses 192.168.1.128/24 ipv4.method manual
-[root@localhost core]# nmcli connection modify ens160 ipv4.dns 192.168.1.247
-[root@localhost core]# nmcli connection modify ens160 ipv4.gateway 192.168.1.1
-[root@localhost core]# nmcli connection modify ens160 ipv4.dns-search okd4.ktdemo.duckdns.org
+[root@localhost core]# nmcli connection modify ens18 ipv4.addresses 192.168.1.128/24 ipv4.method manual
+[root@localhost core]# nmcli connection modify ens18 ipv4.dns 192.168.1.247
+[root@localhost core]# nmcli connection modify ens18 ipv4.gateway 192.168.1.1
+[root@localhost core]# nmcli connection modify ens18 ipv4.dns-search okd4.ktdemo.duckdns.org
 ```  
 
 <br/>
 
-설치를 시작하기 전에 bastion 서버의 /etc/resolv.conf 화일에서 nameserver 설정을 bastion 서버의 ip인 192.168.1.247 로 변경한다.  
+설치를 시작하기 전에 bastion 서버의 /etc/resolv.conf 화일의 nameserver 설정을 bastion 서버의 ip인 192.168.1.247 로 변경한다.  
 - 변경하지 않으면 EOF 에러등 다양한 에러가 발생한다.
 - 이제 부터는 내부 네트웍만 필요하다.    
 
@@ -973,34 +870,9 @@ connection 이름을 ens18로 생성한다.
 
 <br/>
 
-disk 종류를 조회 한다.
-
 ```bash  
-[root@localhost core]# fdisk -l
-Disk /dev/loop0: 386.14 MiB, 404901888 bytes, 790824 sectors
-Units: sectors of 1 * 512 = 512 bytes
-Sector size (logical/physical): 512 bytes / 512 bytes
-I/O size (minimum/optimal): 512 bytes / 512 bytes
-
-
-Disk /dev/nvme0n1: 50 GiB, 53687091200 bytes, 104857600 sectors
-Disk model: VMware Virtual NVMe Disk
-Units: sectors of 1 * 512 = 512 bytes
-Sector size (logical/physical): 512 bytes / 512 bytes
-I/O size (minimum/optimal): 512 bytes / 512 bytes
-
-
-Disk /dev/loop1: 680.51 MiB, 713562624 bytes, 1393677 sectors
-Units: sectors of 1 * 512 = 512 bytes
-Sector size (logical/physical): 512 bytes / 512 bytes
-I/O size (minimum/optimal): 512 bytes / 512 bytes
-```  
- 
-<br/>
-
-```bash  
-[root@localhost core]# coreos-installer install --copy-network /dev/sda -I http://192.168.1.247:8080/ign/bootstrap.ign --insecure-ignition 
-Installing Fedora CoreOS 37.20230218.3.0 x86_64 (512-byte sectors)
+[root@localhost core]# coreos-installer install /dev/sda -I http://192.168.1.247:8080/ign/bootstrap.ign --insecure-ignition --copy-network
+Installing Fedora CoreOS 35.20220410.3.1 x86_64 (512-byte sectors)
 > Read disk 2.5 GiB/2.5 GiB (100%)
 Writing Ignition config
 Copying networking configuration from /etc/NetworkManager/system-connections/
@@ -1045,216 +917,53 @@ The primary services are release-image.service followed by bootkube.service. To 
 
 <br/>
 
-아래 명령어를 사용하여 설치 로그를 확인한다.    
-시간이 지나면 한번 재기동을 진행한다.  
-
-```bash
-[core@localhost ~]$  journalctl -b -f -u release-image.service -u bootkube.service
-Aug 31 05:03:07 localhost.localdomain systemd[1]: Starting release-image.service - Download the OpenShift Release Image...
-Aug 31 05:03:07 localhost.localdomain release-image-download.sh[1552]: Pulling quay.io/openshift/okd@sha256:7153ed89133eeaca94b5fda702c5709b9ad199ce4ff9ad1a0f01678d6ecc720f...
-Aug 31 05:03:07 localhost.localdomain podman[1627]: 2023-08-31 05:03:07.966165638 +0000 UTC m=+0.261238989 system refresh
-Aug 31 05:03:24 localhost.localdomain release-image-download.sh[1627]: 976927c0e02baf3b3ef5c78bfed8b856bac8a7123f8e0f28cd15108db602202a
-Aug 31 05:03:24 localhost.localdomain podman[1627]: 2023-08-31 05:03:07.967191803 +0000 UTC m=+0.262265164 image pull  quay.io/openshift/okd@sha256:7153ed89133eeaca94b5fda702c5709b9ad199ce4ff9ad1a0f01678d6ecc720f
-Aug 31 05:03:24 localhost.localdomain systemd[1]: Finished release-image.service - Download the OpenShift Release Image
-[root@localhost core]# sudo podman images
-REPOSITORY                     TAG         IMAGE ID      CREATED       SIZE
-quay.io/openshift/okd          <none>      976927c0e02b  5 months ago  422 MB
-quay.io/openshift/okd-content  <none>      809d1bb470e0  5 months ago  2.33 GB
-quay.io/openshift/okd-content  <none>      7409643ff5f3  5 months ago  448 MB
-quay.io/openshift/okd-content  <none>      20487d50fb08  8 months ago  419 MB
-[core@localhost ~]$
-Broadcast message from root@localhost (Fri 2023-09-01 03:05:03 UTC):
-
-The system is going down for reboot NOW!
-
-Connection to 192.168.1.128 closed by remote host.
-Connection to 192.168.1.128 closed.
-```
- 
- <br/>
-
-부팅 완료 후 다시 로그인 해보면 설치가 진행이 된다.  
-
-```bash
-[core@localhost ~]$   journalctl -b -f -u release-image.service -u bootkube.service
-Aug 31 05:06:57 localhost.localdomain bootkube.sh[2122]: Writing asset: /assets/config-bootstrap/manifests/0000_10_config-operator_01_infrastructure.crd.yaml
-Aug 31 05:06:57 localhost.localdomain podman[2122]: 2023-08-31 05:06:57.175032705 +0000 UTC m=+10.142264168 container died 9e9f18af07f6c6ae0a1d344ff09b8ab388bcacb946575aa2ee5bd637067aa79b (image=quay.io/openshift/okd-content@sha256:fbc0cf0b8d2d8c1986c51b7dce88f36b33d6ff4a742d42e91edbae0b48b6991f, name=config-render, name=openshift/ose-base, version=v4.12.0, com.redhat.build-host=cpt-1001.osbs.prod.upshift.rdu2.redhat.com, io.openshift.tags=openshift,base, io.k8s.display-name=4.12-base, vcs-type=git, vendor=Red Hat, Inc., io.k8s.description=ART equivalent image openshift-4.12-openshift-enterprise-base - rhel-8/base-repos, release=202212060046.p0.g7e8a010.assembly.stream, distribution-scope=public, io.openshift.maintainer.product=OpenShift Container Platform, io.openshift.build.name=, maintainer=Red Hat, Inc., io.openshift.build.commit.date=, summary=Provides the latest release of the Red Hat Extended Life Base Image., url=https://access.redhat.com/containers/#/registry.access.redhat.com/openshift/ose-base/images/v4.12.0-202212060046.p0.g7e8a010.assembly.stream, io.openshift.build.commit.ref=release-4.12, com.redhat.license_terms=https://www.redhat.com/agreements, io.openshift.build.commit.message=, io.openshift.build.source-context-dir=, vcs-ref=4c6e171d26cc3c302c6d6193060344456bc381a1, build-date=2022-12-06T08:50:37, io.openshift.build.commit.id=4c6e171d26cc3c302c6d6193060344456bc381a1, io.buildah.version=1.26.4, vcs-url=https://github.com/openshift/cluster-config-operator, io.openshift.build.source-location=https://github.com/openshift/cluster-config-operator, io.openshift.release.operator=true, io.openshift.build.namespace=, io.openshift.build.commit.url=https://github.com/openshift/images/commit/7e8a0105eb7369f3f92ad7b2581a2efffab5b28e, description=This is the base image from which all OpenShift Container Platform images inherit., io.openshift.maintainer.component=Release, io.openshift.ci.from.base=sha256:0a36c595ecd06f505df6f5f140bf4d851f112db1120f447ee116b80e2ab47f0f, io.openshift.build.commit.author=, com.redhat.component=openshift-enterprise-base-container, architecture=x86_64, io.openshift.expose-services=, License=GPLv2+)
-```
+아래 명령어를 사용하여 설치 로그를 확인한다.  
 
 <br/>
 
-nameserver 가 변경 된것을 확인 할 수 있다.  
-
 ```bash
-[core@localhost ~]$ sudo cat /etc/resolv.conf
-nameserver 192.168.1.247
-search okd4.ktdemo.duckdns.org
-```  
+  [core@localhost ~]$   journalctl -b -f -u release-image.service -u bootkube.service
+-- Logs begin at Mon 2023-08-07 05:48:45 UTC. --
+Aug 07 05:50:23 localhost bootkube.sh[2232]: wrote /assets/ingress-operator-manifests/cluster-ingress-00-namespace.yaml
+Aug 07 05:50:24 localhost bootkube.sh[2232]: Rendering MCO manifests...
+Aug 07 05:50:32 localhost bootkube.sh[2232]: I0807 05:50:32.203425       1 bootstrap.go:86] Version: v4.8.0-202110020139.p0.git.6cf1670.assembly.stream-dirty (6cf167014583c41e80407eea5a4eda644f420d26)
+Aug 07 05:50:32 localhost bootkube.sh[2232]: I0807 05:50:32.206504       1 bootstrap.go:188] manifests/machineconfigcontroller/controllerconfig.yaml
+Aug 07 05:50:32 localhost bootkube.sh[2232]: I0807 05:50:32.208403       1 bootstrap.go:188] manifests/master.machineconfigpool.yaml
+Aug 07 05:50:32 localhost bootkube.sh[2232]: I0807 05:50:32.208662       1 bootstrap.go:188] manifests/worker.machineconfigpool.yaml
+Aug 07 05:50:32 localhost bootkube.sh[2232]: I0807 05:50:32.208867       1 bootstrap.go:188] manifests/bootstrap-pod-v2.yaml
+Aug 07 05:50:32 localhost bootkube.sh[2232]: I0807 05:50:32.209096       1 bootstrap.go:188] manifests/machineconfigserver/csr-bootstrap-role-binding.yaml
+Aug 07 05:50:32 localhost bootkube.sh[2232]: I0807 05:50:32.209326       1 bootstrap.go:188] manifests/machineconfigserver/kube-apiserver-serving-ca-configmap.yaml
+Aug 07 05:50:32 localhost bootkube.sh[2232]: Rendering CCO manifests...
+Aug 07 05:50:39 localhost bootkube.sh[2232]: time="2023-08-07T05:50:39Z" level=info msg="Rendering files to /assets/cco-bootstrap"
+Aug 07 05:50:39 localhost bootkube.sh[2232]: time="2023-08-07T05:50:39Z" level=info msg="Writing file: /assets/cco-bootstrap/manifests/cco-cloudcredential_v1_operator_config_custresdef.yaml"
+Aug 07 05:50:39 localhost bootkube.sh[2232]: time="2023-08-07T05:50:39Z" level=info msg="Writing file: /assets/cco-bootstrap/manifests/cco-cloudcredential_v1_credentialsrequest_crd.yaml"
+Aug 07 05:50:39 localhost bootkube.sh[2232]: time="2023-08-07T05:50:39Z" level=info msg="Writing file: /assets/cco-bootstrap/manifests/cco-namespace.yaml"
+Aug 07 05:50:39 localhost bootkube.sh[2232]: time="2023-08-07T05:50:39Z" level=info msg="Writing file: /assets/cco-bootstrap/manifests/cco-operator-config.yaml"
+Aug 07 05:50:39 localhost bootkube.sh[2232]: time="2023-08-07T05:50:39Z" level=info msg="Rendering static pod"
+Aug 07 05:50:39 localhost bootkube.sh[2232]: time="2023-08-07T05:50:39Z" level=info msg="writing file: /assets/cco-bootstrap/bootstrap-manifests/cloud-credential-operator-pod.yaml"
+Aug 07 05:50:40 localhost bootkube.sh[2232]: https://localhost:2379 is healthy: successfully committed proposal: took = 8.685028ms
+Aug 07 05:50:40 localhost bootkube.sh[2232]: Starting cluster-bootstrap...
+Aug 07 05:50:46 localhost bootkube.sh[2232]: Starting temporary bootstrap control plane...
+Aug 07 05:50:46 localhost bootkube.sh[2232]: Waiting up to 20m0s for the Kubernetes API
+Aug 07 05:50:47 localhost bootkube.sh[2232]: Still waiting for the Kubernetes API: Get "https://localhost:6443/readyz": dial tcp [::1]:6443: connect: connection refused
+```
 
 <br/>
 
 bootstrap 서버에서 exit 하여 bastion 서버로 돌아오고 아래 명령어를 사용하여 모니터링 한다.   
 
-아래 API 버전까지 나와야 정상이고  대부분  the Kubernetes API 서버 접속시 에러가 많이 발생하는데 DNS 서버인 Bastion 서버의 ip로 설정이 안되어 있는 경우가 많다.  
-
-bootstrap 노드가 재기동 된 후 부터 아래 명령어를 사용해야 API 서버 EOF 에러가 발생 하지 않는다.  
+아래 API 버전까지 나와야 정상이고  대부분  the Kubernetes API 서버 접속시 에러가 많이 발생하는데 DNS 서버인 Bastion 서버의 ip로 설정이 안되어 있는 경우가 많다.
 
 <br/>
 
 ```bash
-[root@bastion ~]# openshift-install --dir=/root/okd4 wait-for bootstrap-complete --log-level=debug
-DEBUG OpenShift Installer 4.12.0-0.okd-2023-03-18-084815
-DEBUG Built from commit 4688870d3a709eea34fe2bb5d1c62dea2cfd7e91
-INFO Waiting up to 20m0s (until 10:26PM) for the Kubernetes API at https://api.okd4.ktdemo.duckdns.org:6443...
-DEBUG Loading Agent Config...
-INFO API v1.25.0-2786+eab9cc98fe4c00-dirty up
-DEBUG Loading Install Config...
-DEBUG   Loading SSH Key...
-DEBUG   Loading Base Domain...
-DEBUG     Loading Platform...
-DEBUG   Loading Cluster Name...
-DEBUG     Loading Base Domain...
-DEBUG     Loading Platform...
-DEBUG   Loading Networking...
-DEBUG     Loading Platform...
-DEBUG   Loading Pull Secret...
-DEBUG   Loading Platform...
-DEBUG Using Install Config loaded from state file
-INFO Waiting up to 30m0s (until 10:36PM) for bootstrapping to complete...
-```
-
-<br/>
-
-`INFO Waiting up to 30m0s (until 10:36PM) for bootstrapping to complete...`
-
-위의 메시지가 나오면 바로 master node를 생성한다.  
-
-
-<br/>
-
-bootstrap 서버에 아래와 같이 pivot 에러가 발생하면 okd 버전에 맞는 coreos 가 달라서 발생한다.  okd github에서 해당 coreos를 찾아서 설치 해아한다.  
-
-```bash
-Aug 30 21:59:22 localhost.localdomain bootstrap-pivot.sh[19646]: + error_line='\''1 source ./pre-pivot.sh'\''
-Aug 30 21:59:22 localhost.localdomain bootstrap-pivot.sh[19646]: ++ journalctl --unit=release-image-pivot.service --lines=3 --output=cat' '. += [
-Aug 30 21:59:22 localhost.localdomain bootstrap-pivot.sh[19646]:           {$timestamp,$preCommand,$postCommand,$stage,$phase,$result,$errorLine,$errorMessage} |
-Aug 30 21:59:22 localhost.localdomain bootstrap-pivot.sh[19646]:           reduce keys[] as $k (.; if .[$k] == "" then del(.[$k]) else . end)
-Aug 30 21:59:22 localhost.localdomain bootstrap-pivot.sh[19646]:         ]'
-Aug 30 21:59:22 localhost.localdomain bootstrap-pivot.sh[18854]: + mv /var/log/openshift//release-image-pivot.json.tmp /var/log/openshift//release-image-pivot.json
-Aug 30 21:59:22 localhost.localdomain systemd[1]: release-image-pivot.service: Main process exited, code=exited, status=1/FAILURE
-```  
-
-<br/> 
-
-아래 처럼 os 이미지 버전이 안 맞아서 rebase 해야 한다. coreos 재설치가 답이다.  
-
-```bash
-rpm-ostree rebase --experimental "ostree-unverified-registry:${MACHINE_OS_IMAGE}"
-```
-<br/>
-
-설치 시 bootstrap 서버에 들어가서 oc 명령어를 사용하여 상태를 볼 수도 있다.   
-
-```bash
-[root@localhost core]# cd /etc/kubernetes
-[root@localhost kubernetes]# oc --kubeconfig kubeconfig get po -A
-NAMESPACE                              NAME                              READY   STATUS    RESTARTS   AGE
-openshift-operator-lifecycle-manager   collect-profiles-28224240-dvr6d   0/1     Pending   0          14m
-
-[root@localhost kubernetes]# oc --kubeconfig kubeconfig get events  -n openshift-operator-lifecycle-manager
-LAST SEEN   TYPE      REASON              OBJECT                                        MESSAGE
-37m         Warning   FailedCreate        replicaset/catalog-operator-c5d66646d         Error creating: pods "catalog-operator-c5d66646d-" is forbidden: autoscaling.openshift.io/ManagementCPUsOverride the cluster does not have any nodes
-18m         Warning   FailedCreate        replicaset/catalog-operator-c5d66646d         Error creating: pods "catalog-operator-c5d66646d-" is forbidden: autoscaling.openshift.io/ManagementCPUsOverride the cluster does not have any nodes
-3m25s       Warning   FailedCreate        replicaset/catalog-operator-c5d66646d         Error creating: pods "catalog-operator-c5d66646d-" is forbidden: autoscaling.openshift.io/ManagementCPUsOverride the cluster does not have any nodes
-48m         Normal    ScalingReplicaSet   deployment/catalog-operator                   Scaled up replica set catalog-operator-c5d66646d to 1
-33m         Warning   FailedScheduling    pod/collect-profiles-28224315-hh5n8           no nodes available to schedule pods
-29m         Warning   FailedScheduling    pod/collect-profiles-28224315-hh5n8           no nodes available to schedule pods
-28m         Warning   FailedScheduling    pod/collect-profiles-28224315-hh5n8           skip schedule deleting pod: openshift-operator-lifecycle-manager/collect-profiles-28224315-hh5n8
-43m         Normal    SuccessfulCreate    job/collect-profiles-28224315                 Created pod: collect-profiles-28224315-hh5n8
-28m         Warning   FailedScheduling    pod/collect-profiles-28224330-vb69j           no nodes available to schedule pods
-23m         Warning   FailedScheduling    pod/collect-profiles-28224330-vb69j           no nodes available to schedule pods
-28m         Normal    SuccessfulCreate    job/collect-profiles-28224330                 Created pod: collect-profiles-28224330-vb69j
-13m         Warning   FailedScheduling    pod/collect-profiles-28224345-6hbjn           no nodes available to schedule pods
-9m8s        Warning   FailedScheduling    pod/collect-profiles-28224345-6hbjn           no nodes available to schedule pods
-13m         Normal    SuccessfulCreate    job/collect-profiles-28224345                 Created pod: collect-profiles-28224345-6hbjn
-43m         Normal    SuccessfulCreate    cronjob/collect-profiles                      Created job collect-profiles-28224315
-28m         Normal    SuccessfulDelete    cronjob/collect-profiles                      Deleted job collect-profiles-28224315
-28m         Normal    SuccessfulCreate    cronjob/collect-profiles                      Created job collect-profiles-28224330
-13m         Normal    SuccessfulDelete    cronjob/collect-profiles                      Deleted job collect-profiles-28224330
-13m         Normal    SuccessfulCreate    cronjob/collect-profiles                      Created job collect-profiles-28224345
-37m         Warning   FailedCreate        replicaset/olm-operator-5fb85799cb            Error creating: pods "olm-operator-5fb85799cb-" is forbidden: autoscaling.openshift.io/ManagementCPUsOverride the cluster does not have any nodes
-18m         Warning   FailedCreate        replicaset/olm-operator-5fb85799cb            Error creating: pods "olm-operator-5fb85799cb-" is forbidden: autoscaling.openshift.io/ManagementCPUsOverride the cluster does not have any nodes
-3m24s       Warning   FailedCreate        replicaset/olm-operator-5fb85799cb            Error creating: pods "olm-operator-5fb85799cb-" is forbidden: autoscaling.openshift.io/ManagementCPUsOverride the cluster does not have any nodes
-48m         Normal    ScalingReplicaSet   deployment/olm-operator                       Scaled up replica set olm-operator-5fb85799cb to 1
-37m         Warning   FailedCreate        replicaset/package-server-manager-9dfd89b5c   Error creating: pods "package-server-manager-9dfd89b5c-" is forbidden: autoscaling.openshift.io/ManagementCPUsOverride the cluster does not have any nodes
-18m         Warning   FailedCreate        replicaset/package-server-manager-9dfd89b5c   Error creating: pods "package-server-manager-9dfd89b5c-" is forbidden: autoscaling.openshift.io/ManagementCPUsOverride the cluster does not have any nodes
-3m24s       Warning   FailedCreate        replicaset/package-server-manager-9dfd89b5c   Error creating: pods "package-server-manager-9dfd89b5c-" is forbidden: autoscaling.openshift.io/ManagementCPUsOverride the cluster does not have any nodes
-48m         Normal    ScalingReplicaSet   deployment/package-server-manager             Scaled up replica set package-server-manager-9dfd89b5c to 1
-39m         Normal    NoPods              poddisruptionbudget/packageserver-pdb         No matching pods found
-19m         Normal    NoPods              poddisruptionbudget/packageserver-pdb         No matching pods found
-9m7s        Normal    NoPods              poddisruptionbudget/packageserver-pdb         No matching pods found
-
-[root@localhost kubernetes]# oc --kubeconfig kubeconfig get clusterversion
-NAME      VERSION   AVAILABLE   PROGRESSING   SINCE   STATUS
-version             False       True          53m     Unable to apply 4.12.0-0.okd-2023-03-18-084815: an unknown error has occurred: MultipleErrors
-```
-
-<br/>
-
-위의 에러는 bootstrap 서버가 종료 되기 전에 master node를 설치 하지 않아서 발생하는 에러이다.  
-bootstrap 서버 기동 후 바로 master node 설치를 해야 한다.  
-
-
-<br/>
-
-정상적으로 master node 설치가 진행이 되면 아래와 같이 보인다.  
-
-```bash
-[root@localhost core]# cd /etc/kubernetes
-[root@localhost kubernetes]# oc --kubeconfig kubeconfig get po -A
-NAMESPACE                                          NAME                                                         READY   STATUS              RESTARTS   AGE
-openshift-apiserver-operator                       openshift-apiserver-operator-8f8cb9ff4-nmkd9                 0/1     Pending             0          70s
-openshift-authentication-operator                  authentication-operator-5f86f86574-fgljl                     0/1     Pending             0          70s
-openshift-cloud-controller-manager-operator        cluster-cloud-controller-manager-operator-754cb759cb-cpb2w   2/2     Running             0          70s
-openshift-cloud-credential-operator                cloud-credential-operator-8995bf858-ch255                    0/2     Pending             0          70s
-openshift-cluster-machine-approver                 machine-approver-565564ff6c-r8fjv                            0/2     Pending             0          70s
-openshift-cluster-node-tuning-operator             cluster-node-tuning-operator-8485fcdd45-2mgvd                0/1     ContainerCreating   0          70s
-openshift-cluster-storage-operator                 cluster-storage-operator-749b9d89fc-bc2r6                    0/1     Pending             0          70s
-openshift-cluster-storage-operator                 csi-snapshot-controller-operator-7c66dbf5fb-dmtv7            0/1     ContainerCreating   0          70s
-openshift-cluster-version                          cluster-version-operator-5d4474d7b8-xwjww                    0/1     ContainerCreating   0          70s
-openshift-config-operator                          openshift-config-operator-6d66bf8658-6zr4t                   0/1     Pending             0          70s
-openshift-controller-manager-operator              openshift-controller-manager-operator-77879f6b5c-v6j9n       0/1     Pending             0          70s
-openshift-dns-operator                             dns-operator-5f6df86d78-ztw7w                                0/2     Pending             0          70s
-openshift-etcd-operator                            etcd-operator-f8fc7cfb4-wxd65                                0/1     Pending             0          70s
-openshift-image-registry                           cluster-image-registry-operator-656b8989db-v6sb2             0/1     Pending             0          70s
-openshift-ingress-operator                         ingress-operator-6d99dfbd-r4fdx                              0/2     Pending             0          70s
-openshift-insights                                 insights-operator-75d976fcf7-2lhbw                           0/1     Pending             0          70s
-openshift-kube-apiserver-operator                  kube-apiserver-operator-54fcf47c74-grwkh                     0/1     Pending             0          70s
-openshift-kube-controller-manager-operator         kube-controller-manager-operator-6d5b4bbc9b-7hsc7            0/1     ContainerCreating   0          70s
-openshift-kube-scheduler-operator                  openshift-kube-scheduler-operator-7cf4676c48-xv4k7           0/1     Pending             0          70s
-openshift-kube-storage-version-migrator-operator   kube-storage-version-migrator-operator-6c4dbb7f98-s2t4q      0/1     Pending             0          70s
-openshift-machine-api                              cluster-autoscaler-operator-768f7bc45-kkx4p                  0/2     ContainerCreating   0          70s
-openshift-machine-api                              cluster-baremetal-operator-69f64d77dc-fw4xz                  0/2     ContainerCreating   0          70s
-openshift-machine-api                              control-plane-machine-set-operator-6bb58cc97c-w792d          0/1     Pending             0          70s
-openshift-machine-api                              machine-api-operator-d658c8c8f-8tqnq                         0/2     Pending             0          70s
-openshift-machine-config-operator                  machine-config-operator-6c567dcc74-cpdtd                     0/1     Pending             0          70s
-openshift-marketplace                              marketplace-operator-5dfccbb4f5-vnqzb                        0/1     Pending             0          70s
-openshift-monitoring                               cluster-monitoring-operator-585c6bf574-pzqth                 0/2     Pending             0          70s
-openshift-multus                                   multus-additional-cni-plugins-rt5tr                          0/1     Init:2/6            0          40s
-openshift-multus                                   multus-admission-controller-754f6f745f-6n786                 0/2     Pending             0          37s
-openshift-multus                                   multus-sgv6q                                                 1/1     Running             0          40s
-openshift-multus                                   network-metrics-daemon-9fq6h                                 0/2     ContainerCreating   0          39s
-openshift-network-diagnostics                      network-check-source-f6dc45665-bcv5d                         0/1     Pending             0          29s
-openshift-network-diagnostics                      network-check-target-mhmvs                                   0/1     ContainerCreating   0          28s
-openshift-network-operator                         network-operator-557ff659f8-b9s85                            1/1     Running             0          70s
-openshift-operator-lifecycle-manager               catalog-operator-c5d66646d-k55px                             0/1     Pending             0          70s
-openshift-operator-lifecycle-manager               collect-profiles-28225635-nm4zx                              0/1     Pending             0          3m46s
-openshift-operator-lifecycle-manager               olm-operator-5fb85799cb-cd96x                                0/1     Pending             0          70s
-openshift-operator-lifecycle-manager               package-server-manager-9dfd89b5c-pkd76                       0/1     Pending             0          70s
-openshift-sdn                                      sdn-controller-xhfnk                                         0/2     ContainerCreating   0          33s
-openshift-sdn                                      sdn-fjh45                                                    0/2     ContainerCreating   0          31s
-openshift-service-ca-operator                      service-ca-operator-b65957b7f-dbprl                          0/1     Pending             0          70s
-```  
+[root@bastion shclub]# /usr/local/bin/openshift-install --dir=/root/okd4 wait-for bootstrap-complete --log-level=debug
+DEBUG OpenShift Installer 4.10.0-0.okd-2022-03-07-131213
+DEBUG Built from commit 3b701903d96b6375f6c3852a02b4b70fea01d694
+INFO Waiting up to 20m0s (until 10:36PM) for the Kubernetes API at https://api.okd4.ktdemo.duckdns.org:6443...
+INFO API v1.23.3-2003+e419edff267ffa-dirty up
+INFO Waiting up to 30m0s (until 10:46PM) for bootstrapping to complete...
+```   
 
 <br/>
 
@@ -1269,15 +978,6 @@ INFO API v1.23.3-2003+e419edff267ffa-dirty up
 INFO Waiting up to 30m0s (until 10:08AM) for bootstrapping to complete...
 DEBUG Bootstrap status: complete
 ```
-
-DEBUG Bootstrap status: complete
-INFO It is now safe to remove the bootstrap resources
-DEBUG Time elapsed per stage:
-DEBUG Bootstrap Complete: 20m51s
-DEBUG                API: 2s
-INFO Time elapsed: 20m51s
-
-
 <br/>
 
 ## 5. Cluster 생성 
@@ -1293,8 +993,8 @@ vmware 에 coreos 기반의 master/worker 겸용 서버를 생성한다. ( 생�
 <br.>
 
 - 다운로드 위치 : 
-https://builds.coreos.fedoraproject.org/browser?stream=stable&arch=x86_64  
-- Version : fedora-coreos-37.20230218.3.0-live.x86_64.iso
+https://builds.coreos.fedoraproject.org/browser?stream=stable&arch=x86_64 에서
+- Version : fedora-coreos-35.20220410.3.1-live.x86_64.iso
 
 <br/>
 
@@ -1331,7 +1031,7 @@ connection 이름을 ens160으로 생성한다.
 <br/>
 
 ```bash  
-[root@localhost core]# nmcli connection modify ens160 ipv4.addresses 192.168.1.146/24 ipv4.method manual
+[root@localhost core]# nmcli connection modify ens160 ipv4.addresses 192.168.1.149/24 ipv4.method manual
 [root@localhost core]# nmcli connection modify ens160 ipv4.dns 192.168.1.247
 [root@localhost core]# nmcli connection modify ens160 ipv4.gateway 192.168.1.1
 [root@localhost core]# nmcli connection modify ens160 ipv4.dns-search okd4.ktdemo.duckdns.org
@@ -1345,7 +1045,7 @@ master 노드 ( okd-1 ) 설치를 한다.
 
 ```bash
 [root@localhost core]# coreos-installer install /dev/sda -I http://192.168.1.247:8080/ign/master.ign --insecure-ignition --copy-network
-Installing Fedora CoreOS 37.20230218.3.0 x86_64 (512-byte sectors)
+Installing Fedora CoreOS 35.20220410.3.1 x86_64 (512-byte sectors)
 > Read disk 2.5 GiB/2.5 GiB (100%)
 Writing Ignition config
 Copying networking configuration from /etc/NetworkManager/system-connections/
@@ -1357,6 +1057,8 @@ Install complete.
 
 hostname을 설정 하고 재기동 한다.
 
+[root@localhost core]# nmcli connection up ens160
+
 <br/>
 
 ```bash
@@ -1366,175 +1068,24 @@ hostname을 설정 하고 재기동 한다.
 
 <br/>
 
-bastion 서버에서 아래 명령어로 모니터링을 하고  `It is now safe to remove the bootstrap resources` 가 나오면 정상적으로 master 노드가 설치가 완료 됩니다.     
+bastion 서버에서 아래 명령어로 모니터링을 하고  `It is now safe to remove the bootstrap resources` 가 나오면 정상적으로 master 노드가 설치가 완료 됩니다.   
+
+<br/>
 
 ```bash
 [root@bastion ~]# /usr/local/bin/openshift-install --dir=/root/okd4 wait-for bootstrap-complete --log-level=debug
-It is now safe to remove the bootstrap resources
+DEBUG OpenShift Installer 4.10.0-0.okd-2022-03-07-131213
+DEBUG Built from commit 3b701903d96b6375f6c3852a02b4b70fea01d694
+INFO Waiting up to 20m0s (until 9:58AM) for the Kubernetes API at https://api.okd4.ktdemo.duckdns.org:6443...
+INFO API v1.23.3-2003+e419edff267ffa-dirty up
+INFO Waiting up to 30m0s (until 10:08AM) for bootstrapping to complete...
+DEBUG Bootstrap status: complete
+INFO It is now safe to remove the bootstrap resources
+DEBUG Time elapsed per stage:
+DEBUG Bootstrap Complete: 7m56s
+INFO Time elapsed: 7m56s
 ```
 
-<br/>
-
-
-### 5.2 worker 노드 생성
-
-<br/>
-
-proxmox 에 coreos 기반의 worker 노드를 생성한다.
-
-<br.>
-
-- 다운로드 위치 : 
-https://builds.coreos.fedoraproject.org/browser?stream=stable&arch=x86_64  
-- Version : fedora-coreos-37.20230218.3.0-live.x86_64.iso
-
-<br/>
-
-먼저 네트웍을 설정을 하기 위해서 network device 이름을 확인한다.  
-
-```bash  
-[root@localhost core]# nmcli device
-DEVICE  TYPE      STATE      CONNECTION
-ens18   ethernet  connected  Wired connection 1
-lo      loopback  unmanaged  --
-```  
-
-<br/>
-
-connection 이름을 ens160으로 생성한다.  
-
-```bash  
-[root@localhost core]# nmcli connection add type ethernet autoconnect yes con-name ens18 ifname ens18
-```  
-
-<br/>
-
-네트웍 설정을 한다.  
-- ip : okd-2 서버는 192.168.1.148/24 로 설정한다.
-- dns : bastion 서버는 192.168.1.40 로 설정한다.
-- gateway : 공유기 ip 인 192.168.1.1 로 설정한다. ( bastion 서버 ip로 해도 상관 없음 )
-- dns-search : okd4.ktdemo.duckdns.org 로 설정 ( cluster 이름 + . + base Domain)
-
-<br/>
-
-```bash  
-[root@localhost core]# nmcli connection modify ens18 ipv4.addresses 192.168.1.148/24 ipv4.method manual
-[root@localhost core]# nmcli connection modify ens18 ipv4.dns 192.168.1.40
-[root@localhost core]# nmcli connection modify ens18 ipv4.gateway 192.168.1.1
-[root@localhost core]# nmcli connection modify ens18 ipv4.dns-search okd4.ktdemo.duckdns.org
-```  
-
-<br/>
-
-worker 노드 ( okd-2 ) 설치를 한다.
-
-```bash
-[root@localhost core]# coreos-installer install /dev/sda -I http://192.168.1.247:8080/ign/worker.ign --insecure-ignition --copy-network
-Installing Fedora CoreOS 37.20230218.3.0 x86_64 (512-byte sectors)
-> Read disk 2.5 GiB/2.5 GiB (100%)
-Writing Ignition config
-Copying networking configuration from /etc/NetworkManager/system-connections/
-Copying /etc/NetworkManager/system-connections/ens18.nmconnection to installed system
-Install complete.
-```  
-
-<br/>
-
-hostname을 설정 하고 재기동 한다.
-
-<br/>
-
-```bash
-[root@localhost core]# hostnamectl set-hostname okd-2.okd4.ktdemo.duckdns.org
-[root@localhost core]# reboot now
-``` 
-
-<br/>
-
-worker node 설치 모니터링을 한다.  
-
-```bash
-[root@bastion ~]# openshift-install --dir=/root/okd4 wait-for install-complete
-INFO Waiting up to 40m0s (until 2:15PM) for the cluster at https://api.okd4.ktdemo.duckdns.org:6443 to initialize...
-INFO Checking to see if there is a route at openshift-console/console...
-INFO Install complete!
-INFO To access the cluster as the system:admin user when using 'oc', run 'export KUBECONFIG=/root/okd4/auth/kubeconfig'
-INFO Access the OpenShift web-console here: https://console-openshift-console.apps.okd4.ktdemo.duckdns.org
-INFO Login to the console with user: "kubeadmin", and password: "**********"
-INFO Time elapsed: 42s
-```
-
-<br/>
-
-설치가 완료가 되면 먼저 node 를 확인해 본다. 아직 worker node 가 조인 되지 않았다.    
-
-```bash
-[root@bastion ~]# oc get nodes
-NAME                            STATUS   ROLES           AGE   VERSION
-okd-1.okd4.ktdemo.duckdns.org   Ready    master,worker   17d   v1.23.3+759c22b
-```  
-
-<br/>
-
-csr를 조회하고 승인을 한다.  
-
-```bash
-[root@bastion ~]# oc get csr
-NAME        AGE     SIGNERNAME                                    REQUESTOR                                                                   REQUESTEDDURATION   CONDITION
-csr-5lgxl   17s     kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper   <none>              Pending
-csr-vhvjn   3m28s   kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper   <none>
-[root@bastion ~]# oc adm certificate approve csr-5lgxl
-certificatesigningrequest.certificates.k8s.io/csr-5lgxl approved
-[root@bastion ~]# oc adm certificate approve csr-vhvjn
-certificatesigningrequest.certificates.k8s.io/csr-vhvjn approved
-```
-
-<br/>
-
-다시 node를 조회하면  join 된 것을 확인 할수 있고 status 는 `NotReady` 이다.  
-
-```bash
-[root@bastion ~]# oc get nodes
-NAME                            STATUS     ROLES           AGE   VERSION
-okd-1.okd4.ktdemo.duckdns.org   Ready      master,worker   17d   v1.23.3+759c22b
-okd-2.okd4.ktdemo.duckdns.org   NotReady   worker          21s   v1.23.3+759c22b
-```  
-
-<br/>
-
-다시 csr를 조회해 보면 승인 대기 중인 csr 이 있는데 okd 는 machine config 기능이 있어 master node 설정값이 worker node에 적용되는 시간이 필요하다.  
-
-```bash
-[root@bastion ~]# oc get csr
-NAME        AGE     SIGNERNAME                                    REQUESTOR                                                                   REQUESTEDDURATION   CONDITION
-csr-5lgxl   2m29s   kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper   <none>              Approved,Issued
-csr-j2m7b   17s     kubernetes.io/kubelet-serving                 system:node:okd-2.okd4.ktdemo.duckdns.org                                   <none>              Pending
-csr-vhvjn   5m40s   kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper   <none>
-```  
-
-<br/>
-
-시간이 좀 더 지나면 아래와 같이 Ready로 바뀐 것을 확인 할 수 있다.
-
-```bash
-[root@bastion ~]# kubectl get nodes
-NAME                            STATUS   ROLES                         AGE    VERSION
-okd-1.okd4.ktdemo.duckdns.org   Ready    control-plane,master,worker   107m   v1.25.7+eab9cc9
-okd-2.okd4.ktdemo.duckdns.org   Ready    worker                        109s   v1.25.7+eab9cc9
-```
-
-<br/>
-
-향후 수정할수 있고 master 노드에서 worker role을 삭제하려면 아래 명령어를 통해 삭제 할 수 있습니다.  
-
-```bash
-[root@bastion ~]# oc patch schedulers.config.openshift.io/cluster --type merge -p '{"spec":{"mastersSchedulable":false}}'
-scheduler.config.openshift.io/cluster patched
-[root@bastion ~]# kubectl get nodes
-NAME                            STATUS   ROLES                  AGE     VERSION
-okd-1.okd4.ktdemo.duckdns.org   Ready    control-plane,master   109m    v1.25.7+eab9cc9
-okd-2.okd4.ktdemo.duckdns.org   Ready    worker                 3m47s   v1.25.7+eab9cc9
-```  
 
 <br/>
 
@@ -1616,8 +1167,8 @@ source 명령어로 profile 를 적용하고 node를 조회해 봅니다.
 ```bash
 [root@bastion ~]# source ~/.bash_profile
 [root@bastion ~]# oc get nodes
-NAME                            STATUS   ROLES                  AGE   VERSION
-okd-1.okd4.ktdemo.duckdns.org   Ready    control-plane,master   17m   v1.25.7+eab9cc9
+NAME                            STATUS   ROLES           AGE   VERSION
+okd-1.okd4.ktdemo.duckdns.org   Ready    master,worker   18m   v1.23.3+759c22b
 ```
 
 <br/>
@@ -1667,46 +1218,6 @@ storage                                    4.10.0-0.okd-2022-03-07-131213   True
 
 <br/>
 
-```bash
-[root@bastion ~]# oc get co
-NAME                                       VERSION                          AVAILABLE   PROGRESSING   DEGRADED   SINCE   MESSAGE
-authentication                             4.12.0-0.okd-2023-03-18-084815   False       False         True       14m     OAuthServerServiceEndpointAccessibleControllerAvailable: Get "https://172.30.64.244:443/healthz": context deadline exceeded (Client.Timeout exceeded while awaiting headers)...
-baremetal                                  4.12.0-0.okd-2023-03-18-084815   True        False         False      12m
-cloud-controller-manager                   4.12.0-0.okd-2023-03-18-084815   True        False         False      16m
-cloud-credential                                                            True        False         False      24m
-cluster-autoscaler                         4.12.0-0.okd-2023-03-18-084815   True        False         False      11m
-config-operator                            4.12.0-0.okd-2023-03-18-084815   True        False         False      14m
-console                                    4.12.0-0.okd-2023-03-18-084815   Unknown     False         False      81s
-control-plane-machine-set                  4.12.0-0.okd-2023-03-18-084815   True        False         False      12m
-csi-snapshot-controller                    4.12.0-0.okd-2023-03-18-084815   True        False         False      13m
-dns                                        4.12.0-0.okd-2023-03-18-084815   True        False         False      8m11s
-etcd                                       4.12.0-0.okd-2023-03-18-084815   True        False         False      9m1s
-image-registry                             4.12.0-0.okd-2023-03-18-084815   True        False         False      2m45s
-ingress                                    4.12.0-0.okd-2023-03-18-084815   True        True          True       11m     The "default" ingress controller reports Degraded=True: DegradedConditions: One or more other status conditions indicate a degraded state: PodsScheduled=False (PodsNotScheduled: Some pods are not scheduled: Pod "router-default-fb8b9b7f9-5zkz6" cannot be scheduled: 0/1 nodes are available: 1 node(s) had untolerated taint {node-role.kubernetes.io/master: }. preemption: 0/1 nodes are available: 1 Preemption is not helpful for scheduling. Make sure you have sufficient worker nodes.), CanaryChecksSucceeding=Unknown (CanaryRouteNotAdmitted: Canary route is not admitted by the default ingress controller)
-insights                                   4.12.0-0.okd-2023-03-18-084815   True        False         False      7m44s
-kube-apiserver                             4.12.0-0.okd-2023-03-18-084815   True        False         False      7m26s
-kube-controller-manager                    4.12.0-0.okd-2023-03-18-084815   True        True          True       7m55s   GarbageCollectorDegraded: error fetching rules: Get "https://thanos-querier.openshift-monitoring.svc:9091/api/v1/rules": dial tcp: lookup thanos-querier.openshift-monitoring.svc on 172.30.0.10:53: no such host
-kube-scheduler                             4.12.0-0.okd-2023-03-18-084815   True        False         False      7m
-kube-storage-version-migrator              4.12.0-0.okd-2023-03-18-084815   True        False         False      13m
-machine-api                                4.12.0-0.okd-2023-03-18-084815   True        False         False      12m
-machine-approver                           4.12.0-0.okd-2023-03-18-084815   True        False         False      12m
-machine-config                             4.12.0-0.okd-2023-03-18-084815   True        False         False      7m28s
-marketplace                                4.12.0-0.okd-2023-03-18-084815   True        False         False      11m
-monitoring                                                                  Unknown     True          Unknown    12m     Rolling out the stack.
-network                                    4.12.0-0.okd-2023-03-18-084815   True        True          False      13m     Deployment "/openshift-network-diagnostics/network-check-source" is waiting for other operators to become ready
-node-tuning                                4.12.0-0.okd-2023-03-18-084815   True        False         False      11m
-openshift-apiserver                        4.12.0-0.okd-2023-03-18-084815   True        False         False      101s
-openshift-controller-manager               4.12.0-0.okd-2023-03-18-084815   True        False         False      7m14s
-openshift-samples                          4.12.0-0.okd-2023-03-18-084815   True        False         False      5m56s
-operator-lifecycle-manager                 4.12.0-0.okd-2023-03-18-084815   True        False         False      12m
-operator-lifecycle-manager-catalog         4.12.0-0.okd-2023-03-18-084815   True        False         False      12m
-operator-lifecycle-manager-packageserver   4.12.0-0.okd-2023-03-18-084815   True        False         False      6m11s
-service-ca                                 4.12.0-0.okd-2023-03-18-084815   True        False         False      14m
-storage                                    4.12.0-0.okd-2023-03-18-084815   True        False         False      14m
-```
-
-<br/>
-
 bastion 서버에서 아래 명령어로 설치 확인을 하며 kubeadmin 비밀번호를 알수 있습니다.    
 
 향후 계정을 신규로 생성하여 cluster admin 권한을 준후 kubeadmin은 삭제합니다.  
@@ -1724,10 +1235,6 @@ INFO Access the OpenShift web-console here: https://console-openshift-console.ap
 INFO Login to the console with user: "kubeadmin", and password: "HeJDB-***-****b****-4hb4q"
 INFO Time elapsed: 0s
 ```
-
-
-[root@bastion ~]#  openshift-install --dir=/root/okd4 wait-for install-complete
-INFO Waiting up to 40m0s (until 1:15PM) for the cluster at https://api.okd4.ktdemo.duckdns.org:6443 to initialize...
 
 <br/>
 
@@ -2691,15 +2198,8 @@ argocd-redis                              ClusterIP   172.30.45.66     <none>   
 argocd-repo-server                        ClusterIP   172.30.178.138   <none>        8081/TCP,8084/TCP            162m
 argocd-server                             NodePort    172.30.154.250   <none>        80:30866/TCP,443:31928/TCP   162m
 argocd-server-metrics                     ClusterIP   172.30.55.105    <none>        8083/TCP                     162m
-[root@bastion argocd]# argocd login 192.168.1.40:30866
+[root@bastion argocd]# argocd login 192.168.1.247:30866
 FATA[0000] dial tcp 192.168.1.247:30866: connect: connection refused
-```  
-
-<br/>
-
-Master 와 Workor node 의 ip로 접속한다.  
-
-```bash
 [root@bastion argocd]# argocd login 192.168.1.146:30866
 WARNING: server is not configured with TLS. Proceed (y/n)? y
 Username: admin
@@ -2723,8 +2223,6 @@ data:
   accounts.edu5: apiKey,login
   accounts.haerin: apiKey,login
   accounts.shclub: apiKey,login
-  accounts.rorty: apiKey,login
-  accounts.hans: apiKey,login
   exec.enabled: "true"
 kind: ConfigMap
 metadata:
@@ -2770,7 +2268,7 @@ data:
     p, role:manager, clusters, get, *, allow
     p, role:manager, repositories, *, *, allow
     p, role:manager, projects, *, *, allow
-    p, role:manager, exec, * , */*, allow
+    p, role:manager, exec, create , */*, allow
     p, role:edu1, clusters, get, *, allow
     p, role:edu1, repositories, get, *, allow
     p, role:edu1, projects, get, *, allow
@@ -2803,288 +2301,16 @@ data:
     g, edu5, role:edu5
     g, shclub, role:manager
     g, haerin, role:manager
-    g, hans, role:manager
-    g, rorty, role:manager
   policy.default: role:''
 ```
 
 <br/>
 
-## 9. Dynamic Provisioning 설치
+## 9. Minio Object Stroage 설치 ( w/ NFS )
 
 <br/>
 
-
-참고   
-- https://github.com/shclub/edu/blob/master/k8s_middle_hands_on_2023.md  
-
-<br/>
-
-설치 전에 git과 helm 을 먼저 설치한다.  
-
-```bash
-[root@bastion ~]# yum install git
-[root@bastion ~]# curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
-[root@bastion ~]# chmod 700 get_helm.sh
-[root@bastion ~]# ./get_helm.sh
-Downloading https://get.helm.sh/helm-v3.12.3-linux-amd64.tar.gz
-Verifying checksum... Done.
-Preparing to install helm into /usr/local/bin
-helm installed into /usr/local/bin/helm
-```  
-
-<br/>
-
-PV/PVC 를  자동으로 생성하기 위해서 Dynamic Provisioning 을 사용한다.    
-`nfs-subdir-external-provisioner` 를 사용하기로 한다.    
-
-helm repository를 추가한다.  
-
-```bash
-[root@bastion dynamic_provisioning]# helm repo add nfs-subdir-external-provisioner https://kubernetes-sigs.github.io/nfs-subdir-external-provisioner
-WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
-"nfs-subdir-external-provisioner" has been added to your repositories
-[root@bastion dynamic_provisioning]# helm repo list
-WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
-NAME                           	URL
-bitnami                        	https://charts.bitnami.com/bitnami
-harbor                         	https://helm.goharbor.io
-nfs-subdir-external-provisioner	https://kubernetes-sigs.github.io/nfs-subdir-external-provisioner
-```
-
-<br/>
- 
-chart를 검색한다.  
-
-```bash
-[root@bastion dynamic_provisioning]# helm search repo nfs-subdir-external-provisioner
-WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
-NAME                                              	CHART VERSION	APP VERSION	DESCRIPTION
-nfs-subdir-external-provisioner/nfs-subdir-exte...	4.0.18       	4.0.2      	nfs-subdir-external-provisioner is an automatic...
-```
-
-<br/>
-
-> k8s 1.25 부터는 podSecurityPolicy 가 deprecated 가 되어 podSecurityStandard 로 변경이 됨.  
-> https://kubernetes.io/docs/tasks/configure-pod-container/enforce-standards-namespace-labels/
-
-<br/>
-
-현재 namespace 구성을 보면 pod는 privileged 권한을 사용할 수 없음
-
-```bash
-[root@bastion ]# kubectl describe namespace shclub
-Name:         shclub
-Labels:       kubernetes.io/metadata.name=shclub
-              pod-security.kubernetes.io/audit=privileged
-              pod-security.kubernetes.io/audit-version=v1.24
-              pod-security.kubernetes.io/warn=privileged
-              pod-security.kubernetes.io/warn-version=v1.24
-Annotations:  openshift.io/description:
-              openshift.io/display-name:
-              openshift.io/node-selector: devops=true
-              openshift.io/requester: system:admin
-              openshift.io/sa.scc.mcs: s0:c26,c15
-              openshift.io/sa.scc.supplemental-groups: 1000680000/10000
-              openshift.io/sa.scc.uid-range: 1000680000/10000
-Status:       Active
-
-No resource quota.
-
-No LimitRange resource.  
-```
-
-<br/>
-
-아래와 같이 현재 namespace 의 pod security standard를 변경해야 다이나믹 프로비져닝 생성이 가능함.    
-
-
-```bash
-[root@bastion ]# kubectl label --overwrite ns shclub \
-  pod-security.kubernetes.io/enforce=baseline \
-  pod-security.kubernetes.io/enforce-version=v1.24
-```  
-
-
-```bash
-[root@bastion ]# kubectl describe namespace shclub
-Name:         shclub
-Labels:       kubernetes.io/metadata.name=shclub
-              pod-security.kubernetes.io/audit=privileged
-              pod-security.kubernetes.io/audit-version=v1.24
-              pod-security.kubernetes.io/enforce=baseline
-              pod-security.kubernetes.io/enforce-version=v1.24
-              pod-security.kubernetes.io/warn=privileged
-              pod-security.kubernetes.io/warn-version=v1.24
-Annotations:  openshift.io/description:
-              openshift.io/display-name:
-              openshift.io/node-selector: devops=true
-              openshift.io/requester: system:admin
-              openshift.io/sa.scc.mcs: s0:c26,c15
-              openshift.io/sa.scc.supplemental-groups: 1000680000/10000
-              openshift.io/sa.scc.uid-range: 1000680000/10000
-Status:       Active
-
-No resource quota.
-
-No LimitRange resource.  
-```
-
-<br/>
-
-helm 으로 values.yaml 화일을 생성한다.  
-
-
-```bash
-[root@bastion dynamic_provisioning]# helm show values nfs-subdir-external-provisioner/nfs-subdir-external-provisioner > values.yaml
-```  
-
-<br/>
-
-values 에서는 아래와 같이 변경한다.    
-
-```bash
-      1 replicaCount: 1
-      2 strategyType: Recreate
-      3
-      4 image:
-      5   repository: registry.k8s.io/sig-storage/nfs-subdir-external-provisioner
-      6   tag: v4.0.2
-      7   pullPolicy: IfNotPresent
-      8 imagePullSecrets: []
-      9
-     10 nfs:
-     11   server: 192.168.1.79  # NAS IP
-     12   path: /volume3/okd/dynamic  # path
-     13   mountOptions:
-     14   volumeName: nfs-subdir-external-provisioner-root
-     15   # Reclaim policy for the main nfs volume
-     16   reclaimPolicy: Retain
-     17
-     18 # For creating the StorageClass automatically:
-     19 storageClass:
-     20   create: true
-     21
-     22   # Set a provisioner name. If unset, a name will be generated.
-     23   # provisionerName:
-     24
-     25   # Set StorageClass as the default StorageClass
-     26   # Ignored if storageClass.create is false
-     27   defaultClass: false
-     28
-     29   # Set a StorageClass name
-     30   # Ignored if storageClass.create is false
-     31   name: nfs-client  # storage class 이름
-     32
-     33   # Allow volume to be expanded dynamically
-     34   allowVolumeExpansion: true
-     35
-     36   # Method used to reclaim an obsoleted volume
-     37   reclaimPolicy: Delete
-     38
-     39   # When set to false your PVs will not be archived by the provisioner upon deletion of the PVC.
-     40   archiveOnDelete: false # archive 안함 
-     41
-     42   # If it exists and has 'delete' value, delete the directory. If it exists and has 'retain' value, save the directory.
-     43   # Overrides archiveOnDelete.
-     44   # Ignored if value not set.
-     ...
-     49   pathPattern:
-     50
-     51   # Set access mode - ReadWriteOnce, ReadOnlyMany or ReadWriteMany
-     52   accessModes: ReadWriteOnce
-     53
-     54   # Set volume bindinng mode - Immediate or WaitForFirstConsumer
-     55   volumeBindingMode: Immediate
-     56
-     57   # Storage class annotations
-     58   annotations: {}
-     59
-     60 leaderElection:
-     61   # When set to false leader election will be disabled
-     62   enabled: true
-     63
-     64 ## For RBAC support:
-     65 rbac:
-     66   # Specifies whether RBAC resources should be created
-     67   create: true
-     68
-     ...
-     71 podSecurityPolicy:
-     72   enabled: false # okd (k8s 1.24 이하는 설정. 1.25 이상에서는 false
-     73
-     74 # Deployment pod annotations
-     75 podAnnotations: {}
-     76
-     80 #podSecurityContext: {}
-     81
-     82 podSecurityContext: {}
-```
-
-<br/>
-
-이제 helm 으로 설치를 한다.  
-
-<br/>
-
-```bash
-[root@bastion dynamic_provisioning]# helm install nfs-subdir-external-provisioner -f values.yaml  nfs-subdir-external-provisioner/nfs-subdir-external-provisioner -n shclub
-WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
-NAME: nfs-subdir-external-provisioner
-LAST DEPLOYED: Fri Sep  1 22:59:26 2023
-NAMESPACE: shclub
-STATUS: deployed
-REVISION: 1
-TEST SUITE: None
-```
-
-<br/>
-
-storageclass 가 nfs-client 이름으로 생성이 된 것을 확인 할 수 있다.  
-
-```bash
-[root@bastion dynamic_provisioning]# kubectl get storageclass
-NAME         PROVISIONER                                     RECLAIMPOLICY   VOLUMEBINDINGMODE   ALLOWVOLUMEEXPANSION   AGE
-nfs-client   cluster.local/nfs-subdir-external-provisioner   Delete          Immediate           true                   15s
-```  
-
-<br/>
-
-PVC 를 생성하여 테스트 해본다.   
-
-```bash
-[root@bastion dynamic_provisioning]# vi test_claim.yaml
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: nfs-pvc-test
-spec:
-  storageClassName: nfs-client # SAME NAME AS THE STORAGECLASS
-  accessModes:
-    - ReadWriteMany #  must be the same as PersistentVolume
-  resources:
-    requests:
-      storage: 1Gi
-```
-
-<br/>
-
-정상적으로 PVC 가 자동 생성 된 것을 확인 할 수 있다.  
-
-```bash
-[root@bastion dynamic_provisioning]# kubectl get pvc -n shclub
-NAME           STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   AGE
-nfs-pvc-test   Bound    pvc-3b872a76-4fe5-4a6d-9c19-9ebdb4c4e58f   1Gi        RWX            nfs-client     6m36s
-```  
-
-<br/>
-
-
-## 10. Minio Object Stroage 설치 ( w/ NFS )
-
-<br/>
-
-### 10.1 Minio Object Stroage 설치 
+### 9.1 Minio Object Stroage 설치 
 
 <br/>
 
@@ -3114,7 +2340,7 @@ minio namespace 에 권한을 할당한다.
 ```bash
 [root@bastion minio]# oc adm policy add-scc-to-user anyuid system:serviceaccount:minio:default
 clusterrole.rbac.authorization.k8s.io/system:openshift:scc:anyuid added: "default"
-[root@bastion minio]# oc adm policy add-scc-to-user privileged system:serviceaccount:minio:default
+[root@bastion harbor]# oc adm policy add-scc-to-user privileged system:serviceaccount:minio:default
 clusterrole.rbac.authorization.k8s.io/system:openshift:scc:privileged added: "default"
 ```
 <br/>
@@ -3131,7 +2357,6 @@ bitnami/minio                               	12.7.0       	2023.7.18    	MinIO(R
 
 <br/>
 
-우리는 다이나믹 프로지저닝으로 설치 할 예정임 으로 아래 pv/pvc 생성은 skip 해도 된다.  
 
 minio 에서 사용한 pv 와 pvc를 생성한다.  nfs는 synology nas 에서 생성하였고 과정은 skip.  
 
@@ -3201,20 +2426,20 @@ values.yaml 화일에서 아래 부분을 수정한다.
     389   ##
     390   podSecurityContext:
     391     enabled: true
-    392     fsGroup: 1000680000 #1001  # namespace 의 uid range 값으로 변경한다.
+    392     fsGroup: 1000710000 #1001  # namespace 의 uid range 값으로 변경한다.
    ...
     399   containerSecurityContext:
     400     enabled: true
-    401     runAsUser: 1000680000 #1001
+    401     runAsUser: 1000710000 #1001
     ...
     426 podSecurityContext:
     427   enabled: true
-    428   fsGroup: 1000680000 # 1001
+    428   fsGroup: 1000710000 # 1001
     ...
     434 ##
     435 containerSecurityContext:
     436   enabled: true
-    437   runAsUser: 1000680000 #1001
+    437   runAsUser: 1000710000 #1001
     438   runAsNonRoot: true
     ...
     899 persistence:
@@ -3222,7 +2447,7 @@ values.yaml 화일에서 아래 부분을 수정한다.
     901   ##
     902   enabled: true
     909   ##
-    910   storageClass: "nfs-client" # storage class 이름
+    910   storageClass: ""
     911   ## @param persistence.mountPath Data volume mount path
     912   ##
     913   mountPath: /data
@@ -3234,7 +2459,7 @@ values.yaml 화일에서 아래 부분을 수정한다.
     919   ##
     920   size: 100Gi # 위에서 설정한 pvc 사이즈
     925   ##
-    926   existingClaim: ""  # 다이나믹 으로 설치함으로 아무 것도 넣지 않는다.
+    926   existingClaim: "minio-pvc"  # 위에서 설정한 pvc 이름
 ```
 
 
@@ -3331,7 +2556,7 @@ metadata:
     app : minio
   name: minio
 spec:
-  host: minio.apps.okd4.ktdemo.duckdns.org
+  host: minio-minio.apps.okd4.ktdemo.duckdns.org
   port:
     targetPort: minio-console
   tls:
@@ -3347,7 +2572,7 @@ spec:
 
 <br/>
 
-웹브라우저에서 http://minio.apps.okd4.ktdemo.duckdns.org 로 접속하고 admin 계정/values.yaml에 설정한 비밀번호로 로그인 한다.  
+웹브라우저에서 http://minio-minio.apps.okd4.ktdemo.duckdns.org 로 접속하고 admin 계정/values.yaml에 설정한 비밀번호로 로그인 한다.  
 
 <br/>
 
@@ -3356,7 +2581,7 @@ spec:
 
 <br/>
 
-### 10.2 Minio 설정 ( bucket 생성 )
+### 9.2 Minio 설정 ( bucket 생성 )
 
 <br/>
 
@@ -3391,7 +2616,7 @@ bucket 이름을 클릭하고 access 를 private 으로 설정한다.
 
 <br/>
 
-### 10.3 Minio 설정 ( Access keys 생성 )
+### 9.3 Minio 설정 ( Access keys 생성 )
 
 <br/>
 
@@ -3417,6 +2642,189 @@ create 버튼 을 누르면 Access key 와 secret 이 생성이 되고 Download 
 
 <br/>
 
+## 10. Dynamic Provisioning 설치
+
+<br/>
+
+
+참고   
+- https://github.com/shclub/edu/blob/master/k8s_middle_hands_on_2023.md  
+
+<br/>
+
+PV/PVC 를  자동으로 생성하기 위해서 Dynamic Provisioning 을 사용한다.    
+`nfs-subdir-external-provisioner` 를 사용하기로 한다.    
+
+helm repository를 추가한다.  
+
+```bash
+[root@bastion dynamic_provisioning]# helm repo add nfs-subdir-external-provisioner https://kubernetes-sigs.github.io/nfs-subdir-external-provisioner
+WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
+"nfs-subdir-external-provisioner" has been added to your repositories
+[root@bastion dynamic_provisioning]# helm repo list
+WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
+NAME                           	URL
+bitnami                        	https://charts.bitnami.com/bitnami
+harbor                         	https://helm.goharbor.io
+nfs-subdir-external-provisioner	https://kubernetes-sigs.github.io/nfs-subdir-external-provisioner
+```
+
+<br/>
+ 
+chart를 검색한다.  
+
+```bash
+[root@bastion dynamic_provisioning]# helm search repo nfs-subdir-external-provisioner
+WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
+NAME                                              	CHART VERSION	APP VERSION	DESCRIPTION
+nfs-subdir-external-provisioner/nfs-subdir-exte...	4.0.18       	4.0.2      	nfs-subdir-external-provisioner is an automatic...
+```
+
+<br/>
+
+values 를 변경하기 위해 values.yaml 를 다운 받는다.  
+
+```bash
+[root@bastion dynamic_provisioning]# helm show values nfs-subdir-external-provisioner/nfs-subdir-external-provisioner > values.yaml
+```  
+
+<br/>
+
+values 에서는 아래와 같이 변경한다.    
+
+```bash
+      1 replicaCount: 1
+      2 strategyType: Recreate
+      3
+      4 image:
+      5   repository: registry.k8s.io/sig-storage/nfs-subdir-external-provisioner
+      6   tag: v4.0.2
+      7   pullPolicy: IfNotPresent
+      8 imagePullSecrets: []
+      9
+     10 nfs:
+     11   server: 192.168.1.79  # NAS IP
+     12   path: /volume3/okd/dynamic  # path
+     13   mountOptions:
+     14   volumeName: nfs-subdir-external-provisioner-root
+     15   # Reclaim policy for the main nfs volume
+     16   reclaimPolicy: Retain
+     17
+     18 # For creating the StorageClass automatically:
+     19 storageClass:
+     20   create: true
+     21
+     22   # Set a provisioner name. If unset, a name will be generated.
+     23   # provisionerName:
+     24
+     25   # Set StorageClass as the default StorageClass
+     26   # Ignored if storageClass.create is false
+     27   defaultClass: false
+     28
+     29   # Set a StorageClass name
+     30   # Ignored if storageClass.create is false
+     31   name: nfs-client  # storage class 이름
+     32
+     33   # Allow volume to be expanded dynamically
+     34   allowVolumeExpansion: true
+     35
+     36   # Method used to reclaim an obsoleted volume
+     37   reclaimPolicy: Delete
+     38
+     39   # When set to false your PVs will not be archived by the provisioner upon deletion of the PVC.
+     40   archiveOnDelete: false # archive 안함 
+     41
+     42   # If it exists and has 'delete' value, delete the directory. If it exists and has 'retain' value, save the directory.
+     43   # Overrides archiveOnDelete.
+     44   # Ignored if value not set.
+     ...
+     49   pathPattern:
+     50
+     51   # Set access mode - ReadWriteOnce, ReadOnlyMany or ReadWriteMany
+     52   accessModes: ReadWriteOnce
+     53
+     54   # Set volume bindinng mode - Immediate or WaitForFirstConsumer
+     55   volumeBindingMode: Immediate
+     56
+     57   # Storage class annotations
+     58   annotations: {}
+     59
+     60 leaderElection:
+     61   # When set to false leader election will be disabled
+     62   enabled: true
+     63
+     64 ## For RBAC support:
+     65 rbac:
+     66   # Specifies whether RBAC resources should be created
+     67   create: true
+     68
+     ...
+     71 podSecurityPolicy:
+     72   enabled: true # okd는 설정. 아주 중요
+     73
+     74 # Deployment pod annotations
+     75 podAnnotations: {}
+     76
+     80 #podSecurityContext: {}
+     81
+     82 podSecurityContext:
+     83   fsGroup: 1000670000 #1001 : namespace 의 UID
+```
+
+<br/>
+
+이제 helm 으로 설치를 한다.  
+
+```bash
+[root@bastion dynamic_provisioning]# helm install nfs-subdir-external-provisioner -f values.yaml  nfs-subdir-external-provisioner/nfs-subdir-external-provisioner -n shclub
+WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
+NAME: nfs-subdir-external-provisioner
+LAST DEPLOYED: Wed Aug 23 15:25:10 2023
+NAMESPACE: shclub
+STATUS: deployed
+REVISION: 1
+TEST SUITE: None
+```
+
+<br/>
+
+storageclass 가 nfs-client 이름으로 생성이 된 것을 확인 할 수 있다.  
+
+```bash
+[root@bastion dynamic_provisioning]# kubectl get storageclass
+NAME         PROVISIONER                                     RECLAIMPOLICY   VOLUMEBINDINGMODE   ALLOWVOLUMEEXPANSION   AGE
+nfs-client   cluster.local/nfs-subdir-external-provisioner   Delete          Immediate           true                   12s
+```  
+<br/>
+
+PVC 를 생성하여 테스트 해본다.   
+
+```bash
+[root@bastion dynamic_provisioning]# vi test_claim.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nfs-pvc-test
+spec:
+  storageClassName: nfs-client # SAME NAME AS THE STORAGECLASS
+  accessModes:
+    - ReadWriteMany #  must be the same as PersistentVolume
+  resources:
+    requests:
+      storage: 1Gi
+```
+
+<br/>
+
+정상적으로 PVC 가 자동 생성 된 것을 확인 할 수 있다.  
+
+```bash
+[root@bastion dynamic_provisioning]# kubectl get pvc -n shclub
+NAME           STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+nfs-pvc-test   Bound    pvc-3b872a76-4fe5-4a6d-9c19-9ebdb4c4e58f   1Gi        RWX            nfs-client     6m36s
+```  
+
+<br/>
 
 ## 11. Harbor ( Private Registry ) 설치 및 설정
 
@@ -3585,7 +2993,24 @@ values.yaml 화일에서 아래 부분을 수정한다.
 
 <br/>
 
-이제 위에서 수정한 harbor_values.yaml 화일로 설치를 한다.     
+이제 위에서 수정한 harbor_values.yaml 화일로 설치를 한다.  
+
+```bash    
+[root@bastion harbor]# vi harbor_values.yaml
+[root@bastion harbor]# helm install my-harbor -f harbor_values.yaml harbor/harbor -n harbor
+WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
+NAME: my-harbor
+LAST DEPLOYED: Thu Aug 24 15:02:37 2023
+NAMESPACE: harbor
+STATUS: deployed
+REVISION: 1
+TEST SUITE: None
+NOTES:
+Please wait for several minutes for Harbor deployment to complete.
+Then you should be able to visit the Harbor portal at https://core.harbor.domain
+For more details, please visit https://github.com/goharbor/harbor
+```    
+<br/>
 
 service 와 pod 그리고 pvc 생성을 확인한다.  
 
@@ -3995,8 +3420,8 @@ proxmox 에 coreos 기반의 worker 노드를 생성한다. ( 생성 과정은 �
 <br/>
 
 - 다운로드 위치 : 
-https://builds.coreos.fedoraproject.org/browser?stream=stable&arch=x86_64
-- Version : fedora-coreos-37.20230218.3.0-live.x86_64.iso
+https://builds.coreos.fedoraproject.org/browser?stream=stable&arch=x86_64 에서
+- Version : fedora-coreos-35.20220410.3.1-live.x86_64.iso
 
 
 <br/>
@@ -4044,7 +3469,7 @@ worker 노드 ( okd-2 ) 설치를 한다.
 
 ```bash
 [root@localhost core]# coreos-installer install /dev/sda -I http://192.168.1.247:8080/ign/worker.ign --insecure-ignition --copy-network
-Installing Fedora CoreOS 37.20230218.3.0 x86_64 (512-byte sectors)
+Installing Fedora CoreOS 35.20220410.3.1 x86_64 (512-byte sectors)
 > Read disk 2.5 GiB/2.5 GiB (100%)
 Writing Ignition config
 Copying networking configuration from /etc/NetworkManager/system-connections/
@@ -4070,7 +3495,7 @@ bastion 서버에서 아래 명령어로 모니터링을 하고  `It is now safe
 <br/>
 
 ```bash
-[root@bastion ~]# /usr/local/bin/openshift-install --dir=okd4 wait-for bootstrap-complete --log-level=debug
+[root@bastion ~]# /usr/local/bin/openshift-install --dir=/root/okd4 wait-for bootstrap-complete --log-level=debug
 DEBUG OpenShift Installer 4.10.0-0.okd-2022-03-07-131213
 DEBUG Built from commit 3b701903d96b6375f6c3852a02b4b70fea01d694
 INFO Waiting up to 20m0s (until 11:21AM) for the Kubernetes API at https://api.okd4.ktdemo.duckdns.org:6443...
@@ -4139,44 +3564,35 @@ csr-vhvjn   5m40s   kubernetes.io/kube-apiserver-client-kubelet   system:service
 시간이 좀 더 지나면 아래와 같이 Ready로 바뀐 것을 확인 할 수 있다.
 
 ```bash
-[root@bastion ~]# kubectl get nodes
-NAME                            STATUS   ROLES                         AGE    VERSION
-okd-1.okd4.ktdemo.duckdns.org   Ready    control-plane,master,worker   107m   v1.25.7+eab9cc9
-okd-2.okd4.ktdemo.duckdns.org   Ready    worker                        109s   v1.25.7+eab9cc9
+[root@bastion ~]# oc get nodes
+NAME                            STATUS   ROLES           AGE     VERSION
+okd-1.okd4.ktdemo.duckdns.org   Ready    master,worker   17d     v1.23.3+759c22b
+okd-2.okd4.ktdemo.duckdns.org   Ready    worker          5m10s   v1.23.3+759c22b
 ```
 
 <br/>
-
-향후 수정할수 있고 master 노드에서 worker role을 삭제하려면 아래 명령어를 통해 삭제 할 수 있습니다.  
-
-```bash
-[root@bastion ~]# oc patch schedulers.config.openshift.io/cluster --type merge -p '{"spec":{"mastersSchedulable":false}}'
-scheduler.config.openshift.io/cluster patched
-[root@bastion ~]# kubectl get nodes
-NAME                            STATUS   ROLES                  AGE     VERSION
-okd-1.okd4.ktdemo.duckdns.org   Ready    control-plane,master   109m    v1.25.7+eab9cc9
-okd-2.okd4.ktdemo.duckdns.org   Ready    worker                 3m47s   v1.25.7+eab9cc9
-```  
 
 machine config 값을 조회해 본다.  
 
 ```bash
 [root@bastion ~]# oc get mc
 NAME                                               GENERATEDBYCONTROLLER                      IGNITIONVERSION   AGE
-00-master                                          e7a5af3faec663f877cc39b582f7ad38120ebd1e   3.2.0             103m
-00-worker                                          e7a5af3faec663f877cc39b582f7ad38120ebd1e   3.2.0             103m
-01-master-container-runtime                        e7a5af3faec663f877cc39b582f7ad38120ebd1e   3.2.0             103m
-01-master-kubelet                                  e7a5af3faec663f877cc39b582f7ad38120ebd1e   3.2.0             103m
-01-worker-container-runtime                        e7a5af3faec663f877cc39b582f7ad38120ebd1e   3.2.0             103m
-01-worker-kubelet                                  e7a5af3faec663f877cc39b582f7ad38120ebd1e   3.2.0             103m
-99-master-generated-registries                     e7a5af3faec663f877cc39b582f7ad38120ebd1e   3.2.0             103m
-99-master-ssh                                                                                 3.2.0             116m
-99-okd-master-disable-mitigations                                                             3.2.0             116m
-99-okd-worker-disable-mitigations                                                             3.2.0             116m
-99-worker-generated-registries                     e7a5af3faec663f877cc39b582f7ad38120ebd1e   3.2.0             103m
-99-worker-ssh                                                                                 3.2.0             116m
-rendered-master-5fab3f83edfada45fc6c80c4653e299d   e7a5af3faec663f877cc39b582f7ad38120ebd1e   3.2.0             103m
-rendered-worker-74e8fd7160efccd8d97f4fe105f4991e   e7a5af3faec663f877cc39b582f7ad38120ebd1e   3.2.0             103m
+00-master                                          14a1ca2cb91ff7e0faf9146b21ba12cd6c652d22   3.2.0             17d
+00-worker                                          14a1ca2cb91ff7e0faf9146b21ba12cd6c652d22   3.2.0             17d
+01-master-container-runtime                        14a1ca2cb91ff7e0faf9146b21ba12cd6c652d22   3.2.0             17d
+01-master-kubelet                                  14a1ca2cb91ff7e0faf9146b21ba12cd6c652d22   3.2.0             17d
+01-worker-container-runtime                        14a1ca2cb91ff7e0faf9146b21ba12cd6c652d22   3.2.0             17d
+01-worker-kubelet                                  14a1ca2cb91ff7e0faf9146b21ba12cd6c652d22   3.2.0             17d
+99-master-generated-registries                     14a1ca2cb91ff7e0faf9146b21ba12cd6c652d22   3.2.0             17d
+99-master-okd-extensions                                                                      3.2.0             17d
+99-master-ssh                                                                                 3.2.0             17d
+99-okd-master-disable-mitigations                                                             3.2.0             17d
+99-okd-worker-disable-mitigations                                                             3.2.0             17d
+99-worker-generated-registries                     14a1ca2cb91ff7e0faf9146b21ba12cd6c652d22   3.2.0             17d
+99-worker-okd-extensions                                                                      3.2.0             17d
+99-worker-ssh                                                                                 3.2.0             17d
+rendered-master-f14cbe675b651ca064299b536d4cf820   14a1ca2cb91ff7e0faf9146b21ba12cd6c652d22   3.2.0             17d
+rendered-worker-f9ec036401f7136f50343298d7955ab9   14a1ca2cb91ff7e0faf9146b21ba12cd6c652d22   3.2.0             17d
 ```
 
 <br/>
@@ -4215,7 +3631,7 @@ okd-1 , okd-2 node 를 edit 하여 label 을  설정한다.
 
 <br/>
 
-namespace 에 node selector 를 annotations 에 적용한다.     
+namespace 에 node selector 를 적용한다.     
 - `openshift.io/node-selector: edu=true`  
 
 
@@ -4266,7 +3682,6 @@ nginx   1/1     Running   0          20s   10.129.0.10   okd-2.okd4.ktdemo.duckd
 - ArgoCD : https://www.skyer9.pe.kr/wordpress/?p=6845
 - ArgoCD Redis 접속 에러 (networkpolicy) : https://www.xiexianbin.cn/cicd/argo-cd/deploy/index.html
 - Harbor 설치 : https://computingforgeeks.com/install-harbor-image-registry-on-kubernetes-openshift-with-helm-chart/?amp
-- Openshift 4.12.0 on BareMetal 설치 및 설정 : https://sysdocu.tistory.com/1765
 
 <br/>
 
@@ -4281,8 +3696,7 @@ journalctl -xeu kubelet -f
 
 <br/>
 
-## route 경로  조회
-
+route 정보 보기   
 
 ```bash
 [root@okd-1 core]# iptables-save | grep 443
@@ -4340,15 +3754,8 @@ journalctl -xeu kubelet -f
 
 <br/>
 
-## journal 사이즈 변경
-
-<br/>
-
-참고 : 
-- https://yjwang.tistory.com/209  
-
-<br/>
-
+journal  disk 사이즈 설정  
+- https://yjwang.tistory.com/209
 
 ```bash
 [root@okd-1 core]# df -h /
@@ -4365,4 +3772,20 @@ Vacuuming done, freed 0B of archived journals from /run/log/journal/c4748c338918
 [root@okd-1 core]# journalctl --disk-usage
 Archived and active journals take up 3.5G in the file system.
 [root@okd-1 core]# journalctl --vacuum-time=1d
+```
+
+<br/>
+
+```bash
+[root@bastion ~]# oc get clusterversion
+NAME      VERSION                          AVAILABLE   PROGRESSING   SINCE   STATUS
+version   4.10.0-0.okd-2022-03-07-131213   True        True          59s     Working towards 4.10.0-0.okd-2022-05-07-021833: 9 of 778 done (1% complete)
+```  
+
+<br/>
+
+first boot 옵션 주기
+
+```bash
+[root@localhost core]# coreos-installer install /dev/sda -I http://192.168.1.71:8080/ign/bootstrap.ign --insecure-ignition --firstboot-args "rd.neednet=1 ip=192.168.1.128::192.168.1.1:255.255.255.0:bootstrap.okd4.ktdemo.duckdns.org:ens18:none nameserver=192.168.1.71"
 ```
