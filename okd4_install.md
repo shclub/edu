@@ -1725,10 +1725,6 @@ INFO Login to the console with user: "kubeadmin", and password: "HeJDB-***-****b
 INFO Time elapsed: 0s
 ```
 
-
-[root@bastion ~]#  openshift-install --dir=/root/okd4 wait-for install-complete
-INFO Waiting up to 40m0s (until 1:15PM) for the cluster at https://api.okd4.ktdemo.duckdns.org:6443 to initialize...
-
 <br/>
 
 ### 6.2 OKD 계정 생성
