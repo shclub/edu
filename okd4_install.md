@@ -79,7 +79,7 @@ ktdemo.duckdns.org 로 생성 을 한다. ip 를 변경하고 싶으면 ip를 �
 | 서버구분 | Hypervisor | IP | hostname | 용도 | OS | Spec | 기타
 |:--------| :-----|:----|  :----|  :----| :----| :----| :----|  
 | VM | proxmox | 192.168.1.1.247 | bastion.okd4.ktdemo.duckdns.org | Bastion(LB,DNS) | Centos 8 Stream | 2 core / 4 G / 30G |
-| VM | proxmox | 192.168.1.1.128 | bootstrap.okd4.ktdemo.duckdns.org |  Bootstrap | Fedora Core OS 37 | 2 core / 8 G / 40G | 메모리 8기가 이상 
+| VM | proxmox | 192.168.1.1.128 | bootstrap.okd4.ktdemo.duckdns.org |  Bootstrap | Fedora Core OS 37 | 2 core / 4 G / 40G | 
 | VM | vmware | 192.168.1.1.146 | okd-1.okd4.ktdemo.duckdns.org | Master/Worker | Fedora Core OS 37 | 8 core / 20 G / 200G | Base OS 윈도우 11 
 | VM | proxmox | 192.168.1.1.148 | okd-2.okd4.ktdemo.duckdns.org |  Worker | Fedora Core OS 37 | 2 core / 16 G / 300G | 워커 노드
 
