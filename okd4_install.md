@@ -106,18 +106,7 @@ Release Metadata:
 Component Versions:
   kubernetes 1.25.7        
   machine-os 37.20230218.3 Fedora CoreOS
-```  
-
-
-Release Metadata:
-  Version:  4.13.0-0.okd-2023-08-18-135805
-  Upgrades: <none>
-  Metadata:
-
-Component Versions:
-  kubernetes 1.26.7        
-  machine-os 38.20230722.3 Fedora CoreOS
-
+```
 
 <br/>
 
