@@ -2202,7 +2202,7 @@ spec:
   commandAction: "bash"
   exposureMode: "ClusterIP"
 #  exposureMode: "NodePort"
-  ttl: 555555555555  # ttl 설정된 시간 만큼 pod 유지
+  ttl: 55555555  # ttl 설정된 시간 만큼 pod 유지
   once: false
 [root@bastion cloudshell]# kubectl apply -f cloud_shell.yaml -n shclub
 cloudshell.cloudshell.cloudtty.io/okd-shell created
