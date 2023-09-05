@@ -2501,7 +2501,7 @@ metadata:
     app : argocd
   name: argocd
 spec:
-  host: argocd-argocd.apps.okd4.ktdemo.duckdns.org
+  host: argocd.apps.okd4.ktdemo.duckdns.org
   port:
     targetPort: http
   tls:
@@ -2522,7 +2522,7 @@ spec:
 [root@bastion argocd]# kubectl apply -f argocd_route.yaml -n argocd
 [root@bastion argocd]# kubectl get route -n argocd
 NAME            HOST/PORT                                           PATH   SERVICES        PORT   TERMINATION   WILDCARD
-argocd          argocd-argocd.apps.okd4.ktdemo.duckdns.org                 argocd-server   http   edge/Allow    None
+argocd          argocd.apps.okd4.ktdemo.duckdns.org                 argocd-server   http   edge/Allow    None
 ```  
 
 <br/> 
@@ -2549,59 +2549,7 @@ data:
 
 <br/>
 
-### 8.2 터미닐 실행 기능 설정
-
-<br/>
-
-argocd 2.4 버전 부터 terminal 기능을 사용 하려면 터미널 실행 기능을 설정한다.  
-   
-
-```bash  
-[root@bastion argocd]# kubectl edit cm argocd-cm -n argocd
-apiVersion: v1
-data:
-  exec.enabled: "true"
-kind: ConfigMap
-```  
-<br/>
-
-아래 내용 추가  
-
-```bash
-data:
-  exec.enabled: "true"
-```     
-
-<br/>  
-
-아래와 같이 터미널이 활성화가 된다.  
-
-<img src="./assets/argocd_terminal.png" style="width: 80%; height: auto;"/>
-
-<br/>
-
-argocd-server pod를 삭제하고 재기동 한다.    
-
-```bash
-[root@bastion argocd]# kubectl get pod -n argocd
-
-NAME                                                READY   STATUS    RESTARTS   AGE
-argocd-application-controller-0                     1/1     Running   0          118m
-argocd-applicationset-controller-6765c74d68-t5jdv   1/1     Running   0          118m
-argocd-dex-server-7d974fc66b-ntz2d                  1/1     Running   0          113m
-argocd-notifications-controller-5df7fddfb7-gqs2w    1/1     Running   0          118m
-argocd-redis-74b8bcc46b-hg22b                       1/1     Running   0          110m
-argocd-repo-server-6db877f7d9-d78qf                 1/1     Running   0          112m
-argocd-server-6c7df9df6b-85vn9                      1/1     Running   0          115m
-[root@bastion argocd]#
-[root@bastion argocd]# kubectl delete po argocd-server-6c7df9df6b-85vn9 -n argocd
-pod "argocd-server-6c7df9df6b-85vn9" deleted
-```  
-
-<br/>
-
-
-### 8.3 트러블 슈팅
+### 8.2 트러블 슈팅
 
 <br/>
 
@@ -2647,7 +2595,7 @@ deployment.apps/argocd-server restarted
 <br/>
 
 
-### 8.4 console 접속
+### 8.3 console 접속
 
 <br/>
 
@@ -2669,7 +2617,7 @@ deployment.apps/argocd-server restarted
 
 <br/>
 
-### 8.5 계정 생성
+### 8.4 계정 생성
 
 <br/>
 
@@ -2740,7 +2688,7 @@ metadata:
 <br/>
 
 계정 별로 비밀번호를 생성합니다.  
-  
+
 ```bash
   [root@bastion argocd]# argocd account update-password --account shclub
 *** Enter password of currently logged in user (admin):
@@ -2750,6 +2698,13 @@ ERRO[0011] Passwords do not match
 *** Enter new password for user shclub:
 *** Confirm new password for user shclub:
 Password updated
+```
+<br/>
+
+아래처럼 해도 됨  
+
+```bash
+argocd account update-password --account developer --new-password Developer123
 ```
 
 <br/>
@@ -2771,27 +2726,27 @@ data:
     p, role:edu1, repositories, get, *, allow
     p, role:edu1, projects, get, *, allow
     p, role:edu1, applications, *, edu1/*, allow
-    p, role:edu1, exec, create , edu1/*, allow
+    p, role:edu1, exec, create, edu1/*, allow
     p, role:edu2, clusters, get, *, allow
     p, role:edu2, repositories, get, *, allow
     p, role:edu2, projects, get, *, allow
     p, role:edu2, applications, *, edu2/*, allow
-    p, role:edu2, exec, create , edu2/*, allow
+    p, role:edu2, exec, create, edu2/*, allow
     p, role:edu3, clusters, get, *, allow
     p, role:edu3, repositories, get, *, allow
     p, role:edu3, projects, get, *, allow
     p, role:edu3, applications, *, edu3/*, allow
-    p, role:edu3, exec, create , edu3/*, allow
+    p, role:edu3, exec, create, edu3/*, allow
     p, role:edu4, clusters, get, *, allow
     p, role:edu4, repositories, get, *, allow
     p, role:edu4, projects, get, *, allow
     p, role:edu4, applications, *, edu4/*, allow
-    p, role:edu4, exec, create , edu4/*, allow
+    p, role:edu4, exec, create, edu4/*, allow
     p, role:edu5, clusters, get, *, allow
     p, role:edu5, repositories, get, *, allow
     p, role:edu5, projects, get, *, allow
     p, role:edu5, applications, *, edu5/*, allow
-    p, role:edu5, exec, create , edu5/*, allow
+    p, role:edu5, exec, create, edu5/*, allow
     g, edu1, role:edu1
     g, edu2, role:edu2
     g, edu3, role:edu3
@@ -2803,6 +2758,105 @@ data:
     g, rorty, role:manager
   policy.default: role:''
 ```
+<br/>
+
+
+### 8.5 터미닐 실행 기능 설정
+
+<br/>
+
+argocd 2.4 버전 부터 terminal 기능을 사용 하려면 터미널 실행 기능을 설정한다.  
+   
+
+```bash  
+[root@bastion argocd]# kubectl edit cm argocd-cm -n argocd
+apiVersion: v1
+data:
+  accounts.edu1: apiKey,login
+  accounts.edu2: apiKey,login
+  accounts.edu3: apiKey,login
+  accounts.edu4: apiKey,login
+  accounts.edu5: apiKey,login
+  accounts.haerin: apiKey,login
+  accounts.hans: apiKey,login
+  accounts.rorty: apiKey,login
+  accounts.shclub: apiKey,login
+  exec.enabled: "true"
+kind: ConfigMap
+```  
+<br/>
+
+아래 내용 추가  
+
+```bash
+data:
+  exec.enabled: "true"
+```     
+
+<br/>
+
+이제 `argocd-server` role 을 변경합니다.    
+
+
+```bash
+[root@bastion argocd]# kubectl edit role argocd-server  -n argocd
+```  
+
+<br/>
+
+맨 아래에 아래 내용을 추가 한다.   
+
+```bash
+- apiGroups:
+  - ""
+  resources:
+  - pods/exec
+  verbs:
+  - create
+```
+
+<br/>  
+
+argocd-rbac-cm 를 수정하여 `exec, create` 를 추가한다.  
+
+위에서 추가 해서 여기서는 여기서는 확인만 한다.  
+
+```bash
+[root@bastion argocd]# kubectl -n argocd edit configmap argocd-rbac-cm -o yaml
+```
+
+<br/>
+
+```bash
+    p, role:<유저명>, exec, create, <프로젝트명>/*, allow
+```  
+
+<br/>
+
+argocd-server pod를 삭제하고 재기동 한다.    
+
+```bash
+[root@bastion argocd]# kubectl get pod -n argocd
+
+NAME                                                READY   STATUS    RESTARTS   AGE
+argocd-application-controller-0                     1/1     Running   0          118m
+argocd-applicationset-controller-6765c74d68-t5jdv   1/1     Running   0          118m
+argocd-dex-server-7d974fc66b-ntz2d                  1/1     Running   0          113m
+argocd-notifications-controller-5df7fddfb7-gqs2w    1/1     Running   0          118m
+argocd-redis-74b8bcc46b-hg22b                       1/1     Running   0          110m
+argocd-repo-server-6db877f7d9-d78qf                 1/1     Running   0          112m
+argocd-server-6c7df9df6b-85vn9                      1/1     Running   0          115m
+[root@bastion argocd]#
+[root@bastion argocd]# kubectl delete po argocd-server-6c7df9df6b-85vn9 -n argocd
+pod "argocd-server-6c7df9df6b-85vn9" deleted
+```  
+
+<br/>
+
+아래와 같이 터미널이 활성화가 된다.  
+
+<img src="./assets/argocd_terminal.png" style="width: 80%; height: auto;"/>
+
 
 <br/>
 
