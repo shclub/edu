@@ -13,9 +13,8 @@ OKD 설명 참고 :  https://velog.io/@_gyullbb/OKD-%EA%B0%9C%EC%9A%94
    - OKD API : https://api.okd4.ktdemo.duckdns.org:6443
    - Minio Object Storage : https://minino.apps.okd4.ktdemo.duckdns.org/   
    - ArgoCD : https://argocd.apps.okd4.ktdemo.duckdns.org/   
-   - Harbor Private Docker Registry : https://myharbor.apps.okd4.ktdemo.duckdns.org/   
+   - Harbor Private Docker Registry : https://myharbor.apps.okd4.ktdemo.duckdns.org/  
    
-
 1. 도메인 생성
 
 2. 설치 환경 인프라 구성
@@ -82,6 +81,7 @@ ktdemo.duckdns.org 로 생성 을 한다. ip 를 변경하고 싶으면 ip를 �
 | VM | proxmox | 192.168.1.1.128 | bootstrap.okd4.ktdemo.duckdns.org |  Bootstrap | Fedora Core OS 37 | 2 core / 4 G / 40G | 
 | VM | vmware | 192.168.1.1.146 | okd-1.okd4.ktdemo.duckdns.org | Master/Worker | Fedora Core OS 37 | 8 core / 20 G / 200G | Base OS 윈도우 11 
 | VM | proxmox | 192.168.1.1.148 | okd-2.okd4.ktdemo.duckdns.org |  Worker | Fedora Core OS 37 | 2 core / 16 G / 300G | 워커 노드
+| VM | proxmox | 192.168.1.1.149 | okd-3.okd4.ktdemo.duckdns.org |  Worker | Fedora Core OS 37 | 4 core / 8 G / 100G | 워커 노드 추가
 
 <br/>
 
@@ -1418,7 +1418,7 @@ connection 이름을 ens160으로 생성한다.
 worker 노드 ( okd-2 ) 설치를 한다.
 
 ```bash
-[root@localhost core]# coreos-installer install /dev/sda -I http://192.168.1.247:8080/ign/worker.ign --insecure-ignition --copy-network
+[root@localhost core]# coreos-installer install /dev/sda -I http://192.168.1.40:8080/ign/worker.ign --insecure-ignition --copy-network
 Installing Fedora CoreOS 37.20230218.3.0 x86_64 (512-byte sectors)
 > Read disk 2.5 GiB/2.5 GiB (100%)
 Writing Ignition config
@@ -1551,12 +1551,14 @@ backend openshift_api_backend
     balance source
     #server      bootstrap 192.168.1.128:6443 check
     server      okd-1 192.168.1.146:6443 check
+    server      okd-2 192.168.1.148:6443 check
 
 backend ocp_machine_config_server_backend
     mode tcp
     balance source
     #server      bootstrap 192.168.1.128:22623 check
     server      okd-1 192.168.1.146:22623 check
+    server      okd-2 192.168.1.148:22623 check
 ```
 
 <br/>
@@ -2944,6 +2946,8 @@ No LimitRange resource.
   pod-security.kubernetes.io/enforce-version=v1.24
 ```  
 
+<br/>
+
 
 ```bash
 [root@bastion ]# kubectl describe namespace shclub
@@ -3883,9 +3887,10 @@ bastion 서버에서 haproxy.cfg 에 신규 노드를 추가한다.
 backend openshift_api_backend
     mode tcp
     balance source
-    server      bootstrap 192.168.1.128:6443 check # bootstrap 서버
-    server      okd-1 192.168.1.146:6443 check # okd master/worker 설정
-    server      okd-2 192.168.1.148:6443 check  # worker node 추가 
+    #server      bootstrap 192.168.1.128:6443 check # bootstrap 서버
+    server      okd-1 192.168.1.146:6443 check # okd master 설정
+    server      okd-2 192.168.1.148:6443 check  # okd worker 설정
+    server      okd-2 192.168.1.149:6443 check  # worker node 추가 
 
 # OKD Machine Config Server
 frontend okd_machine_config_server_frontend
@@ -3896,9 +3901,10 @@ frontend okd_machine_config_server_frontend
 backend okd_machine_config_server_backend
     mode tcp
     balance source
-    server      bootstrap 192.168.1.128:22623 check # bootstrap 서버
-    server      okd-1 192.168.1.146:22623 check # okd master/worker 설정
-    server      okd-2 192.168.1.148:22623 check  # worker node 추가 
+    #server      bootstrap 192.168.1.128:22623 check # bootstrap 서버
+    server      okd-1 192.168.1.146:22623 check # okd master 설정
+    server      okd-2 192.168.1.148:22623 check  # okd worker 설정
+    server      okd-3 192.168.1.149:22623 check  # worker node 추가 
 
 # OKD Ingress - layer 4 tcp mode for each. Ingress Controller will handle layer 7.
 frontend okd_http_ingress_frontend
@@ -3909,8 +3915,10 @@ frontend okd_http_ingress_frontend
 backend okd_http_ingress_backend
     balance source
     mode tcp
-    server      okd-1 192.168.1.146:80 check # okd master/worker 설정
-    server      okd-2 192.168.1.148:80 check  # worker node 추가 
+    server      okd-1 192.168.1.146:80 check # okd master 설정
+    server      okd-2 192.168.1.148:80 check  # okd worker 설정
+    server      okd-3 192.168.1.149:80 check  # worker node 추가 
+
 
 frontend okd_https_ingress_frontend
     bind *:443
@@ -3921,7 +3929,8 @@ backend okd_https_ingress_backend
     mode tcp
     balance source
     server      okd-1 192.168.1.146:443 check
-    server      okd-2 192.168.1.148:443 check  # worker node 추가 
+    server      okd-2 192.168.1.148:443 check 
+    server      okd-3 192.168.1.149:443 check  # worker node 추가 
 ```  
 
 <br/>
@@ -4040,49 +4049,65 @@ https://builds.coreos.fedoraproject.org/browser?stream=stable&arch=x86_64
 
 <br/>
 
-먼저 네트웍을 설정을 하기 위해서 network device 이름을 확인한다.  
+24 시간이 지난 후에 worker node를 추가하는 경우에는 에러가 발생을 하는데 worker.ign의 정보가 bootstrap 생성시 만들어진 것이기 때문에 인증이 유효 하지 않다.     
+
+- 참고 : https://access.redhat.com/solutions/4799921
+
+<br/>
+
+신규로 worker.ign을 생성해야 한다.  
 
 ```bash  
-[root@localhost core]# nmcli device
-DEVICE  TYPE      STATE      CONNECTION
-ens18   ethernet  connected  Wired connection 1
-lo      loopback  unmanaged  --
+[root@bastion okd4]# export MCS=api-int.okd4.ktdemo.duckdns.org:22623
+[root@bastion okd4]# echo "q" | openssl s_client -connect $MCS  -showcerts | awk '/-----BEGIN CERTIFICATE-----/,/-----END CERTIFICATE-----/' | base64 --wrap=0 | tee ./api-int.base64 && \
+> sed --regexp-extended --in-place=.backup "s%base64,[a-zA-Z0-9+\/=]+%base64,$(cat ./api-int.base64)%" ./worker.ign
+depth=0 CN = system:machine-config-server
+verify error:num=20:unable to get local issuer certificate
+verify return:1
+depth=0 CN = system:machine-config-server
+verify error:num=21:unable to verify the first certificate
+verify return:1
+depth=0 CN = system:machine-config-server
+verify return:1
+DONE
+LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURZakN******LS0K
+```
+
+<br/>
+
+다시 worker.ign 화일을 web server에 update 한다.  
+
+```bash  
+[root@bastion ~]# cp okd4/worker.ign /var/www/html/ign/
+cp: overwrite '/var/www/html/ign/worker.ign'? y
+[root@bastion ~]# systemctl restart httpd
+```
+
+<br/>
+
+먼저 네트웍을 설정을 하기 위해서 nmtui 라는 gui 환경으로 구성한다.     
+
+edit 에 들어가서 수정한다.  
+
+
+```bash  
+[root@localhost core]# nmtui
 ```  
 
 <br/>
 
-connection 이름을 ens18으로 생성한다.  
 
-```bash  
-[root@localhost core]# nmcli connection add type ethernet autoconnect yes con-name ens18 ifname ens18
-Connection 'ens18' (c8971315-71e5-40a1-8b16-9c1ef5b354c8) successfully added.
-```  
+<img src="./assets/nmtui_okd_worker.png" style="width: 80%; height: auto;"/>
+
 
 <br/>
 
-네트웍 설정을 한다.  
-- ip : okd-2 서버는 192.168.1.148/24 로 설정한다.
-- dns : bastion 서버는 192.168.1.247 로 설정한다.
-- gateway : 공유기 ip 인 192.168.1.1 로 설정한다. ( bastion 서버 ip로 해도 상관 없음 )
-- dns-search : okd4.ktdemo.duckdns.org 로 설정 ( cluster 이름 + . + base Domain)
-
-<br/>
-
-```bash  
-[root@localhost core]# nmcli connection modify ens18 ipv4.addresses 192.168.1.148/24 ipv4.method manual
-[root@localhost core]# nmcli connection modify ens18 ipv4.dns 192.168.1.247
-[root@localhost core]# nmcli connection modify ens18 ipv4.gateway 192.168.1.1
-[root@localhost core]# nmcli connection modify ens18 ipv4.dns-search okd4.ktdemo.duckdns.org
-```  
-
-<br/>
-
-worker 노드 ( okd-2 ) 설치를 한다.
+worker 노드 ( okd-3 ) 설치를 한다.
 
 <br/>
 
 ```bash
-[root@localhost core]# coreos-installer install /dev/sda -I http://192.168.1.247:8080/ign/worker.ign --insecure-ignition --copy-network
+[root@localhost core]# coreos-installer install /dev/sda -I http://192.168.1.40:8080/ign/worker.ign --insecure-ignition --copy-network
 Installing Fedora CoreOS 37.20230218.3.0 x86_64 (512-byte sectors)
 > Read disk 2.5 GiB/2.5 GiB (100%)
 Writing Ignition config
@@ -4098,30 +4123,10 @@ hostname을 설정 하고 재기동 한다.
 <br/>
 
 ```bash
-[root@localhost core]# hostnamectl set-hostname okd-2.okd4.ktdemo.duckdns.org
+[root@localhost core]# hostnamectl set-hostname okd-3.okd4.ktdemo.duckdns.org
 [root@localhost core]# reboot now
 ``` 
 
-<br/>
-
-bastion 서버에서 아래 명령어로 모니터링을 하고  `It is now safe to remove the bootstrap resources` 가 나오면 정상적으로 worker 노드가 설치가 완료 됩니다.   
-
-<br/>
-
-```bash
-[root@bastion ~]# /usr/local/bin/openshift-install --dir=okd4 wait-for bootstrap-complete --log-level=debug
-DEBUG OpenShift Installer 4.10.0-0.okd-2022-03-07-131213
-DEBUG Built from commit 3b701903d96b6375f6c3852a02b4b70fea01d694
-INFO Waiting up to 20m0s (until 11:21AM) for the Kubernetes API at https://api.okd4.ktdemo.duckdns.org:6443...
-INFO API v1.23.3-2003+e419edff267ffa-dirty up
-INFO Waiting up to 30m0s (until 11:31AM) for bootstrapping to complete...
-DEBUG Bootstrap status: complete
-INFO It is now safe to remove the bootstrap resources
-DEBUG Time elapsed per stage:
-DEBUG Bootstrap Complete: 1s
-DEBUG                API: 1s
-INFO Time elapsed: 1s
-```
 
 <br/>
 
@@ -4132,7 +4137,8 @@ worker node 가 재기동 하기에는 시간이 많이 소요가 되고 완료�
 ```bash
 [root@bastion ~]# oc get nodes
 NAME                            STATUS   ROLES           AGE   VERSION
-okd-1.okd4.ktdemo.duckdns.org   Ready    master,worker   17d   v1.23.3+759c22b
+okd-1.okd4.ktdemo.duckdns.org   Ready      control-plane,master   7d      v1.25.7+eab9cc9
+okd-2.okd4.ktdemo.duckdns.org   Ready      worker                 6d22h   v1.25.7+eab9cc9
 ```  
 
 <br/>
@@ -4140,14 +4146,14 @@ okd-1.okd4.ktdemo.duckdns.org   Ready    master,worker   17d   v1.23.3+759c22b
 csr를 조회하고 승인을 한다.  
 
 ```bash
-[root@bastion ~]# oc get csr
-NAME        AGE     SIGNERNAME                                    REQUESTOR                                                                   REQUESTEDDURATION   CONDITION
-csr-5lgxl   17s     kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper   <none>              Pending
-csr-vhvjn   3m28s   kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper   <none>
-[root@bastion ~]# oc adm certificate approve csr-5lgxl
-certificatesigningrequest.certificates.k8s.io/csr-5lgxl approved
-[root@bastion ~]# oc adm certificate approve csr-vhvjn
-certificatesigningrequest.certificates.k8s.io/csr-vhvjn approved
+[root@bastion ~]# kubectl get csr
+NAME        AGE   SIGNERNAME                                    REQUESTOR                                                                   REQUESTEDDURATION   CONDITION
+csr-8qg9p   85s   kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper   <none>              Pending
+csr-dnbcd   74s   kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper   <none>              Pending
+[root@bastion ~]#  oc adm certificate approve csr-8qg9p
+certificatesigningrequest.certificates.k8s.io/csr-8qg9p approved
+[root@bastion ~]#  oc adm certificate approve csr-dnbcd
+certificatesigningrequest.certificates.k8s.io/csr-dnbcd approved
 ```
 
 <br/>
@@ -4155,10 +4161,11 @@ certificatesigningrequest.certificates.k8s.io/csr-vhvjn approved
 다시 node를 조회하면  join 된 것을 확인 할수 있고 status 는 `NotReady` 이다.  
 
 ```bash
-[root@bastion ~]# oc get nodes
-NAME                            STATUS     ROLES           AGE   VERSION
-okd-1.okd4.ktdemo.duckdns.org   Ready      master,worker   17d   v1.23.3+759c22b
-okd-2.okd4.ktdemo.duckdns.org   NotReady   worker          21s   v1.23.3+759c22b
+[root@bastion ~]# kubectl get nodes
+NAME                            STATUS     ROLES                  AGE     VERSION
+okd-1.okd4.ktdemo.duckdns.org   Ready      control-plane,master   7d      v1.25.7+eab9cc9
+okd-2.okd4.ktdemo.duckdns.org   Ready      worker                 6d22h   v1.25.7+eab9cc9
+okd-3.okd4.ktdemo.duckdns.org   NotReady   worker                 81s     v1.25.7+eab9cc9
 ```  
 
 <br/>
@@ -4175,48 +4182,21 @@ csr-vhvjn   5m40s   kubernetes.io/kube-apiserver-client-kubelet   system:service
 
 <br/>
 
+
 시간이 좀 더 지나면 아래와 같이 Ready로 바뀐 것을 확인 할 수 있다.
 
 ```bash
 [root@bastion ~]# kubectl get nodes
-NAME                            STATUS   ROLES                         AGE    VERSION
-okd-1.okd4.ktdemo.duckdns.org   Ready    control-plane,master,worker   107m   v1.25.7+eab9cc9
-okd-2.okd4.ktdemo.duckdns.org   Ready    worker                        109s   v1.25.7+eab9cc9
+NAME                            STATUS   ROLES                  AGE     VERSION
+okd-1.okd4.ktdemo.duckdns.org   Ready    control-plane,master   7d      v1.25.7+eab9cc9
+okd-2.okd4.ktdemo.duckdns.org   Ready    worker                 6d22h   v1.25.7+eab9cc9
+okd-3.okd4.ktdemo.duckdns.org   Ready    worker                 2m54s   v1.25.7+eab9cc9
 ```
 
 <br/>
 
-향후 수정할수 있고 master 노드에서 worker role을 삭제하려면 아래 명령어를 통해 삭제 할 수 있습니다.  
+machine config pool 값을 조회해 본다.  
 
-```bash
-[root@bastion ~]# oc patch schedulers.config.openshift.io/cluster --type merge -p '{"spec":{"mastersSchedulable":false}}'
-scheduler.config.openshift.io/cluster patched
-[root@bastion ~]# kubectl get nodes
-NAME                            STATUS   ROLES                  AGE     VERSION
-okd-1.okd4.ktdemo.duckdns.org   Ready    control-plane,master   109m    v1.25.7+eab9cc9
-okd-2.okd4.ktdemo.duckdns.org   Ready    worker                 3m47s   v1.25.7+eab9cc9
-```  
-
-machine config 값을 조회해 본다.  
-
-```bash
-[root@bastion ~]# oc get mc
-NAME                                               GENERATEDBYCONTROLLER                      IGNITIONVERSION   AGE
-00-master                                          e7a5af3faec663f877cc39b582f7ad38120ebd1e   3.2.0             103m
-00-worker                                          e7a5af3faec663f877cc39b582f7ad38120ebd1e   3.2.0             103m
-01-master-container-runtime                        e7a5af3faec663f877cc39b582f7ad38120ebd1e   3.2.0             103m
-01-master-kubelet                                  e7a5af3faec663f877cc39b582f7ad38120ebd1e   3.2.0             103m
-01-worker-container-runtime                        e7a5af3faec663f877cc39b582f7ad38120ebd1e   3.2.0             103m
-01-worker-kubelet                                  e7a5af3faec663f877cc39b582f7ad38120ebd1e   3.2.0             103m
-99-master-generated-registries                     e7a5af3faec663f877cc39b582f7ad38120ebd1e   3.2.0             103m
-99-master-ssh                                                                                 3.2.0             116m
-99-okd-master-disable-mitigations                                                             3.2.0             116m
-99-okd-worker-disable-mitigations                                                             3.2.0             116m
-99-worker-generated-registries                     e7a5af3faec663f877cc39b582f7ad38120ebd1e   3.2.0             103m
-99-worker-ssh                                                                                 3.2.0             116m
-rendered-master-5fab3f83edfada45fc6c80c4653e299d   e7a5af3faec663f877cc39b582f7ad38120ebd1e   3.2.0             103m
-rendered-worker-74e8fd7160efccd8d97f4fe105f4991e   e7a5af3faec663f877cc39b582f7ad38120ebd1e   3.2.0             103m
-```
 
 <br/>
 
@@ -4225,8 +4205,8 @@ UPDATING 가 `false` 이면 update 완료
 ```bash
 [root@bastion ~]# oc get mcp
 NAME     CONFIG                                             UPDATED   UPDATING   DEGRADED   MACHINECOUNT   READYMACHINECOUNT   UPDATEDMACHINECOUNT   DEGRADEDMACHINECOUNT   AGE
-master   rendered-master-f14cbe675b651ca064299b536d4cf820   True      False      False      1              1                   1                     0                      17d
-worker   rendered-worker-f9ec036401f7136f50343298d7955ab9   True      False      False      1              1                   1                     0
+master   rendered-master-5fab3f83edfada45fc6c80c4653e299d   True      False      False      1              1                   1                     0                      7d
+worker   rendered-worker-74e8fd7160efccd8d97f4fe105f4991e   True      False      False      2              2                   2                     0                      7d
 ```  
 
 <br/> 
@@ -4239,14 +4219,14 @@ worker   rendered-worker-f9ec036401f7136f50343298d7955ab9   True      False     
 
 <br/>
 
-okd-1 , okd-2 node 를 edit 하여 label 을  설정한다.  
-- okd-1 :  `devops: "true"`     
-- okd-2 :  `edu: "true"`       
+okd-2 , okd-3 node 를 edit 하여 label 을  설정한다.  
+- okd-2 :  `edu: "true"`     
+- okd-3 :  `devops: "true"`       
 
 <br/>
 
 ```bash
-[root@bastion ~]# kubectl edit node okd-1.okd4.ktdemo.duckdns.org
+[root@bastion ~]# kubectl edit node okd-2.okd4.ktdemo.duckdns.org
 ```
 
 <img src="./assets/okd_node_selector1.png" style="width: 80%; height: auto;"/>
@@ -4264,14 +4244,13 @@ namespace 에 node selector 를 annotations 에 적용한다.
 [root@bastion ~]# kubectl edit namespace edu3
 ```
 
-
 <br/> 
 
 <img src="./assets/okd_node_selector2.png" style="width: 80%; height: auto;"/>
 
 <br/>
 
-Pod를 하나 생성해 본다. okd-2 에 pod가 생성된 것을 확인 할 수 있다.  
+Pod를 하나 생성해 본다. okd-3 에 pod가 생성된 것을 확인 할 수 있다.  
 
 ```bash
 [root@bastion ~]# kubectl run nginx --image=nginx -n edu3
@@ -4282,6 +4261,413 @@ nginx   1/1     Running   0          20s   10.129.0.10   okd-2.okd4.ktdemo.duckd
 ```  
 
 <br/>
+
+
+## 13. etcd 백업하기 
+
+<br/>
+
+참고 : https://github.com/shclub/edu/blob/master/chapter9.md  
+
+
+<br/>
+
+###  13.1 수동으로 하기 
+
+<br/>
+
+master node 에 로그인하여 cluster-backup.sh 를 수행한다.    
+
+
+```bash
+[core@okd-1 ~]$ sudo /usr/local/bin/cluster-backup.sh /home/core/assets/backup
+Certificate /etc/kubernetes/static-pod-certs/configmaps/etcd-serving-ca/ca-bundle.crt is missing. Checking in different directory
+Certificate /etc/kubernetes/static-pod-resources/etcd-certs/configmaps/etcd-serving-ca/ca-bundle.crt found!
+found latest kube-apiserver: /etc/kubernetes/static-pod-resources/kube-apiserver-pod-10
+found latest kube-controller-manager: /etc/kubernetes/static-pod-resources/kube-controller-manager-pod-7
+found latest kube-scheduler: /etc/kubernetes/static-pod-resources/kube-scheduler-pod-7
+found latest etcd: /etc/kubernetes/static-pod-resources/etcd-pod-5
+8b350855539690bf729d7d708955e5c0732ac956c8be04089bd0cf107f1da531
+etcdctl version: 3.5.6
+API version: 3.5
+{"level":"info","ts":"2023-09-08T14:42:19.542+0900","caller":"snapshot/v3_snapshot.go:65","msg":"created temporary db file","path":"/home/core/assets/backup/snapshot_2023-09-08_144210.db.part"}
+{"level":"info","ts":"2023-09-08T14:42:19.548+0900","logger":"client","caller":"v3@v3.5.6/maintenance.go:212","msg":"opened snapshot stream; downloading"}
+{"level":"info","ts":"2023-09-08T14:42:19.548+0900","caller":"snapshot/v3_snapshot.go:73","msg":"fetching snapshot","endpoint":"https://192.168.1.146:2379"}
+{"level":"info","ts":"2023-09-08T14:42:20.404+0900","logger":"client","caller":"v3@v3.5.6/maintenance.go:220","msg":"completed snapshot read; closing"}
+{"level":"info","ts":"2023-09-08T14:42:20.677+0900","caller":"snapshot/v3_snapshot.go:88","msg":"fetched snapshot","endpoint":"https://192.168.1.146:2379","size":"105 MB","took":"1 second ago"}
+{"level":"info","ts":"2023-09-08T14:42:20.677+0900","caller":"snapshot/v3_snapshot.go:97","msg":"saved","path":"/home/core/assets/backup/snapshot_2023-09-08_144210.db"}
+Snapshot saved at /home/core/assets/backup/snapshot_2023-09-08_144210.db
+Deprecated: Use `etcdutl snapshot status` instead.
+
+{"hash":607384973,"revision":2738905,"totalKey":7435,"totalSize":104706048}
+snapshot db and kube resources are successfully saved to /home/core/assets/backup
+```
+
+<br/>
+local 에 저장 하는 것보다는 NAS 저장하는 것이 좋다.  
+
+master node에 로그인 하여 mnt 폴더에 nfs 마운트를 한다.  
+
+```bash
+[root@okd-1 ~]# mount -t nfs 192.168.1.79:/volume3/okd/cluster_backup /mnt
+[root@okd-1 ~]# ls -al /mnt
+lrwxrwxrwx. 2 root root 7 Mar  7  2023 /mnt -> var/mnt
+[root@okd-1 ~]# cd /mnt
+[root@okd-1 mnt]# ls
+```  
+
+<br/>
+
+###  13.2 자동으로 백업 하기 
+
+<br/>
+
+먼저 namespace와 권한을 할당한다.  
+
+
+```bash
+[root@bastion etcd_backup]# oc new-project etcd-backup
+
+Now using project "etcd-backup" on server "https://api.okd4.ktdemo.duckdns.org:6443".
+
+You can add applications to this project with the 'new-app' command. For example, try:
+
+    oc new-app rails-postgresql-example
+
+to build a new example application in Ruby. Or use kubectl to deploy a simple Kubernetes application:
+
+    kubectl create deployment hello-node --image=k8s.gcr.io/e2e-test-images/agnhost:2.33 -- /agnhost serve-hostname
+
+[root@bastion etcd_backup]# oc adm policy add-scc-to-user anyuid -z default -n etcd-backup
+clusterrole.rbac.authorization.k8s.io/system:openshift:scc:anyuid added: "default"
+[root@bastion etcd_backup]# oc adm policy add-scc-to-user privileged -z default -n etcd-backup
+clusterrole.rbac.authorization.k8s.io/system:openshift:scc:privileged added: "default"
+```   
+
+
+<br/>
+
+configmap 과 cronjob 화일을 생성한다.  
+
+backup-config.yaml  
+```bash
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: backup-config
+data:
+  OCP_BACKUP_SUBDIR: "/"
+  OCP_BACKUP_DIRNAME: "+etcd-backup-%FT%T%:z"
+  OCP_BACKUP_EXPIRE_TYPE: "days"
+  OCP_BACKUP_KEEP_DAYS: "10"
+  OCP_BACKUP_KEEP_COUNT: "10"
+  OCP_BACKUP_UMASK: "0027"
+```
+
+<br/>
+
+```bash
+[root@bastion etcd_backup]# cat backup-nfs-cronjob.yaml
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: etcd-backup
+spec:
+  schedule: "1 7 * * *"
+  startingDeadlineSeconds: 600
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      template:
+        spec:
+          containers:
+          - command:
+            - /bin/sh
+            - /usr/local/bin/backup.sh
+            image: ghcr.io/adfinis/openshift-etcd-backup
+            imagePullPolicy: Always
+            name: backup-etcd
+            resources:
+              requests:
+                cpu: 500m
+                memory: 128Mi
+              limits:
+                cpu: 1000m
+                memory: 512Mi
+            envFrom:
+            - configMapRef:
+                name: backup-config
+            securityContext:
+              capabilities:
+                add:
+                - SYS_CHROOT
+              runAsUser: 0
+            #securityContext:
+            #  privileged: false
+            #  runAsUser: 0
+            volumeMounts:
+            - mountPath: /host
+              name: host
+            - name: etcd-backup
+              mountPath: /backup
+          nodeSelector:  # node selector
+            node-role.kubernetes.io/master: ""
+          tolerations:  # 모든 master node에 pod 스케줄링
+            - effect: NoSchedule # taint 설정과 같은 값 설정
+              key: node-role.kubernetes.io/master
+          nodeName : okd-1.okd4.ktdemo.duckdns.org # master node 중 하나 지정
+          hostNetwork: true
+          hostPID: true
+          restartPolicy: Never
+          dnsPolicy: ClusterFirst
+          volumes:
+          - hostPath:
+              path: /
+              type: Directory
+            name: host
+          - name: etcd-backup
+            nfs:
+              server: 192.168.1.79
+              path: /volume3/okd/cluster_backup
+```
+
+<br/>
+
+configmap 과 cronjob을 생성합니다.    
+
+```bash
+[root@bastion etcd_backup]# kubectl apply  -f backup-config.yaml -n etcd-backup
+configmap/backup-config created
+[root@bastion etcd_backup]# kubectl apply  -f backup-nfs-cronjob.yaml -n etcd-backup
+cronjob.batch/etcd-backup created
+[root@bastion etcd_backup]# kubectl get cronjob -n etcd-backup
+NAME          SCHEDULE    SUSPEND   ACTIVE   LAST SCHEDULE   AGE
+etcd-backup   1 7 * * *   False     0        <none>          42s
+```  
+
+<br/>
+
+수동으로 cronjob이 잘 되었는지 테스트 하기 위해서는 job을 하나 생성하여 검증합니다.  
+
+
+```bash
+[root@bastion etcd_backup]# kubectl create job --from=cronjob/etcd-backup test-backup -n etcd-backup
+job.batch/test-backup created
+[root@bastion etcd_backup]# kubectl get po -n etcd-backup
+NAME                READY   STATUS      RESTARTS   AGE
+test-backup-srw84   0/1     Completed   0          2m28s
+```
+
+<br/>
+
+nfs 폴더 확인을 해본다.  
+
+<img src="./assets/etcd_backup.png" style="width: 80%; height: auto;"/>
+
+<br/>
+
+## 14. Kubecost 설치 및 설정
+
+<br/>
+
+## 14.1 Kubecost 설치
+
+<br/>
+
+bastion 서버에 kubecost 폴더를 생성하고 okd에 kubecost namespace를 생성한다.    
+
+```bash
+[root@bastion kubecost]# oc new-project kubecost
+Now using project "kubecost" on server "https://api.okd4.ktdemo.duckdns.org:6443".
+
+You can add applications to this project with the 'new-app' command. For example, try:
+
+    oc new-app rails-postgresql-example
+
+to build a new example application in Ruby. Or use kubectl to deploy a simple Kubernetes application:
+
+    kubectl create deployment hello-node --image=k8s.gcr.io/e2e-test-images/agnhost:2.33 -- /agnhost serve-hostname
+```
+
+<br/>
+
+해당 namespace 에 권한을 부여한다.  
+
+```bash
+[root@bastion kubecost]# oc adm policy add-scc-to-user anyuid system:serviceaccount:kubecost:default
+clusterrole.rbac.authorization.k8s.io/system:openshift:scc:anyuid added: "default"
+[root@bastion kubecost]# oc adm policy add-scc-to-user privileged system:serviceaccount:kubecost:default
+clusterrole.rbac.authorization.k8s.io/system:openshift:scc:privileged added: "default"
+```
+
+<br/>
+
+kubecost repository 를 추가한다.  
+
+```bash
+[root@bastion kubecost]# helm repo add kubecost https://kubecost.github.io/cost-analyzer/
+WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
+"kubecost" has been added to your repositories
+[root@bastion kubecost]# helm search repo kubecost
+WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
+NAME                  	CHART VERSION	APP VERSION	DESCRIPTION
+kubecost/cost-analyzer	1.106.0      	1.106.0    	A Helm chart that sets up Kubecost, Prometheus,...
+```  
+
+<br/>
+
+https://www.kubecost.com/install#show-instructions
+
+```bash
+[root@bastion kubecost]# kubectl label --overwrite ns kubecost \
+>   pod-security.kubernetes.io/enforce=baseline \
+>   pod-security.kubernetes.io/enforce-version=v1.24
+```   
+
+
+
+Openshift 에 맞게 values를 수정하기 위해 values.yaml 로 다운 받는다.  
+
+```bash
+[root@bastion kubecost]# helm show values kubecost/cost-analyzer > values.yaml
+```  
+
+<br/>
+
+values.yaml 화일에서 아래 부분을 수정한다.    
+
+```bash
+    223 # generated at http://kubecost.com/install, used for alerts tracking and free trials
+    224 kubecostToken: "c2hjbHViQG************f98"
+    ...
+    565 persistentVolume:
+    566   size: 32Gi
+    567   dbSize: 32.0Gi
+    568   enabled: true # Note that setting this to false means configurations will be wiped out on pod restart.
+    569   storageClass: "nfs-client" #
+    ...
+    596       password: ******** # change me
+    ...
+    873         cpu: 1000m
+    874         memory: 500Mi
+    875     ## default storage class
+    876     storageClass: "nfs-client"
+    877     databaseVolumeSize: 100Gi
+    878     configVolumeSize: 1Gi
+    879
+```
+
+<br/>
+
+이제 위에서 수정한 values.yaml 화일로 설치를 한다.     
+
+service 와 pod 그리고 pvc 생성을 확인한다.  
+
+
+```bash
+[root@bastion kubecost]# helm install my-kubecost -f values.yaml kubecost/cost-analyzer -n kubecost
+WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
+NAME: my-kubecost
+LAST DEPLOYED: Tue Sep  5 12:56:13 2023
+NAMESPACE: kubecost
+STATUS: deployed
+REVISION: 1
+TEST SUITE: None
+NOTES:
+--------------------------------------------------Kubecost has been successfully installed.
+
+Please allow 5-10 minutes for Kubecost to gather metrics.
+
+If you have configured cloud-integrations, it can take up to 48 hours for cost reconciliation to occur.
+
+When using Durable storage (Enterprise Edition), please allow up to 4 hours for data to be collected and the UI to be healthy.
+
+When pods are Ready, you can enable port-forwarding with the following command:
+
+    kubectl port-forward --namespace kubecost deployment/my-kubecost-cost-analyzer 9090
+
+Next, navigate to http://localhost:9090 in a web browser.
+
+Having installation issues? View our Troubleshooting Guide at http://docs.kubecost.com/troubleshoot-install
+[root@bastion kubecost]# kubectl get svc -n kubecost
+NAME                      TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)                   AGE
+harbor                    ClusterIP   172.30.232.108   <none>        80/TCP,443/TCP,4443/TCP   9s
+my-harbor-core            ClusterIP   172.30.73.246    <none>        80/TCP                    10s
+my-harbor-database        ClusterIP   172.30.134.241   <none>        5432/TCP                  9s
+my-harbor-jobservice      ClusterIP   172.30.149.250   <none>        80/TCP                    9s
+my-harbor-notary-server   ClusterIP   172.30.112.41    <none>        4443/TCP                  9s
+my-harbor-notary-signer   ClusterIP   172.30.46.231    <none>        7899/TCP                  9s
+my-harbor-portal          ClusterIP   172.30.77.199    <none>        80/TCP                    9s
+my-harbor-redis           ClusterIP   172.30.253.146   <none>        6379/TCP                  9s
+my-harbor-registry        ClusterIP   172.30.83.190    <none>        5000/TCP,8080/TCP         9s
+my-harbor-trivy           ClusterIP   172.30.76.51     <none>        8080/TCP                  9s
+[root@bastion harbor]# kubectl get po -n harbor
+NAME                                       READY   STATUS    RESTARTS        AGE
+my-harbor-core-67587bcbc4-x6whs            1/1     Running   0               6m35s
+my-harbor-database-0                       1/1     Running   0               6m34s
+my-harbor-jobservice-599859fd57-4qvkk      1/1     Running   2 (6m19s ago)   6m35s
+my-harbor-notary-server-bf5f9b94f-pmxd4    1/1     Running   0               6m35s
+my-harbor-notary-signer-55db47f788-srzq8   1/1     Running   0               6m34s
+my-harbor-portal-694bf8c545-p56f6          1/1     Running   0               6m34s
+my-harbor-redis-0                          1/1     Running   0               6m34s
+my-harbor-registry-6c57986d5d-84fzb        2/2     Running   0               6m34s
+my-harbor-trivy-0                          1/1     Running   0               6m34s
+[root@bastion harbor]# kubectl get pvc -n harbor
+NAME                                 STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+data-my-harbor-redis-0               Bound    pvc-8c45a518-871e-4c4c-bd15-e91243ba5ade   1Gi        RWO            nfs-client     12m
+data-my-harbor-trivy-0               Bound    pvc-88724475-62b8-44d7-93c6-70ec4f2b48f8   5Gi        RWO            nfs-client     12m
+database-data-my-harbor-database-0   Bound    pvc-d7c7d316-7d28-4258-b326-925e25c8bb68   1Gi        RWO            nfs-client     12m
+my-harbor-jobservice                 Bound    pvc-e0a9fcf7-d360-4c56-9a4d-0500572cbfc1   1Gi        RWO            nfs-client     12m
+my-harbor-registry                   Bound    pvc-7a0cb3da-87ba-4758-ba4d-aaa78baec07c   5Gi        RWO            nfs-client     12m
+```
+
+<br/>
+
+grafana 계정 알아보기  
+
+```bash
+[root@bastion kubecost]# kubectl get secret -n kubecost
+NAME                                        TYPE                                  DATA   AGE
+builder-dockercfg-dsjcd                     kubernetes.io/dockercfg               1      6h48m
+builder-token-x8b56                         kubernetes.io/service-account-token   4      6h48m
+default-dockercfg-jtnw6                     kubernetes.io/dockercfg               1      6h48m
+default-token-567gx                         kubernetes.io/service-account-token   4      6h48m
+deployer-dockercfg-vqhgw                    kubernetes.io/dockercfg               1      6h48m
+deployer-token-hvc44                        kubernetes.io/service-account-token   4      6h48m
+my-kubecost-cost-analyzer-dockercfg-24jng   kubernetes.io/dockercfg               1      64m
+my-kubecost-cost-analyzer-token-m4jph       kubernetes.io/service-account-token   4      64m
+my-kubecost-grafana                         Opaque                                3      64m
+my-kubecost-grafana-dockercfg-rb585         kubernetes.io/dockercfg               1      64m
+my-kubecost-grafana-token-qbtpx             kubernetes.io/service-account-token   4      64m
+sh.helm.release.v1.my-kubecost.v1           helm.sh/release.v1                    1      64m
+[root@bastion kubecost]# kubectl get secret my-kubecost-grafana -o jsonpath='{.data}'
+{"admin-password":"c3Ryb25ncGFzc3dvcmQ=","admin-user":"YWRtaW4=","ldap-toml":""}
+[root@bastion kubecost]# echo "c3Ryb25ncGFzc3dvcmQ=" | base64 --decode
+strongpassword
+[root@bastion kubecost]# echo "YWRtaW4=" | base64 --decode
+admin
+```
+<br/>
+
+ingress 와 route 도 확인해 본다.
+
+```bash
+[root@bastion harbor]# kubectl get route -n harbor
+NAME                             HOST/PORT                                    PATH          SERVICES                  PORT       TERMINATION     WILDCARD
+harbor                           harbor-harbor.apps.okd4.ktdemo.duckdns.org                 my-harbor-portal          http-web   edge/Allow      None
+my-harbor-ingress-2cggf          myharbor.apps.okd4.ktdemo.duckdns.org        /service/     my-harbor-core            http-web   edge/Redirect   None
+my-harbor-ingress-5xdrs          myharbor.apps.okd4.ktdemo.duckdns.org        /api/         my-harbor-core            http-web   edge/Redirect   None
+my-harbor-ingress-bxkmn          myharbor.apps.okd4.ktdemo.duckdns.org        /chartrepo/   my-harbor-core            http-web   edge/Redirect   None
+my-harbor-ingress-hqspm          myharbor.apps.okd4.ktdemo.duckdns.org        /v2/          my-harbor-core            http-web   edge/Redirect   None
+my-harbor-ingress-jx9x7          myharbor.apps.okd4.ktdemo.duckdns.org        /c/           my-harbor-core            http-web   edge/Redirect   None
+my-harbor-ingress-notary-6j87b   notray-harbor.apps.okd4.ktdemo.duckdns.org   /             my-harbor-notary-server   <all>      edge/Redirect   None
+my-harbor-ingress-tsr84          myharbor.apps.okd4.ktdemo.duckdns.org        /             my-harbor-portal          <all>      edge/Redirect   None
+[root@bastion harbor]# kubectl get ing -n harbor
+NAME                       CLASS    HOSTS                                        ADDRESS                                       PORTS     AGE
+my-harbor-ingress          <none>   myharbor.apps.okd4.ktdemo.duckdns.org        router-default.apps.okd4.ktdemo.duckdns.org   80, 443   10m
+my-harbor-ingress-notary   <none>   notray-harbor.apps.okd4.ktdemo.duckdns.org   router-default.apps.okd4.ktdemo.duckdns.org   80, 443   10m
+```  
+
 
 <br/><br/><br/>
 
@@ -4306,6 +4692,8 @@ nginx   1/1     Running   0          20s   10.129.0.10   okd-2.okd4.ktdemo.duckd
 - ArgoCD Redis 접속 에러 (networkpolicy) : https://www.xiexianbin.cn/cicd/argo-cd/deploy/index.html
 - Harbor 설치 : https://computingforgeeks.com/install-harbor-image-registry-on-kubernetes-openshift-with-helm-chart/?amp
 - Openshift 4.12.0 on BareMetal 설치 및 설정 : https://sysdocu.tistory.com/1765
+- kubecost : https://devocean.sk.com/blog/techBoardDetail.do?ID=164699&boardType=techBlog
+- kubecost : https://judae.tistory.com/45
 
 <br/>
 
@@ -4404,4 +4792,44 @@ Vacuuming done, freed 0B of archived journals from /run/log/journal/c4748c338918
 [root@okd-1 core]# journalctl --disk-usage
 Archived and active journals take up 3.5G in the file system.
 [root@okd-1 core]# journalctl --vacuum-time=1d
+```
+
+
+<br/>
+
+## system coredum 에러 발생시 조치
+
+<br/>
+
+```bash
+[core@okd-1 ~]$ systemctl status systemd-coredump@0-128284-0.service
+× systemd-coredump@0-128284-0.service - Process Core Dump (PID 128284/UID 0)
+     Loaded: loaded (/usr/lib/systemd/system/systemd-coredump@.service; static)
+     Active: failed (Result: timeout) since Fri 2023-09-08 09:26:06 KST; 5h 18min ago
+   Duration: 5min 619ms
+TriggeredBy: ● systemd-coredump.socket
+       Docs: man:systemd-coredump(8)
+    Process: 128307 ExecStart=/usr/lib/systemd/systemd-coredump (code=killed, signal=TERM)
+   Main PID: 128307 (code=killed, signal=TERM)
+        CPU: 44.847s
+```
+
+<br/>
+
+서비스를 재기동 하고 failed 된 것들을 reset 한다.  
+
+```bash
+[root@okd-1 core]# systemctl restart systemd-coredump.socket
+[root@okd-1 core]# systemctl reset-failed
+[root@okd-1 core]# systemctl status systemd-coredump.socket
+● systemd-coredump.socket - Process Core Dump Socket
+     Loaded: loaded (/usr/lib/systemd/system/systemd-coredump.socket; static)
+     Active: active (listening) since Fri 2023-09-08 14:46:39 KST; 16s ago
+      Until: Fri 2023-09-08 14:46:39 KST; 16s ago
+       Docs: man:systemd-coredump(8)
+     Listen: /run/systemd/coredump (SequentialPacket)
+   Accepted: 1; Connected: 0;
+     CGroup: /system.slice/systemd-coredump.socket
+
+Sep 08 14:46:39 okd-1.okd4.ktdemo.duckdns.org systemd[1]: Listening on systemd-coredump.socket - Process Core Dump Socket.
 ```

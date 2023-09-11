@@ -78,10 +78,11 @@ ktdemo.duckdns.org 로 생성 을 한다. ip 를 변경하고 싶으면 ip를 �
 | 서버구분 | Hypervisor | IP | hostname | 용도 | OS | Spec | 기타
 |:--------| :-----|:----|  :----|  :----| :----| :----| :----|  
 | VM | proxmox | 192.168.1.1.247 | bastion.okd4.ktdemo.duckdns.org | Bastion(LB,DNS) | Centos 8 Stream | 2 core / 4 G / 30G |
-| VM | proxmox | 192.168.1.1.128 | bootstrap.okd4.ktdemo.duckdns.org |  Bootstrap | Fedora Core OS 35 | 2 core / 6 G / 40G |
-| VM | vmware | 192.168.1.1.146 | okd-1.okd4.ktdemo.duckdns.org | Master/Worker | Fedora Core OS 35 | 8 core / 20 G / 200G | Base OS 윈도우 11 
-| VM | proxmox | 192.168.1.1.148 | okd-2.okd4.ktdemo.duckdns.org |  Worker | Fedora Core OS 35 | 2 core / 16 G / 300G | 워커 노드 추가
-
+| VM | proxmox | 192.168.1.1.128 | bootstrap.okd4.ktdemo.duckdns.org |  Bootstrap | Fedora Core OS 37 | 2 core / 6 G / 40G |
+| VM | vmware | 192.168.1.1.146 | okd-1.okd4.ktdemo.duckdns.org | Master/Worker | Fedora Core OS 37 | 8 core / 20 G / 200G | Base OS 윈도우 11 
+| VM | proxmox | 192.168.1.1.148 | okd-2.okd4.ktdemo.duckdns.org |  Worker | Fedora Core OS 37 | 2 core / 16 G / 300G | 워커 노드 추가
+S 윈도우 11 
+| VM | proxmox | 192.168.1.1.149 | okd-3.okd4.ktdemo.duckdns.org |  Worker | Fedora Core OS 37 | 4 core / 8 G / 300G | 워커 노드 추가
 
 <br/>
 
@@ -246,8 +247,9 @@ backend openshift_api_backend
     mode tcp
     balance source
     server      bootstrap 192.168.1.128:6443 check # bootstrap 서버
-    server      okd-1 192.168.1.146:6443 check # okd master/worker 설정
-    #server     okd-2 192.168.1.147:6443 check  # 추가 서버 있다면 설정
+    server      okd-1 192.168.1.146:6443 check # okd master 설정
+    server      okd-2 192.168.1.148:6443 check  # okd worker 설정
+    server      okd-3 192.168.1.149:6443 check  # 추가 okd worker 설정
 
 # OKD Machine Config Server
 frontend okd_machine_config_server_frontend
@@ -259,8 +261,9 @@ backend okd_machine_config_server_backend
     mode tcp
     balance source
     server      bootstrap 192.168.1.128:22623 check # bootstrap 서버
-    server      okd-1 192.168.1.146:22623 check # okd master/worker 설정
-    server      okd-2 192.168.1.148:22623 check  # 추가 서버 있다 면 설정
+    server      okd-1 192.168.1.146:22623 check # okd master 설정
+    server      okd-2 192.168.1.148:22623 check  # okd worker 설정
+    server      okd-3 192.168.1.149:22623 check  # 추가 okd worker 설정
 
 # OKD Ingress - layer 4 tcp mode for each. Ingress Controller will handle layer 7.
 frontend okd_http_ingress_frontend
@@ -271,8 +274,9 @@ frontend okd_http_ingress_frontend
 backend okd_http_ingress_backend
     balance source
     mode tcp
-    server      okd-1 192.168.1.146:80 check # okd master/worker 설정
-    server      okd-2 192.168.1.148:80 check  # 추가 서버 있다 면 설정
+    server      okd-1 192.168.1.146:80 check # okd master설정
+    server      okd-2 192.168.1.148:80 check  # okd worker 설정
+    server      okd-3 192.168.1.149:80 check  # 추가 okd worker 설정
 
 frontend okd_https_ingress_frontend
     bind *:443
@@ -283,7 +287,8 @@ backend okd_https_ingress_backend
     mode tcp
     balance source
     server      okd-1 192.168.1.146:443 check
-    server     okd-2 192.168.1.148:443 check  # 추가 서버 있다 면 설정
+    server      okd-2 192.168.1.148:443 check  
+    server      okd-3 192.168.1.148:443 check  # 추가 okd worker 설정
 
 ```
 

@@ -858,7 +858,7 @@ backup-nfs-cronjob.yaml 화일을 생성한다.
 아래 CronJob은 master node 에 pod 를 생성한다.  
 - `runAsUser: 0` : 0은  root로 실행하는 것을 의미.
 - `nodeName : edu.master01` : master 1번 노드에서 생성 
-- `mountPath : /backup` : worker node에서 mount 되는 폴더는 backup 폴더 이다. 변경하지 말것
+- `mountPath : /backup` : master node에서 mount 되는 폴더는 backup 폴더 이다. 변경하지 말것
 
 <br/>
 
