@@ -6686,7 +6686,6 @@ values.yaml 의 화일에서 storageClass 는 `nfs-client` 인 dynamic provision
 
 <br/>
 
-
 설치를 진행 합니다.  
 
 <br/>
@@ -6724,20 +6723,9 @@ elasticsearch-master-headless   ClusterIP   None             <none>        9200/
 
 <br/>
 
-### trobleshooting
-
-<br/>
-...
-
-
-<br/>
-
-
 #### kibana 설치
 
-
 <br/>
-
 
 kibana 를 설치를 하기 위해 helm 설정을 합니다.  
 
@@ -6863,13 +6851,6 @@ elastic/비밀번호 로 로그인 한다.
 
 
 <img src="./assets/kibana_0.png" style="width: 60%; height: auto;"/>
-
-
-
-
-<br/>
-
-
 
 <br/>
 
