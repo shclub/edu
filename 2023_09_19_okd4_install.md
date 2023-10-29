@@ -81,11 +81,7 @@ ktdemo.duckdns.org 로 생성 을 한다. ip 를 변경하고 싶으면 ip를 �
 | VM | proxmox | 192.168.1.1.128 | bootstrap.okd4.ktdemo.duckdns.org |  Bootstrap | Fedora Core OS 37 | 2 core / 4 G / 40G | 
 | VM | vmware | 192.168.1.1.146 | okd-1.okd4.ktdemo.duckdns.org | Master/Worker | Fedora Core OS 37 | 8 core / 20 G / 200G | Base OS 윈도우 11 
 | VM | proxmox | 192.168.1.1.148 | okd-2.okd4.ktdemo.duckdns.org |  Worker | Fedora Core OS 37 | 2 core / 16 G / 300G | 워커 노드
-| VM | proxmox | 192.168.1.1.149 | okd-3.okd4.ktdemo.duckdns.org |  Worker | Fedora Core OS 37 | 4 core / 20 G / 100G | 워커 노드 추가
-| VM | vmware | 192.168.1.1.150 | okd-4.okd4.ktdemo.duckdns.org |  Worker | Fedora Core OS 37 | 4 core / 40 G / 100G | 워커 노드 추가
-| VM | hyper-v | 192.168.1.1.154 | okd-5.okd4.ktdemo.duckdns.org |  Worker | Fedora Core OS 37 | 4 core / 16 G / 100G | 워커 노드 추가
-| VM | esxi | 192.168.1.1.155 | okd-6.okd4.ktdemo.duckdns.org |  Worker | Fedora Core OS 37 | 4 core / 16 G / 100G | 워커 노드 추가
-| VM | virtualbox | 192.168.1.1.156 | okd-6.okd4.ktdemo.duckdns.org |  Worker | Fedora Core OS 37 | 4 core / 14 G / 100G | 워커 노드 추가
+| VM | proxmox | 192.168.1.1.149 | okd-3.okd4.ktdemo.duckdns.org |  Worker | Fedora Core OS 37 | 4 core / 8 G / 100G | 워커 노드 추가
 
 <br/>
 
@@ -587,7 +583,7 @@ bastion.okd4    IN      A       192.168.1.247
 bootstrap.okd4	IN	A	192.168.1.128
 
 okd-1.okd4	IN	A	192.168.1.146
-okd-2.okd4	IN	A	192.168.1.148
+okd-1.okd4	IN	A	192.168.1.148
 
 api.okd4	IN	A	192.168.1.247
 api-int.okd4	IN	A	192.168.1.247
@@ -616,7 +612,7 @@ $TTL 1D
 247	IN	PTR	bastion.okd4.ktdemo.duckdns.org.
 128	IN	PTR	bootstrap.okd4.ktdemo.duckdns.org.
 146	IN	PTR	okd-1.okd4.ktdemo.duckdns.org.
-148	IN	PTR	okd-2.okd4.ktdemo.duckdns.org.
+148	IN	PTR	okd-1.okd4.ktdemo.duckdns.org.
 
 247	IN	PTR	api.okd4.ktdemo.duckdns.org.
 247	IN	PTR	api-int.okd4.ktdemo.duckdns.org.
@@ -1444,14 +1440,6 @@ hostname을 설정 하고 재기동 한다.
 
 <br/>
 
-node-hostname 에러가 발생하는 경우는  다시 로그인하여 hostname 설정하고 재기동한다.    
-
-```bash
-[root@localhost core]# hostnamectl set-hostname okd-2.okd4.ktdemo.duckdns.org
-```  
-
-<br/>
-
 worker node 설치 모니터링을 한다.  
 
 ```bash
@@ -1908,7 +1896,7 @@ Adding password for user edu1
 이제 적용하고 web console에서 다시 접속해 본다.
 
 ```bash
-[root@bastion ~]# oc --user=admin create secret generic htpasswd  --from-file=htpasswd -n openshift-config --dry-run=client -o yaml | oc replace -f -
+[root@bastion argocd]# oc --user=admin create secret generic htpasswd  --from-file=htpasswd -n openshift-config --dry-run=client -o yaml | oc replace -f -
 secret/htpasswd replaced
 ```
 
@@ -2027,7 +2015,7 @@ nginx   1/1     Running   0          8s
 
 <br/>
 
-kubeadmin 대신 cluster-admin 생성은 root 라는 계정을 만들고 cluster-admin 권한을 할당합니다.    
+kubeadmin 대신 cluster-admin 생성은 root 라는 계정을 만들고 cluster-admin권한을 할당합니다.    
 
 <br/>
 
@@ -2415,7 +2403,6 @@ oc new-project argo-rollouts
 
 권한을 설정한다.
 
-
 ```bash
 oc adm policy add-scc-to-user anyuid -z default -n argocd
 oc adm policy add-scc-to-user privileged -z default -n argocd
@@ -2592,10 +2579,6 @@ networkpolicy.networking.k8s.io "argocd-dex-server-network-policy" deleted
 
 <br/>
 
-kubectl rollout restart statefulset -n argocd argocd-application-controller
-
-
-
 deployment 전체 재기동은 아래와 같이 실행한다.  
 
 ```bash
@@ -2607,16 +2590,6 @@ deployment.apps/argocd-redis restarted
 deployment.apps/argocd-repo-server restarted
 deployment.apps/argocd-server restarted
 ```
-
-
-<br/>
-
-재기동후에 `Unable to load data: error getting cached app managed resources: cache: key is missing` 에러가 발생하면 `secret caching` 문제로 `statefulset` 도 재배포 필요
-
-
-```bash
-kubectl rollout restart statefulset  argocd-application-controller -n argocd
-```  
 
 <br/>
 
@@ -2634,7 +2607,7 @@ kubectl rollout restart statefulset  argocd-application-controller -n argocd
 
 <br/>
 
-웹브라우저에서 http://argocd.apps.okd4.ktdemo.duckdns.org 로 접속하고 admin 계정/초기비밀번호로 로그인 하고  비밀번호를 변경합니다.  
+웹브라우저에서 http://argocd-argocd.apps.okd4.ktdemo.duckdns.org 로 접속하고 admin 계정/초기비밀번호로 로그인 하고  비밀번호를 변경합니다.  
 
 <br/>
 
@@ -2646,6 +2619,7 @@ kubectl rollout restart statefulset  argocd-application-controller -n argocd
 ### 8.4 계정 생성
 
 <br/>
+
 
 계정 생성을 위해서는 argocd-server를 NodePort 로 expose하고 argocd cli 로 접속한다.  
 
@@ -2746,7 +2720,7 @@ data:
     p, role:manager, clusters, get, *, allow
     p, role:manager, repositories, *, *, allow
     p, role:manager, projects, *, *, allow
-    p, role:manager, exec, *, */*, allow
+    p, role:manager, exec, * , */*, allow
     p, role:edu1, clusters, get, *, allow
     p, role:edu1, repositories, get, *, allow
     p, role:edu1, projects, get, *, allow
@@ -2820,15 +2794,11 @@ data:
 
 <br/>
 
-이제 `argocd-server` role 을 변경합니다.  
-- 반드시 clusterrole 를 주어야 터미널로 접속이 가능 하다.  
+이제 `argocd-server` role 을 변경합니다.    
 
-
-<br/>
 
 ```bash
-[root@bastion argocd]# kubectl edit clusterrole argocd-server
-clusterrole.rbac.authorization.k8s.io/argocd-server edited
+[root@bastion argocd]# kubectl edit role argocd-server  -n argocd
 ```  
 
 <br/>
@@ -2944,6 +2914,76 @@ nfs-subdir-external-provisioner/nfs-subdir-exte...	4.0.18       	4.0.2      	nfs
 
 <br/>
 
+> k8s 1.25 부터는 podSecurityPolicy 가 deprecated 가 되어 podSecurityStandard 로 변경이 됨.  
+> - https://kubernetes.io/docs/tasks/configure-pod-container/enforce-standards-namespace-labels/
+> - https://aws.amazon.com/ko/blogs/tech/implementing-pod-security-standards-in-amazon-eks/
+
+<br/>
+
+현재 namespace 구성을 보면 pod는 privileged 권한을 사용할 수 없음
+
+```bash
+[root@bastion ]# kubectl describe namespace shclub
+Name:         shclub
+Labels:       kubernetes.io/metadata.name=shclub
+              pod-security.kubernetes.io/audit=privileged
+              pod-security.kubernetes.io/audit-version=v1.24
+              pod-security.kubernetes.io/warn=privileged
+              pod-security.kubernetes.io/warn-version=v1.24
+Annotations:  openshift.io/description:
+              openshift.io/display-name:
+              openshift.io/node-selector: devops=true
+              openshift.io/requester: system:admin
+              openshift.io/sa.scc.mcs: s0:c26,c15
+              openshift.io/sa.scc.supplemental-groups: 1000680000/10000
+              openshift.io/sa.scc.uid-range: 1000680000/10000
+Status:       Active
+
+No resource quota.
+
+No LimitRange resource.  
+```
+
+<br/>
+
+아래와 같이 현재 namespace 의 pod security standard를 변경해야 다이나믹 프로비져닝 생성이 가능함.    
+
+
+```bash
+[root@bastion ]# kubectl label --overwrite ns shclub \
+  pod-security.kubernetes.io/enforce=baseline \
+  pod-security.kubernetes.io/enforce-version=v1.24
+```  
+
+<br/>
+
+
+```bash
+[root@bastion ]# kubectl describe namespace shclub
+Name:         shclub
+Labels:       kubernetes.io/metadata.name=shclub
+              pod-security.kubernetes.io/audit=privileged
+              pod-security.kubernetes.io/audit-version=v1.24
+              pod-security.kubernetes.io/enforce=baseline
+              pod-security.kubernetes.io/enforce-version=v1.24
+              pod-security.kubernetes.io/warn=privileged
+              pod-security.kubernetes.io/warn-version=v1.24
+Annotations:  openshift.io/description:
+              openshift.io/display-name:
+              openshift.io/node-selector: devops=true
+              openshift.io/requester: system:admin
+              openshift.io/sa.scc.mcs: s0:c26,c15
+              openshift.io/sa.scc.supplemental-groups: 1000680000/10000
+              openshift.io/sa.scc.uid-range: 1000680000/10000
+Status:       Active
+
+No resource quota.
+
+No LimitRange resource.  
+```
+
+<br/>
+
 helm 으로 values.yaml 화일을 생성한다.  
 
 
@@ -3049,16 +3089,6 @@ STATUS: deployed
 REVISION: 1
 TEST SUITE: None
 ```
-
-<br/>
-
-설치를 진행하면 에러가 발생하고 `nfs-subdir-external-provisioner` service account에  권한을 할당한다.    
-
-
-```bash
-[root@bastion dynamic_provisioning]# oc adm policy add-scc-to-user privileged -z nfs-subdir-external-provisioner -n shclub
-clusterrole.rbac.authorization.k8s.io/system:openshift:scc:privileged added: "nfs-subdir-external-provisioner"
-```  
 
 <br/>
 
@@ -3369,7 +3399,7 @@ spec:
 
 <br/>
 
-웹브라우저에서 https://minio.apps.okd4.ktdemo.duckdns.org 로 접속하고 admin 계정/values.yaml에 설정한 비밀번호로 로그인 한다.  
+웹브라우저에서 http://minio.apps.okd4.ktdemo.duckdns.org 로 접속하고 admin 계정/values.yaml에 설정한 비밀번호로 로그인 한다.  
 
 <br/>
 
@@ -4036,23 +4066,12 @@ https://builds.coreos.fedoraproject.org/browser?stream=stable&arch=x86_64
 
 <br/>
 
-신규로 worker.ign을 생성해야 한다. 
-worker.ign 기존 화일을 복사를 하여 백업하고 worker.ign은 지우지 않는다.
+신규로 worker.ign을 생성해야 한다.  
 
 ```bash  
 [root@bastion okd4]# export MCS=api-int.okd4.ktdemo.duckdns.org:22623
-```  
-
-<br/>
-
-```bash
-echo "q" | openssl s_client -connect $MCS  -showcerts | awk '/-----BEGIN CERTIFICATE-----/,/-----END CERTIFICATE-----/' | base64 --wrap=0 | tee ./api-int.base64 && sed --regexp-extended --in-place=.backup "s%base64,[a-zA-Z0-9+\/=]+%base64,$(cat ./api-int.base64)%" ./worker.ign
-```  
-<br/>
-
-```bash
-[root@bastion okd4]# echo "q" | openssl s_client -connect $MCS  -showcerts | awk '/-----BEGIN CERTIFICATE-----/,/-----END CERTIFICATE-----/' | base64 --wrap=0 | tee ./api-int.base64 && sed --regexp-extended --in-place=.backup "s%base64,[a-zA-Z0-9+\/=]+%base64,$(cat ./api-int.base64)%" ./worker.ign
-
+[root@bastion okd4]# echo "q" | openssl s_client -connect $MCS  -showcerts | awk '/-----BEGIN CERTIFICATE-----/,/-----END CERTIFICATE-----/' | base64 --wrap=0 | tee ./api-int.base64 && \
+> sed --regexp-extended --in-place=.backup "s%base64,[a-zA-Z0-9+\/=]+%base64,$(cat ./api-int.base64)%" ./worker.ign
 depth=0 CN = system:machine-config-server
 verify error:num=20:unable to get local issuer certificate
 verify return:1
@@ -4070,14 +4089,12 @@ LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURZakN******LS0K
 다시 worker.ign 화일을 web server에 update 한다.  
 
 ```bash  
-[root@bastion ~]# cp worker.ign /var/www/html/ign/
+[root@bastion ~]# cp okd4/worker.ign /var/www/html/ign/
 cp: overwrite '/var/www/html/ign/worker.ign'? y
 [root@bastion ~]# systemctl restart httpd
 ```
 
 <br/>
-
-추가할 워커 노드로 부팅을 한다. 
 
 먼저 네트웍을 설정을 하기 위해서 nmtui 라는 gui 환경으로 구성한다.     
 
@@ -4121,13 +4138,6 @@ hostname을 설정 하고 재기동 한다.
 [root@localhost core]# reboot now
 ``` 
 
-<br/>
-
-node-hostname 에러가 발생하는 경우는  다시 로그인하여 hostname 설정하고 재기동한다.    
-
-```bash
-[root@localhost core]# hostnamectl set-hostname okd-3.okd4.ktdemo.duckdns.org
-```
 
 <br/>
 
@@ -4398,14 +4408,14 @@ spec:
             envFrom:
             - configMapRef:
                 name: backup-config
-            #securityContext:
-            #  capabilities:
-            #    add:
-            #    - SYS_CHROOT
-            #  runAsUser: 0
             securityContext:
-              privileged: true
+              capabilities:
+                add:
+                - SYS_CHROOT
               runAsUser: 0
+            #securityContext:
+            #  privileged: false
+            #  runAsUser: 0
             volumeMounts:
             - mountPath: /host
               name: host
@@ -4433,10 +4443,10 @@ spec:
 ```
 
 <br/>
-
+imsi
+....
 호스트 네트워크 모드로 실행되기 때문입니다. 포드 스펙에 아래의 그림과 같이 hostNetwork를 설정해주면 마치 docker run 명령어의 --net host와 같은 효과를 낼 수 있습니다.
-
-<br/>
+..
 
 configmap 과 cronjob을 생성합니다.    
 
@@ -4452,17 +4462,15 @@ etcd-backup   1 7 * * *   False     0        <none>          42s
 
 <br/>
 
-수동으로 cronjob이 잘 되었는지 테스트 하기 위해서는 job을 하나 생성하여 검증합니다.    
-
-hostnetwork 으로 설정 했기 때문에 pod의 ip가 아닌 master node IP 로 실행이 된 것을 볼수 있다.  
+수동으로 cronjob이 잘 되었는지 테스트 하기 위해서는 job을 하나 생성하여 검증합니다.  
 
 
 ```bash
 [root@bastion etcd_backup]# kubectl create job --from=cronjob/etcd-backup test-backup -n etcd-backup
 job.batch/test-backup created
-[root@bastion etcd_backup]# kubectl get po -n etcd-backup -o wide
-NAME                 READY   STATUS      RESTARTS   AGE     IP              NODE                            NOMINATED NODE   READINESS GATES
-test-backup-2sh2f   0/1     Completed   0          7s      192.168.1.146   okd-1.okd4.ktdemo.duckdns.org   <none>           <none>
+[root@bastion etcd_backup]# kubectl get po -n etcd-backup
+NAME                READY   STATUS      RESTARTS   AGE
+test-backup-srw84   0/1     Completed   0          2m28s
 ```
 
 <br/>
@@ -4843,7 +4851,138 @@ Sep 08 14:46:39 okd-1.okd4.ktdemo.duckdns.org systemd[1]: Listening on systemd-c
 
 
 <br/>
-prometheus 여기 까지 복사
+
+## prometheus  설정
+
+
+<br/>
+
+참고:  https://access.redhat.com/documentation/ko-kr/openshift_container_platform/4.12/html-single/monitoring/index  
+
+<br/>
+
+okd 를 초기 설치 하면 기본적인 cpu , mem, disk 정도만 모니터링이 되고 데이터는 node에 저장이된다.  
+
+`openshift-monitoring` namespace 에 `cluster-monitoring-config` configmap 을 생성한다.  
+
+<br/>
+
+```bash
+root@bastion monitoring]# cat cluster-monitoring-config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cluster-monitoring-config
+  namespace: openshift-monitoring
+data:
+  config.yaml: |
+    #grafana:       #  grafana 자동 설치
+    #  nodeSelector:
+    #    devops: "true"  # node selector 찾아서  설치  
+    prometheusK8s:
+      retention: 14d   # 데이터 보존 기간 
+      volumeClaimTemplate:
+        spec:
+          storageClassName: nfs-client  # storage는 다이나믹 프로비져닝으로 생성
+          volumeMode: Filesystem
+          resources:
+            requests:
+              storage: 50Gi
+      tolerations:
+      - effect: NoExecute
+        key: node.kubernetes.io/not-ready
+        operator: Exists
+        tolerationSeconds: 3
+      - effect: NoExecute
+        key: node.kubernetes.io/unreachable
+        operator: Exists
+        tolerationSeconds: 3
+      - effect: NoSchedule
+        key: node.kubernetes.io/memory-pressure
+        operator: Exists
+    alertmanagerMain:
+      nodeSelector:
+        devops: "true"
+      volumeClaimTemplate:
+        spec:
+          storageClassName: nfs-client
+          volumeMode: Filesystem
+          resources:
+            requests:
+              storage: 50Gi
+    telemeterClient:
+      nodeSelector:
+        devops: "true"
+    prometheusOperator:
+      nodeSelector:
+        devops: "true"
+    kubeStateMetrics:
+      nodeSelector:
+        devops: "true"
+    openshiftStateMetrics:
+      nodeSelector:
+        devops: "true"
+    thanosQuerier:
+      nodeSelector:
+        devops: "true"
+    k8sPrometheusAdapter:
+      nodeSelector:
+        devops: "true"
+```  
+
+<br/>
+
+아래 와 같이 `--dry-run=server` 명령어를 사용하여 yaml 화일을 검증 한다.  
+
+```bash
+[root@bastion monitoring]# kubectl apply -f cluster-monitoring-config.yaml --dry-run=server -n openshift-monitoring
+configmap/cluster-monitoring-config created (server dry run)
+```  
+
+<br/>
+
+에러가 없으면 configmap 을 생성한다.  
+
+```bash
+[root@bastion monitoring]# kubectl apply -f cluster-monitoring-config.yaml -n openshift-monitoring
+configmap/cluster-monitoring-config created
+```  
+
+<br/>
+
+openshift-monitoring namespace 의 pod 를 조회해 보면 신규로 `alertmanager-main` , `openshift-state-metrics` 등이 생성이 된다.    
+
+```bash
+[root@bastion monitoring]# kubectl get po -n openshift-monitoring
+NAME                                                     READY   STATUS    RESTARTS      AGE
+alertmanager-main-0                                      6/6     Running   1 (58s ago)   77s
+cluster-monitoring-operator-585c6bf574-pzqth             2/2     Running   4             10d
+kube-state-metrics-755448c775-875h2                      3/3     Running   0             107s
+node-exporter-6z2q6                                      2/2     Running   0             10d
+node-exporter-p6khv                                      2/2     Running   4             10d
+node-exporter-v9jcd                                      2/2     Running   2             3d6h
+openshift-state-metrics-6c75f948d8-qt4cx                 3/3     Running   0             107s
+prometheus-adapter-5fc64d5b7f-n58sh                      1/1     Running   0             106s
+prometheus-k8s-0                                         6/6     Running   0             63s
+prometheus-operator-54f7875879-g49qq                     2/2     Running   0             2m
+prometheus-operator-admission-webhook-7d8d84948d-xqhhg   1/1     Running   0             2m12s
+telemeter-client-5fb4cc8d85-lksv2                        3/3     Running   0             106s
+thanos-querier-798bc997d-trsbq                           6/6     Running   0             93s
+```  
+
+<br/>
+
+다이나믹 프로비저닝을 통해 2개의 pvc가 생성이 된 것을 확인할 수 있다.  
+
+<img src="./assets/okd_prometheus_pvc.png" style="width: 80%; height: auto;"/>
+
+<br/>
+
+observer -> metrics 메뉴로 이동하여 아래와 같이 `absent_over_time(container_cpu_usage_seconds_total{}[5m])` promQL을 입력하여 데이터를 조회 한다.    
+
+<img src="./assets/okd_prometheus_query1.png" style="width: 80%; height: auto;"/>
+
+
 <br/>
 
 ### bastion에  node exporter를 설치합니다.  
@@ -4881,11 +5020,162 @@ LICENSE  NOTICE  node_exporter
 
 
 
+<kube-state-metric 사용>
+
+모든 쿠버네티스 오브젝트의 메트릭을 가지고 있는 kube state metric
+
+<kubelet>
+
+kubelet에 포함된 cAdvisor를 통해 컨테이너의 메트릭 정보를 볼 수 있음
 
 
 
 <br/>
--- 여기까지 복사
+
+참고 : https://access.redhat.com/documentation/en-us/openshift_container_platform/4.12/html-single/monitoring/index#enabling-monitoring-for-user-defined-projects  
+
+
+
+`openshift-user-workload-monitoring` 을 활성화 하기 위해서는 `cluster-monitoring-config` 이름의
+configmap에 `enableUserWorkload: true` 를 추가한다.  
+
+<br/>
+
+```bash
+[root@bastion ~]# oc -n openshift-monitoring edit configmap cluster-monitoring-config
+```  
+
+<br/>  
+
+아래와 같이 추가 하고 저장.  
+
+```bash
+      6 data:
+      7   config.yaml: |
+      8     enableUserWorkload: true  # 추가
+```     
+
+<br/>
+
+cluster operator 에서 성공 메시지를 확인은 한다.   
+
+<img src="./assets/cluster_operator.png" style="width: 100%; height: auto;"/>
+
+
+<br/>
+
+`openshift-user-workload-monitoring` namespace 에서 3개의 pod가 생성된 것을 확인한다.   
+
+
+```bash  
+[root@bastion ~]# kubectl get po -n openshift-user-workload-monitoring
+NAME                                  READY   STATUS    RESTARTS   AGE
+prometheus-operator-9d64bcf56-468q5   2/2     Running   0          48s
+prometheus-user-workload-0            6/6     Running   0          44s
+thanos-ruler-user-workload-0          3/3     Running   0          41s
+```  
+
+<br/>
+
+
+```bash  
+[root@bastion monitoring]# kubectl apply -f frontend-v1-and-backend-v1-JVM.yaml -n shclub
+deployment.apps/frontend-v1 created
+service/frontend created
+route.route.openshift.io/frontend created
+deployment.apps/backend-v1 created
+service/backend created
+```  
+
+Call frontend app with curl
+
+```bash
+[root@bastion monitoring]# curl -k https://$(oc get route frontend -o jsonpath='{.spec.host}' -n shclub)
+Frontend version: v1 => [Backend: http://backend:8080, Response: 200, Body: Backend version:v1, Response:200, Host:backend-v1-86d9c7747d-96d7s, Status:200, Message: Hello, World]
+```  
+
+
+<br/>
+
+Check for backend's metrics
+- jvm heap size
+
+```bash
+[root@bastion monitoring]# oc exec -n shclub $(oc get pods -l app=backend \
+--no-headers  -o custom-columns='Name:.metadata.name' \
+-n shclub | head -n 1 ) -- curl -s  http://localhost:8080/q/metrics | grep heap
+# HELP jvm_gc_memory_allocated_bytes Incremented for an increase in the size of the (young) heap memory pool after one GC to before the next
+jvm_memory_max_bytes{area="nonheap",id="CodeHeap 'profiled nmethods'"} 1.22912768E8
+jvm_memory_max_bytes{area="heap",id="PS Old Gen"} 1.048576E8
+jvm_memory_max_bytes{area="heap",id="PS Survivor Space"} 524288.0
+jvm_memory_max_bytes{area="heap",id="PS Eden Space"} 5.1380224E7
+jvm_memory_max_bytes{area="nonheap",id="Metaspace"} -1.0
+jvm_memory_max_bytes{area="nonheap",id="CodeHeap 'non-nmethods'"} 5828608.0
+jvm_memory_max_bytes{area="nonheap",id="Compressed Class Space"} 1.073741824E9
+jvm_memory_max_bytes{area="nonheap",id="CodeHeap 'non-profiled nmethods'"} 1.22916864E8
+# HELP jvm_memory_usage_after_gc_percent The percentage of long-lived heap pool used after the last GC event, in the range [0..1]
+jvm_memory_usage_after_gc_percent{area="heap",pool="long-lived"} 0.09887138366699219
+jvm_memory_committed_bytes{area="nonheap",id="CodeHeap 'profiled nmethods'"} 6029312.0
+jvm_memory_committed_bytes{area="heap",id="PS Old Gen"} 1.1534336E7
+jvm_memory_committed_bytes{area="heap",id="PS Survivor Space"} 524288.0
+jvm_memory_committed_bytes{area="heap",id="PS Eden Space"} 1048576.0
+jvm_memory_committed_bytes{area="nonheap",id="Metaspace"} 3.2636928E7
+jvm_memory_committed_bytes{area="nonheap",id="CodeHeap 'non-nmethods'"} 2555904.0
+jvm_memory_committed_bytes{area="nonheap",id="Compressed Class Space"} 4194304.0
+jvm_memory_committed_bytes{area="nonheap",id="CodeHeap 'non-profiled nmethods'"} 2555904.0
+jvm_memory_used_bytes{area="nonheap",id="CodeHeap 'profiled nmethods'"} 5988992.0
+jvm_memory_used_bytes{area="heap",id="PS Old Gen"} 1.0367416E7
+jvm_memory_used_bytes{area="heap",id="PS Survivor Space"} 248008.0
+jvm_memory_used_bytes{area="heap",id="PS Eden Space"} 787736.0
+jvm_memory_used_bytes{area="nonheap",id="Metaspace"} 3.22404E7
+jvm_memory_used_bytes{area="nonheap",id="CodeHeap 'non-nmethods'"} 1318656.0
+jvm_memory_used_bytes{area="nonheap",id="Compressed Class Space"} 4023512.0
+jvm_memory_used_bytes{area="nonheap",id="CodeHeap 'non-profiled nmethods'"} 1021696.0
+# HELP jvm_gc_live_data_size_bytes Size of long-lived heap memory pool after reclamation
+# HELP jvm_gc_max_data_size_bytes Max size of long-lived heap memory pool
+```  
+
+
+Check for backend application related metrics
+
+```bash
+[root@bastion monitoring]# oc exec -n shclub $(oc get pods -l app=backend \
+> --no-headers  -o custom-columns='Name:.metadata.name' \
+> -n shclub | head -n 1 ) \
+> -- curl -s  http://localhost:8080/q/metrics | grep http_server_requests_seconds
+# TYPE http_server_requests_seconds summary
+# HELP http_server_requests_seconds
+http_server_requests_seconds_count{method="GET",outcome="SUCCESS",status="200",uri="root"} 1.0
+http_server_requests_seconds_sum{method="GET",outcome="SUCCESS",status="200",uri="root"} 3.911644255
+# TYPE http_server_requests_seconds_max gauge
+# HELP http_server_requests_seconds_max
+http_server_requests_seconds_max{method="GET",outcome="SUCCESS",status="200",uri="root"} 0.0
+```  
+
+<br/>
+
+```bash
+[root@bastion monitoring]# vi backend-service-monitor.yaml
+[root@bastion monitoring]# kubectl apply -f backend-service-monitor.yaml -n shclub
+servicemonitor.monitoring.coreos.com/backend-monitor created
+```  
+
+Role monitor-edit is required for create ServiceMonitor and PodMonitor resources. Following example is granting role montior-edit to user1 for project1
+
+
+```bash
+[root@bastion monitoring]#   oc adm policy add-role-to-user  monitoring-edit shclub -n shclub
+clusterrole.rbac.authorization.k8s.io/monitoring-edit added: "shclub"
+```  
+
+siege는 명령어를 사용하여 성능 테스트를 수행합니다.
+
+
+okd_prometheus_user1.png
+okd_prometheus_user2.png
+
+okd_topology1.png
+
 
 Assign the user-workload-monitoring-config-edit role to a user in the openshift-user-workload-monitoring project:
 
@@ -5030,6 +5320,11 @@ prometheus-k8s-openshift-monitoring.apps.okd4.ktdemo.duckdns.org
 {"status":"success","data":{"headStats":{"numSeries":142428,"numLabelPairs":12717,"chunkCount":369937,"minTime":1694592000485,"maxTime":1694601927016},"seriesCountByMetricName":[{"name":"apiserver_request_duration_seconds_bucket","value":11086},{"name":"apiserver_request_slo_duration_seconds_bucket","value":10802},{"name":"etcd_request_duration_seconds_bucket","value":7848},{"name":"workqueue_queue_duration_seconds_bucket","value":4554},{"name":"workqueue_work_duration_seconds_bucket","value":4554},{"name":"apiserver_response_sizes_bucket","value":3568},{"name":"apiserver_watch_events_sizes_bucket","value":1692},{"name":"prober_probe_duration_seconds_bucket","value":1464},{"name":"apiserver_request_total","value":1402},{"name":"grpc_server_handled_total","value":1326}],"labelValueCountByLabelName":[{"name":"__name__","value":1890},{"name":"name","value":1059},{"name":"secret","value":1035},{"name":"id","value":828},{"name":"resource","value":463},{"name":"configmap","value":413},{"name":"le","value":407},{"name":"type","value":336},{"name":"container_id","value":327},{"name":"uid","value":321}],"memoryInBytesByLabelName":[{"name":"id","value":134699},{"name":"name","value":77553},{"name":"__name__","value":70940},{"name":"secret","value":27612},{"name":"container_id","value":23544},{"name":"mountpoint","value":20798},{"name":"rule_group","value":13094},{"name":"uid","value":11540},{"name":"image_id","value":11385},{"name":"type","value":11119}],"seriesCountByLabelValuePair":[{"name":"endpoint=https","value":75269},{"name":"namespace=default","value":45665},{"name":"service=kubernetes","value":45635},{"name":"job=apiserver","value":45634},{"name":"apiserver=kube-apiserver","value":45633},{"name":"instance=192.168.1.146:6443","value":44948},{"name":"service=kubelet","value":33095},{"name":"endpoint=https-metrics","value":31939},{"name":"job=kubelet","value":31772},{"name":"component=apiserver","value":30400}]}}
 ```  
 
+외부 서비스 등록 방법
+
+https://www.justinpolidori.it/posts/20210829_monitor_external_services_with_promethues_outside_kubernetes/
+
+https://gist.github.com/christophlehmann/b1bbf2821a876c7f91d8eec3b6788f24
 
 docker run node_exporter
 
@@ -5039,6 +5334,44 @@ prometheus.yaml vs operator
 
 https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/additional-scrape-config.md
 
+
+```bash
+[root@bastion monitoring]# podman run  -d -p 9100:9100 prom/node-exporter
+✔ docker.io/prom/node-exporter:latest
+Trying to pull docker.io/prom/node-exporter:latest...
+Getting image source signatures
+Copying blob 2b6642e6c59e done
+Copying blob d5c4df21b127 done
+Copying blob 2f5f7d8898a1 done
+Copying config 458e026e6a done
+Writing manifest to image destination
+Storing signatures
+3b79c5a114c3c6908c33539230ba9926d907651824cd419f8660f6537b0618d5
+[root@bastion monitoring]# podman ps
+CONTAINER ID  IMAGE                                COMMAND     CREATED         STATUS         PORTS                   NAMES
+3b79c5a114c3  docker.io/prom/node-exporter:latest              24 seconds ago  Up 24 seconds  0.0.0.0:9100->9100/tcp  stoic_black
+```  
+
+```bash
+[root@bastion monitoring]# curl http://192.168.1.40:9100/metrics
+```
+
+```bash
+[root@bastion monitoring]# kubectl apply -f external-node-exporter-svc.yaml -n shclub
+service/external-node-exporter created
+[root@bastion monitoring]# kubectl apply -f external-node-exporter-ep.yaml -n shclub
+endpoints/external-node-exporter created
+[root@bastion monitoring]# kubectl apply -f external-service-monitor.yaml -n shclub
+servicemonitor.monitoring.coreos.com/external-node-exporter created
+```
+
+```bash
+[root@bastion monitoring]# kubectl get svc -n shclub  | grep external-node-exporter
+external-node-exporter                                ClusterIP   172.30.33.239    <none>        9100/TCP         3m11s
+[root@bastion monitoring]# kubectl get servicemonitor -n shclub
+NAME                     AGE
+external-node-exporter   11m
+```
 
 <br/>
 
@@ -5064,58 +5397,30 @@ https://nakamasato.medium.com/how-prometheus-operator-facilitates-prometheus-con
 promethus rule  역할 ?
 
 
+4.12에서 grafana 는 ?
 
+https://docs.okd.io/4.12/logging/cluster-logging-loki.html
 
-<br/>
+ibm 자료 grafana 설치
 
-## Grafana 설치 
+https://www.ibm.com/docs/en/mhmpmh-and-p-u/continuous-delivery?topic=dashboards-installing-configuring-grafana
 
-<br/>
-
-OKD 4.11 이후 부터는 loki stack 이 기본으로 사용이 되어 Grafana 설치는 Operator 로 설치 해야 한다.  
-
-설치가이드는 IBM 사이트를 참고한다.
-
-<br/>
-
-참고     
-- https://www.ibm.com/docs/en/mhmpmh-and-p-u/continuous-delivery?topic=dashboards-installing-configuring-grafana  
-- https://loki-operator.dev/docs/howto_connect_grafana.md/  
-- https://docs.okd.io/4.12/logging/cluster-logging-loki.html
+https://loki-operator.dev/docs/howto_connect_grafana.md/
 
 openshift-user-workload-monitoring 에 grafana operator 설치
 
 
-<br/>
-
-`openshift-user-workload-monitoring` namespace 에 grafana operator 설치 한다.  
-
-<img src="./assets/okd_grafana_1.png" style="width: 80%; height: auto;"/>
 
 <br/>
 
-시간이 좀 걸려서 설치가 되면 view operator 화면이 보이고 클릭한다.  
+Install the Grafana operator for the openshift-user-workload-monitoring namespace.
+Create an instance of Grafana.
+Select Operator > OperatorHub > Grafana Operator and then select the Grafana tab.
+Click Create Grafana.
+On YAML tab, enter the following text:
 
-<img src="./assets/okd_grafana_2.png" style="width: 80%; height: auto;"/>
+Operator 에서 Grafana를 생성한다.    
 
-<br/>
-
-Operator > OperatorHub > Grafana Operator 로 이동하고 Grafana tab을 클릭한다.  
-
-<img src="./assets/okd_grafana_3.png" style="width: 80%; height: auto;"/>
-
-<br/>
-
-Operator 에서 Grafana를 생성한다.      
-
-Create Grafana를 클릭하고 YAML view 를 선택하고 아래 내용을 붙여넣는다.     
-- `class: ocs-storagecluster-cephfs` 를 `class: nfs-client` 로 변경한다.
-
-<br/>
-
-<img src="./assets/okd_grafana_4.png" style="width: 80%; height: auto;"/>
-
-<br/>
 
 ```bash
 apiVersion: integreatly.org/v1alpha1
@@ -5130,7 +5435,7 @@ spec:
     accessModes:
       - ReadWriteOnce
     size: 10Gi
-    class: nfs-client
+    class: ocs-storagecluster-cephfs
   config:
     log:
       mode: "console"
@@ -5150,25 +5455,6 @@ spec:
 
 <br/>
 
-Operator 에서 status 를 확인 한다.
-
-<img src="./assets/okd_grafana_5.png" style="width: 80%; height: auto;"/>
-
-<br/>
-
-```bash
-[root@bastion monitoring]# kubectl get po -n openshift-user-workload-monitoring
-NAME                                                   READY   STATUS    RESTARTS       AGE
-grafana-deployment-748dfdc468-scp5m                    1/1     Running   2 (4m8s ago)   4m18s
-grafana-operator-controller-manager-679556bd5f-gdq5h   2/2     Running   0              21m
-prometheus-operator-9d64bcf56-tvk4g                    2/2     Running   0              3h17m
-prometheus-user-workload-0                             6/6     Running   0              3h16m
-thanos-ruler-user-workload-0                           3/3     Running   0              3h17m
-```  
-
-<br/>
-
-
 권한을 할당한다.  
 
 ```bash
@@ -5178,18 +5464,18 @@ clusterrole.rbac.authorization.k8s.io/cluster-monitoring-view added: "grafana-se
 
 <br/>
 
-
-
-secret 으로 token 값을 알아낸다.  
-
 ```bash
 [root@bastion monitoring]# SECRET=`oc get secret -n openshift-user-workload-monitoring | grep  prometheus-user-workload-token | head -n 1 | awk '{print $1 }'`
 [root@bastion monitoring]# TOKEN=`echo $(oc get secret $SECRET -n openshift-user-workload-monitoring -o json | jq -r '.data.token') | base64 -d`
 ```   
 
+이게 맞으려냐 위에께 맞으려나 아래꺼는 에전
+
+[root@bastion monitoring]# token=$(oc  create token  grafana-serviceaccount -n openshift-user-workload-monitoring)
+
 <br/>
 
-grafana dashboard 를 생성한다.  위의 토큰 값으로 아래 `${BEARER_TOKEN}` 를 replace 한다.  
+grafana dashboard 를 생성한다.    
 
 <br/>
 
@@ -5218,51 +5504,8 @@ spec:
 
 <br/>
 
-<img src="./assets/okd_grafana_6.png" style="width: 80%; height: auto;"/>
 
-<br/>  
-
-Grafana Dashboard 를 생성한다.   
-
-<img src="./assets/okd_grafana_7.png" style="width: 80%; height: auto;"/>
-
-<br/>
-
-web 브라우저로 route 에 연결한다. 
-- https://grafana-route-openshift-user-workload-monitoring.apps.okd4.ktdemo.duckdns.org/
-
-
-<br/>
-
-로그인 창이 뜨고 로그인 을 한다.  
-
-<img src="./assets/okd_grafana_8.png" style="width: 80%; height: auto;"/>
-
-<br/>
-
-초기 ID와 비밀번호는 secret에서 확인한다.  ( root/secret )  
-
-<img src="./assets/okd_grafana_9.png" style="width: 80%; height: auto;"/>
-
-<br/>
-
-Configuration 메뉴에서 Datasource 를 확인 한다.  
-
-<img src="./assets/okd_grafana_10.png" style="width: 80%; height: auto;"/>
-
-<br/>
-
-Dashboard 를 import 하여 생성한다.  
-
-<img src="./assets/okd_grafana_11.png" style="width: 80%; height: auto;"/>
-
-<br/>
-
-### Prometheus Service Discovery  
-
-<br/>
-
-참고 : https://www.jacobbaek.com/1540
+https://www.jacobbaek.com/1540
 
 
 job 을 만든다.  
@@ -5362,6 +5605,89 @@ data:
               storage: 10Gi
 ```  
 
+namespace 별  pod 갯수 세기
+
+https://devocean.sk.com/blog/techBoardDetail.do?ID=164488
+
+minio 사용 하기 : https://devocean.sk.com/blog/techBoardDetail.do?page=&boardType=undefined&query=&ID=164946&searchData=&subIndex=
+
+
+PromQL: `sum(kube_pod_info) by (namespace)`
+
+`kube_pod_info`는 kubernetes-exporter를 통해 수집되는 metric
+
+<br/>
+
+```bash
+[root@bastion monitoring]# SECRET=`oc get secret -n openshift-user-workload-monitoring | grep  prometheus-user-workload-token | head -n 1 | awk '{print $1 }'`
+[root@bastion monitoring]# TOKEN=`echo $(oc get secret $SECRET -n openshift-user-workload-monitoring -o json | jq -r '.data.token') | base64 -d`
+[root@bastion monitoring]# THANOS_QUERIER_HOST=`oc get route thanos-querier -n openshift-monitoring -o json | jq -r '.spec.host'`
+```  
+
+<br/>
+
+query 부분에 위 query를 URL-encoding을 수행한 값으로 넣어주면 된다.
+
+<br/>
+
+```bash
+[root@bastion monitoring]# curl -X GET -kG "https://$THANOS_QUERIER_HOST/api/v1/query?" --data-urlencode "query=sum(kube_pod_info) by (namespace)" -H "Authorization: Bearer $TOKEN"
+{"status":"success","data":{"resultType":"vector","result":[{"metric":{"namespace":"openshift-etcd"},"value":[1694754323.376,"4"]},{"metric":{"namespace":"openshift-kube-apiserver"},"value":[1694754323.376,"9"]},{"metric":{"namespace":"openshift-kube-controller-manager"},"value":[1694754323.376,"6"]},{"metric":{"namespace":"openshift-kube-scheduler"},"value":[1694754323.376,"6"]},{"metric":{"namespace":"openshift-marketplace"},"value":[1694754323.376,"8"]},{"metric":{"namespace":"edu1"},"value":[1694754323.376,"4"]},{"metric":{"namespace":"edu2"},"value":[1694754323.376,"8"]},{"metric":{"namespace":"minio"},"value":[1694754323.376,"2"]},{"metric":{"namespace":"shclub"},"value":[1694754323.376,"9"]},{"metric":{"namespace":"openshift-dns"},"value":[1694754323.376,"6"]},{"metric":{"namespace":"openshift-ingress-canary"},"value":[1694754323.376,"3"]},{"metric":{"namespace":"openshift-machine-config-operator"},"value":[1694754323.376,"6"]},{"metric":{"namespace":"openshift-multus"},"value":[1694754323.376,"10"]},{"metric":{"namespace":"openshift-network-diagnostics"},"value":[1694754323.376,"4"]},{"metric":{"namespace":"openshift-image-registry"},"value":[1694754323.376,"7"]},{"metric":{"namespace":"openshift-monitoring"},"value":[1694754323.376,"13"]},{"metric":{"namespace":"openshift-sdn"},"value":[1694754323.376,"4"]},{"metric":{"namespace":"openshift-cluster-node-tuning-operator"},"value":[1694754323.376,"4"]},{"metric":{"namespace":"haerin"},"value":[1694754323.376,"1"]},{"metric":{"namespace":"openshift-operator-lifecycle-manager"},"value":[1694754323.376,"7"]},{"metric":{"namespace":"etcd-backup"},"value":[1694754323.376,"3"]},{"metric":{"namespace":"openshift-oauth-apiserver"},"value":[1694754323.376,"1"]},{"metric":{"namespace":"openshift-apiserver"},"value":[1694754323.376,"1"]},{"metric":{"namespace":"argo-rollouts"},"value":[1694754323.376,"1"]},{"metric":{"namespace":"argocd"},"value":[1694754323.376,"7"]},{"metric":{"namespace":"openshift-authentication-operator"},"value":[1694754323.376,"1"]},{"metric":{"namespace":"openshift-cloud-credential-operator"},"value":[1694754323.376,"1"]},{"metric":{"namespace":"openshift-machine-api"},"value":[1694754323.376,"4"]},{"metric":{"namespace":"openshift-cloud-controller-manager-operator"},"value":[1694754323.376,"1"]},{"metric":{"namespace":"openshift-cluster-samples-operator"},"value":[1694754323.376,"1"]},{"metric":{"namespace":"openshift-cluster-storage-operator"},"value":[1694754323.376,"4"]},{"metric":{"namespace":"openshift-cluster-version"},"value":[1694754323.376,"1"]},{"metric":{"namespace":"openshift-console"},"value":[1694754323.376,"2"]},{"metric":{"namespace":"openshift-console-operator"},"value":[1694754323.376,"1"]},{"metric":{"namespace":"openshift-controller-manager"},"value":[1694754323.376,"1"]},{"metric":{"namespace":"openshift-dns-operator"},"value":[1694754323.376,"1"]},{"metric":{"namespace":"openshift-etcd-operator"},"value":[1694754323.376,"1"]},{"metric":{"namespace":"openshift-user-workload-monitoring"},"value":[1694754323.376,"5"]},{"metric":{"namespace":"openshift-ingress-operator"},"value":[1694754323.376,"1"]},{"metric":{"namespace":"openshift-insights"},"value":[1694754323.376,"1"]},{"metric":{"namespace":"openshift-kube-apiserver-operator"},"value":[1694754323.376,"1"]},{"metric":{"namespace":"openshift-kube-controller-manager-operator"},"value":[1694754323.376,"1"]},{"metric":{"namespace":"openshift-kube-storage-version-migrator-operator"},"value":[1694754323.376,"1"]},{"metric":{"namespace":"openshift-operators"},"value":[1694754323.376,"1"]},{"metric":{"namespace":"openshift-cluster-machine-approver"},"value":[1694754323.376,"1"]},{"metric":{"namespace":"openshift-kube-storage-version-migrator"},"value":[1694754323.376,"1"]},{"metric":{"namespace":"harbor"},"value":[1694754323.376,"9"]},{"metric":{"namespace":"edu5"},"value":[1694754323.376,"2"]},{"metric":{"namespace":"openshift-network-operator"},"value":[1694754323.376,"1"]},{"metric":{"namespace":"openshift-authentication"},"value":[1694754323.376,"1"]},{"metric":{"namespace":"openshift-apiserver-operator"},"value":[1694754323.376,"1"]},{"metric":{"namespace":"openshift-config-operator"},"value":[1694754323.376,"1"]},{"metric":{"namespace":"openshift-controller-manager-operator"},"value":[1694754323.376,"1"]},{"metric":{"namespace":"openshift-kube-scheduler-operator"},"value":[1694754323.376,"1"]},{"metric":{"namespace":"openshift-route-controller-manager"},"value":[1694754323.376,"1"]},{"metric":{"namespace":"openshift-ingress"},"value":[1694754323.376,"1"]},{"metric":{"namespace":"openshift-service-ca"},"value":[1694754323.376,"1"]},{"metric":{"namespace":"openshift-service-ca-operator"},"value":[1694754323.376,"1"]}]}}
+```  
+
+
+<br/>
+
+추가적으로 보기 편하도록 파이썬 모듈인 json.tool을 사용할 수 있다.
+
+```bash
+[root@bastion monitoring]# curl -X GET -kG "https://$THANOS_QUERIER_HOST/api/v1/query?" --data-urlencode "query=sum(kube_pod_info) by (namespace)" -H "Authorization: Bearer $TOKEN" | python3  -m json.tool
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  4749    0  4749    0     0  96918      0 --:--:-- --:--:-- --:--:-- 96918
+{
+    "status": "success",
+    "data": {
+        "resultType": "vector",
+        "result": [
+            {
+                "metric": {
+                    "namespace": "openshift-etcd"
+                },
+                "value": [
+                    1694651859.101,
+                    "4"
+                ]
+            },
+            {
+                "metric": {
+                    "namespace": "openshift-kube-apiserver"
+                },
+                "value": [
+                    1694651859.101,
+                    "9"
+                ]
+            },
+            {
+                "metric": {
+                    "namespace": "openshift-kube-controller-manager"
+                },
+                "value": [
+                    1694651859.101,
+                    "6"
+                ]
+            },
+            {
+                "metric": {
+                    "namespace": "openshift-kube-scheduler"
+                },
+                "value": [
+                    1694651859.101,
+                    "6"
+                ]
+            },
+...            
+```  
 
 
 [root@bastion monitoring]# kubectl get servicemonitors.monitoring.coreos.com  -n openshift-user-workload-monitoring
@@ -5651,6 +5977,14 @@ Move the existing Kubernetes API server pod file out of the kubelet manifest dir
 
 Verify that the Kubernetes API server pods are stopped.  
 
+
+```bash
+[root@okd-1 core]#  crictl ps | grep kube-apiserver | grep -v operator
+```
+
+<br/>
+
+Move the etcd data directory to a different location  
 
 ```bash
 [root@okd-1 core]#  crictl ps | grep kube-apiserver | grep -v operator
@@ -6004,1619 +6338,3 @@ csr-nn266   4s     kubernetes.io/kubelet-serving                 system:node:okd
 csr-sphb7   119s   kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper   <none>              Approved,Issued
 [root@bastion ~]#  oc adm certificate approve csr-nn266
 certificatesigningrequest.certificates.k8s.io/csr-nn266 approved
-
-
-journalctl -u kubelet 에서 특정 날짜 에러 보기
-
-
-No valid client certificate is found but the server is not responsive. A restart may be necessary to retrieve new initial credentials." lastCertificateAvailabilityTim
-
-https://access.redhat.com/solutions/6748611
-
-
-<br/>
-
-에러가 자주 발생하면 아래 처럼 확인하고 문제가 되는 node를 재기동 한다.
-
-```bash
-[root@bastion ~]# oc get co
-NAME                                       VERSION                          AVAILABLE   PROGRESSING   DEGRADED   SINCE   MESSAGE
-authentication                             4.12.0-0.okd-2023-03-18-084815   True        False         False      4m44s
-baremetal                                  4.12.0-0.okd-2023-03-18-084815   True        False         False      33d
-cloud-controller-manager                   4.12.0-0.okd-2023-03-18-084815   True        False         False      33d
-cloud-credential                           4.12.0-0.okd-2023-03-18-084815   True        False         False      33d
-cluster-autoscaler                         4.12.0-0.okd-2023-03-18-084815   True        False         False      33d
-config-operator                            4.12.0-0.okd-2023-03-18-084815   True        False         False      33d
-console                                    4.12.0-0.okd-2023-03-18-084815   True        False         False      76m
-control-plane-machine-set                  4.12.0-0.okd-2023-03-18-084815   True        False         False      33d
-csi-snapshot-controller                    4.12.0-0.okd-2023-03-18-084815   True        False         False      81m
-dns                                        4.12.0-0.okd-2023-03-18-084815   True        True          False      16d     DNS "default" reports Progressing=True: "Have 3 available node-resolver pods, want 4."
-etcd                                       4.12.0-0.okd-2023-03-18-084815   True        False         False      33d
-image-registry                             4.12.0-0.okd-2023-03-18-084815   True        True          True       33d     Degraded: The registry is removed...
-ingress                                    4.12.0-0.okd-2023-03-18-084815   True        False         False      33d
-insights                                   4.12.0-0.okd-2023-03-18-084815   True        False         False      33d
-kube-apiserver                             4.12.0-0.okd-2023-03-18-084815   True        False         False      33d
-kube-controller-manager                    4.12.0-0.okd-2023-03-18-084815   True        False         False      33d
-kube-scheduler                             4.12.0-0.okd-2023-03-18-084815   True        False         False      33d
-kube-storage-version-migrator              4.12.0-0.okd-2023-03-18-084815   True        False         False      81m
-machine-api                                4.12.0-0.okd-2023-03-18-084815   True        False         False      33d
-machine-approver                           4.12.0-0.okd-2023-03-18-084815   True        False         False      33d
-machine-config                             4.12.0-0.okd-2023-03-18-084815   True        False         False      15d
-marketplace                                4.12.0-0.okd-2023-03-18-084815   True        False         False      33d
-monitoring                                 4.12.0-0.okd-2023-03-18-084815   True        False         False      77m
-network                                    4.12.0-0.okd-2023-03-18-084815   True        True          False      33d     DaemonSet "/openshift-multus/multus" is not available (awaiting 1 nodes)...
-node-tuning                                4.12.0-0.okd-2023-03-18-084815   True        False         False      33d
-openshift-apiserver                        4.12.0-0.okd-2023-03-18-084815   True        False         False      64m
-openshift-controller-manager               4.12.0-0.okd-2023-03-18-084815   True        False         False      81m
-openshift-samples                          4.12.0-0.okd-2023-03-18-084815   True        False         False      33d
-operator-lifecycle-manager                 4.12.0-0.okd-2023-03-18-084815   True        False         False      33d
-operator-lifecycle-manager-catalog         4.12.0-0.okd-2023-03-18-084815   True        False         False      33d
-operator-lifecycle-manager-packageserver   4.12.0-0.okd-2023-03-18-084815   True        False         False      81m
-service-ca                                 4.12.0-0.okd-2023-03-18-084815   True        False         False      33d
-storage                                    4.12.0-0.okd-2023-03-18-084815   True        False         False      33d 
-```  
-
-<br/>
-
-시간이 지나면 아래와 같이 해결이 된다.  
-
-```bash
-[root@bastion ~]# oc get co
-NAME                                       VERSION                          AVAILABLE   PROGRESSING   DEGRADED   SINCE   MESSAGE
-authentication                             4.12.0-0.okd-2023-03-18-084815   True        False         False      95s
-baremetal                                  4.12.0-0.okd-2023-03-18-084815   True        False         False      33d
-cloud-controller-manager                   4.12.0-0.okd-2023-03-18-084815   True        False         False      33d
-cloud-credential                           4.12.0-0.okd-2023-03-18-084815   True        False         False      33d
-cluster-autoscaler                         4.12.0-0.okd-2023-03-18-084815   True        False         False      33d
-config-operator                            4.12.0-0.okd-2023-03-18-084815   True        False         False      33d
-console                                    4.12.0-0.okd-2023-03-18-084815   True        False         False      80m
-control-plane-machine-set                  4.12.0-0.okd-2023-03-18-084815   True        False         False      33d
-csi-snapshot-controller                    4.12.0-0.okd-2023-03-18-084815   True        False         False      85m
-dns                                        4.12.0-0.okd-2023-03-18-084815   True        False         False      16d
-etcd                                       4.12.0-0.okd-2023-03-18-084815   True        False         False      33d
-image-registry                             4.12.0-0.okd-2023-03-18-084815   True        False         True       33d     Degraded: The registry is removed...
-ingress                                    4.12.0-0.okd-2023-03-18-084815   True        False         False      33d
-insights                                   4.12.0-0.okd-2023-03-18-084815   True        False         False      33d
-kube-apiserver                             4.12.0-0.okd-2023-03-18-084815   True        False         False      33d
-kube-controller-manager                    4.12.0-0.okd-2023-03-18-084815   True        False         False      33d
-kube-scheduler                             4.12.0-0.okd-2023-03-18-084815   True        False         False      33d
-kube-storage-version-migrator              4.12.0-0.okd-2023-03-18-084815   True        False         False      85m
-machine-api                                4.12.0-0.okd-2023-03-18-084815   True        False         False      33d
-machine-approver                           4.12.0-0.okd-2023-03-18-084815   True        False         False      33d
-machine-config                             4.12.0-0.okd-2023-03-18-084815   True        False         False      15d
-marketplace                                4.12.0-0.okd-2023-03-18-084815   True        False         False      33d
-monitoring                                 4.12.0-0.okd-2023-03-18-084815   True        False         False      82m
-network                                    4.12.0-0.okd-2023-03-18-084815   True        False         False      33d
-node-tuning                                4.12.0-0.okd-2023-03-18-084815   True        False         False      33d
-openshift-apiserver                        4.12.0-0.okd-2023-03-18-084815   True        False         False      69m
-openshift-controller-manager               4.12.0-0.okd-2023-03-18-084815   True        False         False      85m
-openshift-samples                          4.12.0-0.okd-2023-03-18-084815   True        False         False      33d
-operator-lifecycle-manager                 4.12.0-0.okd-2023-03-18-084815   True        False         False      33d
-operator-lifecycle-manager-catalog         4.12.0-0.okd-2023-03-18-084815   True        False         False      33d
-operator-lifecycle-manager-packageserver   4.12.0-0.okd-2023-03-18-084815   True        False         False      85m
-service-ca                                 4.12.0-0.okd-2023-03-18-084815   True        False         False      33d
-storage                                    4.12.0-0.okd-2023-03-18-084815   True        False         False      33d
-```
-
-<br/>
-
-image-registry 가 Degrade 된 경우 해결법 
-
-참고 : https://gist.github.com/ruo91/98b965daaa0d3fdddb05eea2362a50c4  
-
-<br/>
-
-- 원인 : image-registry에 사용할 수 있는 스토리지가 없을때 발생한다.
-즉, managementState가 Removed 상태인 경우에는 operator가 image-registry pod를 생성하지 않아도,
-Image Pruner가 cronjob을 생성하고 이를 수행하는 부분에서 발생하는 것으로 이해 한다.  
-
-<br/>
-
-- 해결방법 : Image Pruner 상태 변경을 한다. suspend를 false에서 true로 변경 해준다.   
-
-
-```bash
-[root@bastion ~]# oc edit imagepruner.imageregistry/cluster
-imagepruner.imageregistry.operator.openshift.io/cluster edited
-[root@bastion ~]# oc delete jobs --all -n openshift-image-registry
-job.batch "image-pruner-28264320" deleted
-job.batch "image-pruner-28265760" deleted
-job.batch "image-pruner-28267200" deleted
-[root@bastion ~]# oc get clusteroperators | image-registry
-zsh: command not found: image-registry
-[root@bastion ~]# oc get clusteroperators | grep image-registry
-image-registry                             4.12.0-0.okd-2023-03-18-084815   True        False         False      33d
-[root@bastion ~]# oc describe clusteroperators image-registry  | grep Message
-    Message:               Available: The registry is removed
-    Message:               Progressing: All registry resources are removed
-    Message:               Degraded: The registry is removed
-```    
-
-<br/>
-
-모든 component 가 정상 인것을 확인 할 수 있다.
-
-```bash
-[root@bastion ~]# oc get co
-NAME                                       VERSION                          AVAILABLE   PROGRESSING   DEGRADED   SINCE   MESSAGE
-authentication                             4.12.0-0.okd-2023-03-18-084815   True        False         False      55s
-baremetal                                  4.12.0-0.okd-2023-03-18-084815   True        False         False      33d
-cloud-controller-manager                   4.12.0-0.okd-2023-03-18-084815   True        False         False      33d
-cloud-credential                           4.12.0-0.okd-2023-03-18-084815   True        False         False      33d
-cluster-autoscaler                         4.12.0-0.okd-2023-03-18-084815   True        False         False      33d
-config-operator                            4.12.0-0.okd-2023-03-18-084815   True        False         False      33d
-console                                    4.12.0-0.okd-2023-03-18-084815   True        False         False      144m
-control-plane-machine-set                  4.12.0-0.okd-2023-03-18-084815   True        False         False      33d
-csi-snapshot-controller                    4.12.0-0.okd-2023-03-18-084815   True        False         False      16h
-dns                                        4.12.0-0.okd-2023-03-18-084815   True        False         False      16d
-etcd                                       4.12.0-0.okd-2023-03-18-084815   True        False         False      33d
-image-registry                             4.12.0-0.okd-2023-03-18-084815   True        False         False      33d
-ingress                                    4.12.0-0.okd-2023-03-18-084815   True        False         False      33d
-insights                                   4.12.0-0.okd-2023-03-18-084815   True        False         False      33d
-kube-apiserver                             4.12.0-0.okd-2023-03-18-084815   True        False         False      33d
-kube-controller-manager                    4.12.0-0.okd-2023-03-18-084815   True        False         False      33d
-kube-scheduler                             4.12.0-0.okd-2023-03-18-084815   True        False         False      33d
-kube-storage-version-migrator              4.12.0-0.okd-2023-03-18-084815   True        False         False      16h
-machine-api                                4.12.0-0.okd-2023-03-18-084815   True        False         False      33d
-machine-approver                           4.12.0-0.okd-2023-03-18-084815   True        False         False      33d
-machine-config                             4.12.0-0.okd-2023-03-18-084815   True        False         False      16d
-marketplace                                4.12.0-0.okd-2023-03-18-084815   True        False         False      33d
-monitoring                                 4.12.0-0.okd-2023-03-18-084815   True        False         False      16h
-network                                    4.12.0-0.okd-2023-03-18-084815   True        False         False      33d
-node-tuning                                4.12.0-0.okd-2023-03-18-084815   True        False         False      33d
-openshift-apiserver                        4.12.0-0.okd-2023-03-18-084815   True        False         False      3h18m
-openshift-controller-manager               4.12.0-0.okd-2023-03-18-084815   True        False         False      16h
-openshift-samples                          4.12.0-0.okd-2023-03-18-084815   True        False         False      33d
-operator-lifecycle-manager                 4.12.0-0.okd-2023-03-18-084815   True        False         False      33d
-operator-lifecycle-manager-catalog         4.12.0-0.okd-2023-03-18-084815   True        False         False      33d
-operator-lifecycle-manager-packageserver   4.12.0-0.okd-2023-03-18-084815   True        False         False      16h
-service-ca                                 4.12.0-0.okd-2023-03-18-084815   True        False         False      33d
-storage                                    4.12.0-0.okd-2023-03-18-084815   True        False         False      33d
-```  
-
-
-<br/>
-
-### Opensearch 설치  
-
-<br/> 
-
-`opensearch` namespace를 생성합니다.  
-
-<br/>
-
-```bash
-[root@bastion ~]# oc new-project opensearch
-Now using project "opensearch" on server "https://api.okd4.ktdemo.duckdns.org:6443".
-
-You can add applications to this project with the 'new-app' command. For example, try:
-
-    oc new-app rails-postgresql-example
-
-to build a new example application in Ruby. Or use kubectl to deploy a simple Kubernetes application:
-
-    kubectl create deployment hello-node --image=k8s.gcr.io/e2e-test-images/agnhost:2.33 -- /agnhost serve-hostname
-```
-
-<br/>
-
-namespace 에 annotation 설정을 하고 권한을 할당 합니다.  
-
-```bash
-[root@bastion ~]# kubectl edit namespace opensearch -n opensearch
-namespace/opensearch edited
-[root@bastion ~]# oc adm policy add-scc-to-user anyuid -z default -n opensearch
-clusterrole.rbac.authorization.k8s.io/system:openshift:scc:anyuid added: "default"
-[root@bastion ~]# oc adm policy add-scc-to-user privileged -z default -n opensearch
-clusterrole.rbac.authorization.k8s.io/system:openshift:scc:privileged added: "default"
-```
-
-<br/>
-
-opensearch helm repository를 추가합니다.  
-
-```bash
-[root@bastion ~]# helm repo add opensearch https://opensearch-project.github.io/helm-charts/
-WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
-"opensearch" has been added to your repositories
-[root@bastion ~]# helm repo update
-WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
-Hang tight while we grab the latest from your chart repositories...
-...Successfully got an update from the "opensearch" chart repository
-...Successfully got an update from the "kubecost" chart repository
-...Successfully got an update from the "nfs-subdir-external-provisioner" chart repository
-...Successfully got an update from the "aspecto" chart repository
-...Successfully got an update from the "kubescape" chart repository
-...Successfully got an update from the "harbor" chart repository
-...Successfully got an update from the "bitnami" chart repository
-Update Complete. ⎈Happy Helming!⎈
-[root@bastion ~]# helm repo list
-WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
-NAME                           	URL
-nfs-subdir-external-provisioner	https://kubernetes-sigs.github.io/nfs-subdir-external-provisioner
-harbor                         	https://helm.goharbor.io
-bitnami                        	https://charts.bitnami.com/bitnami
-kubecost                       	https://kubecost.github.io/cost-analyzer/
-aspecto                        	https://aspecto-io.github.io/helm-charts
-kubescape                      	https://kubescape.github.io/helm-charts/
-opensearch                     	https://opensearch-project.github.io/helm-charts/
-[root@bastion ~]# mkdir -p opensearch
-[root@bastion ~]# cd opensearch
-[root@bastion opensearch]# helm search repo opensearch
-WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
-NAME                            	CHART VERSION	APP VERSION	DESCRIPTION
-bitnami/opensearch              	0.2.3        	2.10.0     	OpenSearch is a scalable open-source solution f...
-opensearch/opensearch           	2.15.0       	2.10.0     	A Helm chart for OpenSearch
-opensearch/opensearch-dashboards	2.13.0       	2.10.0     	A Helm chart for OpenSearch Dashboards
-``` 
-
-<br/>
-
-values.yaml 화일을 생성합니다.    
-
-```bash 
-[root@bastion opensearch]# helm show values opensearch/opensearch > values.yaml
-WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
-```  
-
-<br/>
-
-values.yaml 의 화일에서 storageClass 는 `nfs-client` 인 dynamic provisioning 으로 설정한다.     
-
-<br/>
-
-```bash
-[root@bastion opensearch]# vi values.yaml
-```    
-
-<br/>
-
-```bash
-    210   storageClass: "nfs-client"
-    211   accessModes:
-    212     - ReadWriteOnce
-    213   size: 50Gi
-```  
-
-
-설치를 진행 합니다.  
-
-<br/>
-
-```bash
-[root@bastion opensearch]# helm install opensearch  opensearch/opensearch -f opensearch_values.yaml -n opensearch
-WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
-NAME: opensearch
-LAST DEPLOYED: Thu Oct  5 18:20:09 2023
-NAMESPACE: opensearch
-STATUS: deployed
-REVISION: 1
-TEST SUITE: None
-NOTES:
-Watch all cluster members come up.
-  $ kubectl get pods --namespace=opensearch -l app.kubernetes.io/component=opensearch-cluster-master -w
-```  
-
-
-<br/>
-
-정상적으로 설치가 되어 있는지 확인한다.  
-
-```bash
-[root@bastion opensearch]# kubectl get po -n opensearch
-NAME                          READY   STATUS    RESTARTS   AGE
-opensearch-cluster-master-0   1/1     Running   0          4m
-opensearch-cluster-master-1   1/1     Running   0          22s
-opensearch-cluster-master-2   1/1     Running   0          2m44s
-[root@bastion opensearch]# kubectl get svc -n opensearch
-NAME                                 TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)                      AGE
-opensearch-cluster-master            ClusterIP   172.30.175.101   <none>        9200/TCP,9300/TCP            7m56s
-opensearch-cluster-master-headless   ClusterIP   None             <none>        9200/TCP,9300/TCP,9600/TCP   7m56s
-[root@bastion opensearch]# kubectl get pvc -n opensearch
-NAME                                                    STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   AGE
-opensearch-cluster-master-opensearch-cluster-master-0   Bound    pvc-6bf577dd-14ff-4076-bca4-132a0dfb4203   50Gi       RWO            nfs-client     8m
-opensearch-cluster-master-opensearch-cluster-master-1   Bound    pvc-d283ed3c-4f15-484d-9197-45ae944b1f8e   50Gi       RWO            nfs-client     8m
-opensearch-cluster-master-opensearch-cluster-master-2   Bound    pvc-5b2d0dc9-9c51-4fa5-97ce-bf862e3c19f9   50Gi       RWO            nfs-client     7m59s
-```
-
-<br/>
-
-dashboard 를 설치를 하기 위해 helm 설정을 합니다.  
-
-<br/>
-
-```bash
-[root@bastion opensearch]# helm search repo opensearch
-WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
-NAME                            	CHART VERSION	APP VERSION	DESCRIPTION
-bitnami/opensearch              	0.2.3        	2.10.0     	OpenSearch is a scalable open-source solution f...
-opensearch/opensearch           	2.15.0       	2.10.0     	A Helm chart for OpenSearch
-opensearch/opensearch-dashboards	2.13.0       	2.10.0     	A Helm chart for OpenSearch Dashboards
-[root@bastion opensearch]# helm show values opensearch/opensearch-dashboards > dashboard_values.yaml
-WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
-```
-
-<br/>
-
-아래와 같이 환경에 맞게 수정합니다.  
-- dashboard_values.yaml    
-
-
-```bash
-      9 replicaCount: 2
-    ...  
-    188 resources:
-    189   requests:
-    190     cpu: "100m"
-    191     memory: "512M"
-    192   limits:
-    193     cpu: "1000m"
-    194     memory: "1024M"
-```  
-
-<br/>
-
-Dashboard 설치를 합니다.  
-
-```bash
-[root@bastion opensearch]# helm install opensearch-dashboard  opensearch/opensearch-dashboards -f dashboard_values.yaml -n opensearch
-WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
-NAME: opensearch-dashboard
-LAST DEPLOYED: Thu Oct  5 18:30:31 2023
-NAMESPACE: opensearch
-STATUS: deployed
-REVISION: 1
-TEST SUITE: None
-NOTES:
-1. Get the application URL by running these commands:
-  export POD_NAME=$(kubectl get pods --namespace opensearch -l "app.kubernetes.io/name=opensearch-dashboards,app.kubernetes.io/instance=opensearch-dashboard" -o jsonpath="{.items[0].metadata.name}")
-  export CONTAINER_PORT=$(kubectl get pod --namespace opensearch $POD_NAME -o jsonpath="{.spec.containers[0].ports[0].containerPort}")
-  echo "Visit http://127.0.0.1:8080 to use your application"
-  kubectl --namespace opensearch port-forward $POD_NAME 8080:$CONTAINER_PORT
-[root@bastion opensearch]# kubectl get po -n opensearch
-NAME                                                         READY   STATUS    RESTARTS   AGE
-opensearch-cluster-master-0                                  1/1     Running   0          6m56s
-opensearch-cluster-master-1                                  1/1     Running   0          3m18s
-opensearch-cluster-master-2                                  1/1     Running   0          5m40s
-opensearch-dashboard-opensearch-dashboards-878bcb586-cgz9g   1/1     Running   0          23s
-opensearch-dashboard-opensearch-dashboards-878bcb586-fcxsb   1/1     Running   0          23s
-[root@bastion opensearch]# kubectl get svc -n opensearch
-NAME                                         TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)                      AGE
-opensearch-cluster-master                    ClusterIP   172.30.175.101   <none>        9200/TCP,9300/TCP            10m
-opensearch-cluster-master-headless           ClusterIP   None             <none>        9200/TCP,9300/TCP,9600/TCP   10m
-opensearch-dashboard-opensearch-dashboards   ClusterIP   172.30.185.79    <none>        5601/TCP                     32s
-```
-
-
-<br/>
-
-웹 브라우저에서 Dashboard에 접속하기 위해 route 를 생성합니다.  
-
-```bash
-[root@bastion opensearch]# vi opensearch_route.yaml
-apiVersion: route.openshift.io/v1
-kind: Route
-metadata:
-  labels:
-    app : opensearch
-  name: opensearch
-spec:
-  host: opensearch.apps.okd4.ktdemo.duckdns.org
-  port:
-    targetPort: http
-  tls:
-    insecureEdgeTerminationPolicy: Allow
-    termination: edge
-  to:
-    kind: Service
-    name: opensearch-dashboard-opensearch-dashboards
-    weight: 100
-  wildcardPolicy: None
-```
-
-<br/>
-
-적용하고 생성된 route를 확인합니다.  
-
-```bash  
-[root@bastion opensearch]# kubectl apply -f opensearch_dashboard_route.yaml -n opensearch
-route.route.openshift.io/opensearch created
-[root@bastion opensearch]# kubectl get route -n opensearch
-NAME         HOST/PORT                                 PATH   SERVICES                                     PORT   TERMINATION   WILDCARD
-opensearch   opensearch.apps.okd4.ktdemo.duckdns.org          opensearch-dashboard-opensearch-dashboards   http   edge/Allow    None
-```  
-
-<br/>
-
-웹브라우저에서 https://opensearch.apps.okd4.ktdemo.duckdns.org/ 를 입력하면 로그인 하는 창이 나오고
-admin/admin 으로 로그인 한다.  
-
-
-<img src="./assets/opensearch_0.png" style="width: 60%; height: auto;"/>
-
-
-
-<br/>
-
-
-### Elastic Stack 설치  
-
-<br/> 
-
-`elastic` namespace를 생성합니다.  
-
-<br/>
-
-```bash
-[root@bastion ~]# oc new-project elastic
-Now using project "elastic" on server "https://api.okd4.ktdemo.duckdns.org:6443".
-
-You can add applications to this project with the 'new-app' command. For example, try:
-
-    oc new-app rails-postgresql-example
-
-to build a new example application in Ruby. Or use kubectl to deploy a simple Kubernetes application:
-
-    kubectl create deployment hello-node --image=k8s.gcr.io/e2e-test-images/agnhost:2.33 -- /agnhost serve-hostname
-```
-
-<br/>
-
-node에 label을 추가한다.  
-
-```bash
-[root@bastion elastic]# kubectl edit node okd-4.okd4.ktdemo.duckdns.org -n elastic
-node/okd-4.okd4.ktdemo.duckdns.org edited
-```  
-
-
-```bash
-     18   labels:
-     19     beta.kubernetes.io/arch: amd64
-     20     beta.kubernetes.io/os: linux
-     21     edu2: "true"
-     22     elastic: "true"
-```  
-
-<br/>
-
-namespace 에 annotation 설정을 하고 권한을 할당 합니다.     
-
-```bash
-      8   annotations:
-      9     openshift.io/description: ""
-     10     openshift.io/display-name: ""
-     11     openshift.io/node-selector: elastic=true
-     12     openshift.io/requester: root
-```  
-
-<br/>
-
-
-```bash
-[root@bastion ~]# kubectl edit namespace elastic -n elastic
-namespace/elastic edited
-[root@bastion ~]# oc adm policy add-scc-to-user anyuid -z default -n elastic
-clusterrole.rbac.authorization.k8s.io/system:elastic:scc:anyuid added: "default"
-[root@bastion ~]# oc adm policy add-scc-to-user privileged -z default -n elastic
-clusterrole.rbac.authorization.k8s.io/system:elastic:scc:privileged added: "default"
-```
-
-<br/>
-
-elastic helm repository를 추가합니다.  
-
-```bash
-[root@bastion ~]# helm repo add elastic https://helm.elastic.co
-WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
-"elastic" has been added to your repositories
-[root@bastion ~]# helm repo list
-WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
-NAME                           	URL
-nfs-subdir-external-provisioner	https://kubernetes-sigs.github.io/nfs-subdir-external-provisioner
-harbor                         	https://helm.goharbor.io
-bitnami                        	https://charts.bitnami.com/bitnami
-kubecost                       	https://kubecost.github.io/cost-analyzer/
-aspecto                        	https://aspecto-io.github.io/helm-charts
-kubescape                      	https://kubescape.github.io/helm-charts/
-opensearch                     	https://opensearch-project.github.io/helm-charts/
-elastic                        	https://helm.elastic.co
-[root@bastion ~]# helm search repo elastic
-WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
-NAME                     	CHART VERSION	APP VERSION	DESCRIPTION
-bitnami/elasticsearch    	19.13.0      	8.10.2     	Elasticsearch is a distributed search and analy...
-elastic/eck-elasticsearch	0.7.0        	           	Elasticsearch managed by the ECK operator
-elastic/elasticsearch    	8.5.1        	8.5.1      	Official Elastic helm chart for Elasticsearch
-elastic/apm-attacher     	0.1.0        	           	A Helm chart installing the Elastic APM mutatin...
-elastic/apm-server       	8.5.1        	8.5.1      	Official Elastic helm chart for Elastic APM Server
-elastic/eck-agent        	0.7.0        	           	Elastic Agent managed by the ECK operator
-elastic/eck-beats        	0.7.0        	           	Elastic Beats managed by the ECK operator
-elastic/eck-fleet-server 	0.7.0        	           	Elastic Fleet Server as an Agent managed by the...
-elastic/eck-kibana       	0.7.0        	           	Kibana managed by the ECK operator
-elastic/eck-operator     	2.9.0        	2.9.0      	Elastic Cloud on Kubernetes (ECK) operator
-elastic/eck-operator-crds	2.9.0        	2.9.0      	ECK operator Custom Resource Definitions
-elastic/eck-stack        	0.7.0        	           	Elastic Stack managed by the ECK Operator
-elastic/filebeat         	8.5.1        	8.5.1      	Official Elastic helm chart for Filebeat
-elastic/kibana           	8.5.1        	8.5.1      	Official Elastic helm chart for Kibana
-elastic/logstash         	8.5.1        	8.5.1      	Official Elastic helm chart for Logstash
-elastic/metricbeat       	8.5.1        	8.5.1      	Official Elastic helm chart for Metricbeat
-elastic/pf-host-agent    	8.10.2       	8.10.2     	Hyperscaler software efficiency. For everybody.
-bitnami/dataplatform-bp2 	12.0.5       	1.0.1      	DEPRECATED This Helm chart can be used for the ...
-bitnami/kibana           	10.5.5       	8.10.2     	Kibana is an open source, browser based analyti...
-[root@bastion ~]# mkdir -p elastic
-[root@bastion ~]# cd elastic
-``` 
-
-<br/>
-
-values.yaml 화일을 생성합니다.    
-
-```bash 
-[root@bastion elastic]# helm show values elastic/elasticsearch > values.yaml
-WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
-[root@bastion elastic]# ls
-values.yaml
-```  
-
-<br/>
-
-master용 pvc를 생성한다.  
-
-
-```bash
-[root@bastion elastic]# vi elasticsearch-master-0-pvc.yaml
-```  
-<br/>
-
-```bash
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: elasticsearch-master-elasticsearch-master-0
-spec:
-  accessModes:
-  - ReadWriteOnce
-  resources:
-    requests:
-      storage: 10Gi
-  storageClassName: nfs-client
-```
-
-<br/>
-
-```bash
-[root@bastion elastic]# kubectl apply -f elasticsearch-master-0-pvc.yaml -n elastic
-[root@bastion elastic]# kubectl get pvc -n elastic
-NAME                                          STATUS    VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   AGE
-elasticsearch-master-elasticsearch-master-0   Bound    pvc-d0e92fc9-68a5-428c-a17e-9c7ea2d37787   10Gi       RWO            nfs-client     86m
-```
-
-
-<br/>
-
-snapshot용 pvc를 생성합니다.    
-
-```bash
-[root@bastion elastic]# vi elasticsearch-snapshot-pvc.yaml
-```  
-<br/>
-
-```bash
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: elasticsearch-snapshot-pvc
-spec:
-  accessModes:
-  - ReadWriteOnce
-  resources:
-    requests:
-      storage: 20Gi
-  storageClassName: nfs-client
-```
-
-<br/>
-
-```bash
-[root@bastion elastic]# kubectl apply -f elasticsearch-snapshot-pvc.yaml -n elastic
-[root@bastion elastic]# kubectl get pvc -n elastic
-NAME                                          STATUS    VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   AGE
-elasticsearch-snapshot-pvc                    Bound     pvc-40957b18-6ce1-4192-af8b-78752163d721   20Gi       RWO            nfs-client     5s
-```
-
-<br/>
-
-values.yaml 의 화일에서 storageClass 는 `nfs-client` 인 dynamic provisioning 으로 설정한다.     
-
-<br/>
-
-```bash
-[root@bastion opensearch]# vi values.yaml
-```    
-
-<br/>
-
-```bash
-     24 replicas: 1  # pod 갯수
-     25 minimumMasterNodes: 1  # 최소 마스터 노드수 
-     ...
-     31 esConfig: #  {}
-     32   elasticsearch.yml: |
-     33     path.repo: "/usr/share/elasticsearch/snapshot"
-     ...
-     60 secret:
-     61   enabled: true
-     62   password: "elastic" # 비밀번호를 입력한다.
-     ...
-     80 imageTag: "8.9.1"
-     ...
-     89 esJavaOpts: "-Xmx5g -Xms5g -Djna.tmpdir=/usr/share/elasticsearch/tmp" # example: "-Xmx1g -Xms1g"
-     90
-     91 resources:
-     92   requests:
-     93     cpu: "1"
-     94     memory: "2Gi"
-     95   limits:
-     96     cpu: "8"
-     97     memory: "20Gi"
-     ...
-    109 volumeClaimTemplate:  # master volume
-    110   accessModes: ["ReadWriteOnce"]
-    111   resources:
-    112     requests:
-    113       storage: 10Gi
-     ...
-    147 extraVolumes: # []
-    148  - name: snapshot #extras
-    149    persistentVolumeClaim:
-    150      claimName: elasticsearch-snapshot-pvc
-    151 #   emptyDir: {}
-    152
-    153 extraVolumeMounts: # []
-    154  - name: snapshot # extras
-    155    mountPath: /usr/share/elasticsearch/snapshot #/usr/share/extras
-    156 #   readOnly: true
-     ...
-    178 antiAffinity: "soft"
-     ...
-    253 nodeSelector: # {}
-    254   elastic: "true" 
-```  
-
-
-<br/>
-
-
-설치를 진행 합니다.  
-
-<br/>
-
-```bash
-[root@bastion elastic]# helm install elasticsearch elastic/elasticsearch -f values.yaml -n elastic
-WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
-NAME: elasticsearch
-LAST DEPLOYED: Fri Oct  6 13:01:43 2023
-NAMESPACE: elastic
-STATUS: deployed
-REVISION: 1
-NOTES:
-1. Watch all cluster members come up.
-  $ kubectl get pods --namespace=elastic -l app=elasticsearch-master -w
-2. Retrieve elastic user's password.
-  $ kubectl get secrets --namespace=elastic elasticsearch-master-credentials -ojsonpath='{.data.password}' | base64 -d
-3. Test cluster health using Helm test.
-  $ helm --namespace=elastic test elasticsearch
-```  
-
-<br/>
-
-정상적으로 설치가 되어 있는지 확인한다.  
-
-```bash
-[root@bastion elastic]# kubectl get po -n elastic
-NAME                     READY   STATUS    RESTARTS   AGE
-elasticsearch-master-0   1/1     Running   0          102s
-[root@bastion elastic]# kubectl get svc -n elastic
-NAME                            TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)             AGE
-elasticsearch-master            ClusterIP   172.30.217.171   <none>        9200/TCP,9300/TCP   2m6s
-elasticsearch-master-headless   ClusterIP   None             <none>        9200/TCP,9300/TCP   2m6s
-```
-
-<br/>
-
-### trobleshooting
-
-<br/>
-...
-
-
-<br/>
-
-
-#### kibana 설치
-
-
-<br/>
-
-
-kibana 를 설치를 하기 위해 helm 설정을 합니다.  
-
-<br/>
-
-```bash
-[root@bastion elastic]# helm search repo kibana
-WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
-NAME                     	CHART VERSION	APP VERSION	DESCRIPTION
-bitnami/kibana           	10.5.5       	8.10.2     	Kibana is an open source, browser based analyti...
-elastic/eck-kibana       	0.7.0        	           	Kibana managed by the ECK operator
-elastic/kibana           	8.5.1        	8.5.1      	Official Elastic helm chart for Kibana
-elastic/eck-operator     	2.7.0        	2.7.0      	A Helm chart for deploying the Elastic Cloud on...
-elastic/eck-stack        	0.4.0        	           	A Parent Helm chart for all Elastic stack resou...
-bitnami/dataplatform-bp2 	12.0.5       	1.0.1      	DEPRECATED This Helm chart can be used for the ...
-elastic/eck-operator-crds	2.9.0        	2.9.0      	ECK operator Custom Resource Definitions
-[root@bastion elastic]# helm show values elastic/kibana > kibana_values.yaml
-```
-
-<br/>
-
-아래와 같이 환경에 맞게 수정합니다.  
-- kibana_values.yaml    
-
-```bash
-     12 extraEnvs:
-     13   - name: "NODE_OPTIONS"
-     14     value: "--max-old-space-size=3072"
-     ...  
-     41 imageTag: "8.9.1"
-     ...     
-     52 resources:
-     53   requests:
-     54     cpu: "1"
-     55     memory: "2Gi"
-     56 #  limits:
-     57 #    cpu: "1000m"
-     58 #    memory: "2Gi"
-     ...
-    162 nodeSelector: #{}
-    163   elastic: 'true'
-```  
-
-<br/>
-
-kibana 설치를 합니다.  
-
-```bash
-[root@bastion elastic]# helm install kibana elastic/kibana -f kibana_values.yaml -n elastic
-WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
-NAME: kibana
-LAST DEPLOYED: Fri Oct  6 15:45:44 2023
-NAMESPACE: elastic
-STATUS: deployed
-REVISION: 1
-TEST SUITE: None
-NOTES:
-1. Watch all containers come up.
-  $ kubectl get pods --namespace=elastic -l release=kibana -w
-2. Retrieve the elastic user's password.
-  $ kubectl get secrets --namespace=elastic elasticsearch-master-credentials -ojsonpath='{.data.password}' | base64 -d
-3. Retrieve the kibana service account token.
-  $ kubectl get secrets --namespace=elastic kibana-kibana-es-token -ojsonpath='{.data.token}' | base64 -d
-```  
-
-<br/>
-
-```bash  
-[root@bastion elastic]# kubectl get svc -n elastic
-NAME                            TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)             AGE
-elasticsearch-master            ClusterIP   172.30.48.68     <none>        9200/TCP,9300/TCP   106m
-elasticsearch-master-headless   ClusterIP   None             <none>        9200/TCP,9300/TCP   106m
-kibana-kibana                   ClusterIP   172.30.252.244   <none>        5601/TCP            49s
-[root@bastion elastic]# kubectl get po -n elastic
-NAME                           READY   STATUS    RESTARTS   AGE
-elasticsearch-master-0         1/1     Running   0          8m57s
-kibana-kibana-d8dcc5f6-4stg7   1/1     Running   0          2m15s
-```
-
-
-<br/>
-
-웹 브라우저에서 kibana 에 접속하기 위해 route 를 생성합니다.  
-
-```bash
-[root@bastion elastic]# vi kibana_route.yaml
-apiVersion: route.openshift.io/v1
-kind: Route
-metadata:
-  labels:
-    app : kibana
-  name: kibana
-spec:
-  host: kibana.apps.okd4.ktdemo.duckdns.org
-  port:
-    targetPort: http
-  tls:
-    insecureEdgeTerminationPolicy: Allow
-    termination: edge
-  to:
-    kind: Service
-    name: kibana-kibana
-    weight: 100
-  wildcardPolicy: None
-```
-
-<br/>
-
-적용하고 생성된 route를 확인합니다.  
-
-```bash  
-[root@bastion elastic]# kubectl apply -f kibana_route.yaml -n elastic
-route.route.openshift.io/kibana created
-[root@bastion elastic]# kubectl get route -n elastic
-NAME     HOST/PORT                             PATH   SERVICES        PORT   TERMINATION   WILDCARD
-kibana   kibana.apps.okd4.ktdemo.duckdns.org          kibana-kibana   http   edge/Allow    None
-```  
-
-<br/>
-
-웹브라우저에서 https://kibana.apps.okd4.ktdemo.duckdns.org/ 를 입력하면 로그인 하는 창이 나오고
-elastic/비밀번호 로 로그인 한다.  
-
-
-<img src="./assets/kibana_0.png" style="width: 60%; height: auto;"/>
-
-
-
-
-<br/>
-
-
-
-<br/>
-
-### metric 정리
-
-<br/>
-
-
-##### metrics 서버 동작 원리
-
-<br/>
-
-
-```bash
-[root@bastion opensearch]# kubectl get po -n openshift-monitoring
-NAME                                                    READY   STATUS    RESTARTS       AGE
-alertmanager-main-0                                     6/6     Running   8              39d
-cluster-monitoring-operator-585c6bf574-pzqth            2/2     Running   13 (22h ago)   39d
-kube-state-metrics-7fc57d8785-r52m9                     3/3     Running   9 (22h ago)    39d
-node-exporter-29s9w                                     2/2     Running   0              22d
-node-exporter-5sg8p                                     2/2     Running   2              22d
-node-exporter-dvtf9                                     2/2     Running   2              22d
-node-exporter-p6khv                                     2/2     Running   4              39d
-openshift-state-metrics-866ff84554-clxp8                3/3     Running   4              39d
-prometheus-adapter-5696bbcf66-bn7f7                     1/1     Running   0              6d1h
-prometheus-k8s-0                                        6/6     Running   6              39d
-prometheus-operator-864d498767-5298f                    2/2     Running   4 (22h ago)    39d
-prometheus-operator-admission-webhook-cf7d8fb4d-4d9wj   1/1     Running   3              39d
-telemeter-client-dcb65ff66-pxwrj                        3/3     Running   4              39d
-thanos-querier-767bcd5786-nntjm                         6/6     Running   7              39d
-```   
-
-<br/>
-
-cadvisor에 접속하기 위한 token 값을 구한다.  
-
-```bash
-[root@bastion opensearch]# kubectl get secrets -n openshift-monitoring
-NAME                                                    TYPE                                  DATA   AGE
-...
-kube-state-metrics-dockercfg-x7jx5                      kubernetes.io/dockercfg               1      39d
-kube-state-metrics-kube-rbac-proxy-config               Opaque                                1      39d
-kube-state-metrics-tls                                  kubernetes.io/tls                     2      39d
-kube-state-metrics-token-fx5r8                          kubernetes.io/service-account-token   4      39d
-metrics-client-certs                                    Opaque                                2      39d
-node-exporter-dockercfg-zh5v5                           kubernetes.io/dockercfg               1      39d
-node-exporter-kube-rbac-proxy-config                    Opaque                                1      39d
-node-exporter-tls                                       kubernetes.io/tls                     2      39d
-node-exporter-token-gsg9m                               kubernetes.io/service-account-token   4      39d
-openshift-state-metrics-dockercfg-pm5lp                 kubernetes.io/dockercfg               1      39d
-openshift-state-metrics-kube-rbac-proxy-config          Opaque                                1      39d
-openshift-state-metrics-tls                             kubernetes.io/tls                     2      39d
-openshift-state-metrics-token-sqd8x                     kubernetes.io/service-account-token   4      39d
-...
-```   
-
-<br/>
-
-`state-metrics-token` 이 들어가는 secret를 찾아서 token 값을 확인한다.  
-
-
-```bash
-[root@bastion opensearch]# TOKEN=`echo $(kubectl get secrets -n openshift-monitoring openshift-state-metrics-token-sqd8x -o jsonpath={.data.token}) | base64 -d`
-```  
-
-
-<br/>
-
-
-```bash
-curl https://okd-1.okd4.ktdemo.duckdns.org:10250/stats/summary -k -H "Authorization: Bearer $TOKEN"
-```
-
-<br/>
-
-```bash
-[root@bastion opensearch]# kubectl get --raw /apis/metrics.k8s.io | jq
-{
-  "kind": "APIGroup",
-  "apiVersion": "v1",
-  "name": "metrics.k8s.io",
-  "versions": [
-    {
-      "groupVersion": "metrics.k8s.io/v1beta1",
-      "version": "v1beta1"
-    }
-  ],
-  "preferredVersion": {
-    "groupVersion": "metrics.k8s.io/v1beta1",
-    "version": "v1beta1"
-  }
-}
-[root@bastion opensearch]# kubectl get --raw /apis/metrics.k8s.io/v1beta1/nodes | jq
-{
-  "kind": "NodeMetricsList",
-  "apiVersion": "metrics.k8s.io/v1beta1",
-  "metadata": {},
-  "items": [
-    {
-      "metadata": {
-        "name": "okd-1.okd4.ktdemo.duckdns.org",
-        "creationTimestamp": "2023-10-10T09:07:57Z",
-        "labels": {
-          "beta.kubernetes.io/arch": "amd64",
-          "beta.kubernetes.io/os": "linux",
-          "kubernetes.io/arch": "amd64",
-          "kubernetes.io/hostname": "okd-1.okd4.ktdemo.duckdns.org",
-          "kubernetes.io/os": "linux",
-          "node-role.kubernetes.io/control-plane": "",
-          "node-role.kubernetes.io/master": "",
-          "node.openshift.io/os_id": "fedora"
-        }
-      },
-      "timestamp": "2023-10-10T09:07:57Z",
-      "window": "5m0s",
-      "usage": {
-        "cpu": "1441m",
-        "memory": "11049704Ki"
-      }
-    },
-    {
-      "metadata": {
-        "name": "okd-2.okd4.ktdemo.duckdns.org",
-        "creationTimestamp": "2023-10-10T09:07:57Z",
-        "labels": {
-          "beta.kubernetes.io/arch": "amd64",
-          "beta.kubernetes.io/os": "linux",
-          "devops": "true",
-          "edu": "true",
-          "kubernetes.io/arch": "amd64",
-          "kubernetes.io/hostname": "okd-2.okd4.ktdemo.duckdns.org",
-          "kubernetes.io/os": "linux",
-          "node-role.kubernetes.io/worker": "",
-          "node.openshift.io/os_id": "fedora"
-        }
-      },
-      "timestamp": "2023-10-10T09:07:57Z",
-      "window": "5m0s",
-      "usage": {
-        "cpu": "361m",
-        "memory": "4976272Ki"
-      }
-    },
-    {
-      "metadata": {
-        "name": "okd-3.okd4.ktdemo.duckdns.org",
-        "creationTimestamp": "2023-10-10T09:07:57Z",
-        "labels": {
-          "beta.kubernetes.io/arch": "amd64",
-          "beta.kubernetes.io/os": "linux",
-          "devops": "true",
-          "kubernetes.io/arch": "amd64",
-          "kubernetes.io/hostname": "okd-3.okd4.ktdemo.duckdns.org",
-          "kubernetes.io/os": "linux",
-          "node-role.kubernetes.io/worker": "",
-          "node.openshift.io/os_id": "fedora"
-        }
-      },
-      "timestamp": "2023-10-10T09:07:57Z",
-      "window": "5m0s",
-      "usage": {
-        "cpu": "180m",
-        "memory": "3077016Ki"
-      }
-    }
-  ]
-}
-```   
-
-<br/>
-
-pods 들에 대한 metric 도 확인 할 수 있다.  
-
-```bash
-kubectl get --raw /apis/metrics.k8s.io/v1beta1/pods | jq
-```
-
-<br/>
-
-
-### Opensearch 설정 ( S3 plugin )
-
-<br/>
-
-참고 :
-- https://opensearch.org/docs/latest/install-and-configure/plugins/  
-
-
-<br/>
-
-S3 snapshot 을 위한 plugin을 설치해야 한다.   
-
-opensearch 모든 노드 에서 아래 명령어로 plugin 을 추가 한다.   
-
-```bash
-sh-5.2$ bin/opensearch-plugin install repository-s3
--> Installing repository-s3
--> Downloading repository-s3 from opensearch
-[=================================================] 100%?? 
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-@     WARNING: plugin requires additional permissions     @
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-* java.io.FilePermission config#plus read
-* java.lang.RuntimePermission accessDeclaredMembers
-* java.lang.RuntimePermission getClassLoader
-* java.lang.RuntimePermission setContextClassLoader
-* java.lang.reflect.ReflectPermission suppressAccessChecks
-* java.net.NetPermission setDefaultAuthenticator
-* java.net.SocketPermission * connect,resolve
-* java.util.PropertyPermission aws.configFile read,write
-* java.util.PropertyPermission aws.sharedCredentialsFile read,write
-* java.util.PropertyPermission opensearch.allow_insecure_settings read,write
-* java.util.PropertyPermission opensearch.path.conf read,write
-See http://docs.oracle.com/javase/8/docs/technotes/guides/security/permissions.html
-for descriptions of what these permissions allow and the associated risks.
-
-Continue with installation? [y/N]y
--> Installed repository-s3 with folder name repository-s3
-```  
-
-<br/>
-
-```bash
-sh-5.2$ bin/opensearch-keystore add s3.client.okd.access_key
-Enter value for s3.client.okd.access_key: 
-sh-5.2$ bin/opensearch-keystore add s3.client.okd.secret_key
-Enter value for s3.client.okd.secret_key: 
-```
-
-<br/>
-
-Dev Tool에서 아래 구문을 실행을 한다.
-
-```bash
-POST _nodes/reload_secure_settings
-```
-
-<br/>
-
-아래 처럼 응답이오면 적용이 된것이다.  
-
-```bash
-{
-  "_nodes": {
-    "total": 3,
-    "successful": 3,
-    "failed": 0
-  },
-  "cluster_name": "opensearch-cluster",
-  "nodes": {
-    "_sVxIlViSgOQ6VcgQd9Egg": {
-      "name": "opensearch-cluster-master-1"
-    },
-    "8jZgt4yHRwOzAOYXp0nmXA": {
-      "name": "opensearch-cluster-master-0"
-    },
-    "1K16F2RJT0G4IQObyZwv4g": {
-      "name": "opensearch-cluster-master-2"
-    }
-  }
-}
-```
-
-<br/>  
-
-plugin list 를 확인한다.  
-
-```bash
-GET _cat/plugins
-```  
-
-<br/>
-
-```bash
-opensearch-cluster-master-2 opensearch-alerting                  2.10.0.0
-opensearch-cluster-master-2 opensearch-anomaly-detection         2.10.0.0
-opensearch-cluster-master-2 opensearch-asynchronous-search       2.10.0.0
-opensearch-cluster-master-2 opensearch-cross-cluster-replication 2.10.0.0
-opensearch-cluster-master-2 opensearch-custom-codecs             2.10.0.0
-opensearch-cluster-master-2 opensearch-geospatial                2.10.0.0
-opensearch-cluster-master-2 opensearch-index-management          2.10.0.0
-opensearch-cluster-master-2 opensearch-job-scheduler             2.10.0.0
-opensearch-cluster-master-2 opensearch-knn                       2.10.0.0
-opensearch-cluster-master-2 opensearch-ml                        2.10.0.0
-opensearch-cluster-master-2 opensearch-neural-search             2.10.0.0
-opensearch-cluster-master-2 opensearch-notifications             2.10.0.0
-opensearch-cluster-master-2 opensearch-notifications-core        2.10.0.0
-opensearch-cluster-master-2 opensearch-observability             2.10.0.0
-opensearch-cluster-master-2 opensearch-performance-analyzer      2.10.0.0
-opensearch-cluster-master-2 opensearch-reports-scheduler         2.10.0.0
-opensearch-cluster-master-2 opensearch-security                  2.10.0.0
-opensearch-cluster-master-2 opensearch-security-analytics        2.10.0.0
-opensearch-cluster-master-2 opensearch-sql                       2.10.0.0
-opensearch-cluster-master-0 opensearch-alerting                  2.10.0.0
-opensearch-cluster-master-0 opensearch-anomaly-detection         2.10.0.0
-opensearch-cluster-master-0 opensearch-asynchronous-search       2.10.0.0
-opensearch-cluster-master-0 opensearch-cross-cluster-replication 2.10.0.0
-opensearch-cluster-master-0 opensearch-custom-codecs             2.10.0.0
-opensearch-cluster-master-0 opensearch-geospatial                2.10.0.0
-opensearch-cluster-master-0 opensearch-index-management          2.10.0.0
-opensearch-cluster-master-0 opensearch-job-scheduler             2.10.0.0
-opensearch-cluster-master-0 opensearch-knn                       2.10.0.0
-opensearch-cluster-master-0 opensearch-ml                        2.10.0.0
-opensearch-cluster-master-0 opensearch-neural-search             2.10.0.0
-opensearch-cluster-master-0 opensearch-notifications             2.10.0.0
-opensearch-cluster-master-0 opensearch-notifications-core        2.10.0.0
-opensearch-cluster-master-0 opensearch-observability             2.10.0.0
-opensearch-cluster-master-0 opensearch-performance-analyzer      2.10.0.0
-opensearch-cluster-master-0 opensearch-reports-scheduler         2.10.0.0
-opensearch-cluster-master-0 opensearch-security                  2.10.0.0
-opensearch-cluster-master-0 opensearch-security-analytics        2.10.0.0
-opensearch-cluster-master-0 opensearch-sql                       2.10.0.0
-opensearch-cluster-master-1 opensearch-alerting                  2.10.0.0
-opensearch-cluster-master-1 opensearch-anomaly-detection         2.10.0.0
-opensearch-cluster-master-1 opensearch-asynchronous-search       2.10.0.0
-opensearch-cluster-master-1 opensearch-cross-cluster-replication 2.10.0.0
-opensearch-cluster-master-1 opensearch-custom-codecs             2.10.0.0
-opensearch-cluster-master-1 opensearch-geospatial                2.10.0.0
-opensearch-cluster-master-1 opensearch-index-management          2.10.0.0
-opensearch-cluster-master-1 opensearch-job-scheduler             2.10.0.0
-opensearch-cluster-master-1 opensearch-knn                       2.10.0.0
-opensearch-cluster-master-1 opensearch-ml                        2.10.0.0
-opensearch-cluster-master-1 opensearch-neural-search             2.10.0.0
-opensearch-cluster-master-1 opensearch-notifications             2.10.0.0
-opensearch-cluster-master-1 opensearch-notifications-core        2.10.0.0
-opensearch-cluster-master-1 opensearch-observability             2.10.0.0
-opensearch-cluster-master-1 opensearch-performance-analyzer      2.10.0.0
-opensearch-cluster-master-1 opensearch-reports-scheduler         2.10.0.0
-opensearch-cluster-master-1 opensearch-security                  2.10.0.0
-opensearch-cluster-master-1 opensearch-security-analytics        2.10.0.0
-opensearch-cluster-master-1 opensearch-sql                       2.10.0.0
-```  
-
-
-<br/>
-
-`opensearch-cluster-master` statefulset을 재기동 한다.  
-
-```bash
-[root@bastion opensearch]# kubectl rollout restart statefulset opensearch-cluster-master -n opensearch
-statefulset.apps/opensearch-cluster-master restarted
-```
-
-<br/>
-
-재기동 이후 다시 terminal 로 들어가서 `repository-s3`을 확인한다.
-
-```bash
-sh-5.2$ ls plugins
-opensearch-alerting                   opensearch-geospatial        opensearch-neural-search         opensearch-reports-scheduler
-opensearch-anomaly-detection          opensearch-index-management  opensearch-notifications         opensearch-security
-opensearch-asynchronous-search        opensearch-job-scheduler     opensearch-notifications-core    opensearch-security-analytics
-opensearch-cross-cluster-replication  opensearch-knn               opensearch-observability         opensearch-sql
-opensearch-custom-codecs              opensearch-ml                opensearch-performance-analyzer  repository-s3
-```  
-
-<br/>
-
-opensearch dashboard deployment 를 재기동한다.      
-
-<img src="./assets/opensearch_deploy_restart_1.png" style="width: 80%; height: auto;"/>
-
-<br/>
-
-
-### LOGZ 테스트
-
-
-<br/>
-
-env_id 는 k8s cluster 이름을 명시하면 됨.  
-
-
-```bash
-helm install -n elastic  \
-  --set logs.enabled=true \
-  --set logzio-fluentd.secrets.logzioShippingToken='QGCDkINAfVsSfRiMYCMiUWHeXSBUMlAk' \
-  --set logzio-fluentd.secrets.logzioListener='listener.logz.io' \
-  --set logzio-fluentd.env_id='ktdemo1234' \
-  --set metricsOrTraces.enabled=true \
-  --set logzio-k8s-telemetry.metrics.enabled=true \
-  --set logzio-k8s-telemetry.secrets.MetricsToken='SIQFVioypfwhJxNrpjtklXJuuGOuJRKC' \
-  --set logzio-k8s-telemetry.secrets.ListenerHost='https://listener.logz.io:8053' \
-  --set logzio-k8s-telemetry.secrets.p8s_logzio_name='ktdemo1234' \
-  --set logzio-k8s-telemetry.enableMetricsFilter.aks=true \
-  --set logzio-k8s-telemetry.traces.enabled=true \
-  --set logzio-k8s-telemetry.secrets.TracesToken='wyHtBnJHexFohLTQlCqwIezhckHWjbEP' \
-  --set logzio-k8s-telemetry.secrets.LogzioRegion='us' \
-  --set logzio-k8s-telemetry.spm.enabled=true \
-  --set logzio-k8s-telemetry.secrets.env_id='ktdemo1234' \
-  --set logzio-k8s-telemetry.secrets.SpmToken='SIQFVioypfwhJxNrpjtklXJuuGOuJRKC' \
-  --set securityReport.enabled=true \
-  --set logzio-trivy.env_id='ktdemo1234' \
-  --set logzio-trivy.secrets.logzioShippingToken='QGCDkINAfVsSfRiMYCMiUWHeXSBUMlAk' \
-  --set logzio-trivy.secrets.logzioListener='listener.logz.io' \
-logzio-monitoring logzio-helm/logzio-monitoring
-```
-
-<br/>
-
-```bash
-[root@bastion elastic]# helm repo add logzio-helm https://logzio.github.io/logzio-helm
-WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
-"logzio-helm" has been added to your repositories
-[root@bastion elastic]# helm update
-WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
-Error: unknown command "update" for "helm"
-Run 'helm --help' for usage.
-[root@bastion elastic]# helm repo update
-WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
-Hang tight while we grab the latest from your chart repositories...
-...Successfully got an update from the "logzio-helm" chart repository
-...Successfully got an update from the "kubecost" chart repository
-...Successfully got an update from the "opentelemetry" chart repository
-...Successfully got an update from the "harbor" chart repository
-...Successfully got an update from the "aspecto" chart repository
-...Successfully got an update from the "kubescape" chart repository
-...Successfully got an update from the "opensearch" chart repository
-...Successfully got an update from the "nfs-subdir-external-provisioner" chart repository
-...Successfully got an update from the "elastic" chart repository
-...Successfully got an update from the "jetstack" chart repository
-...Successfully got an update from the "bitnami" chart repository
-Update Complete. ⎈Happy Helming!⎈
-[root@bastion elastic]#helm install -n elastic  \
-  --set logs.enabled=true \
-  --set logzio-fluentd.secrets.logzioShippingToken='QGCDkINAfVsSfRiMYCMiUWHeXSBUMlAk' \
-  --set logzio-fluentd.secrets.logzioListener='listener.logz.io' \
-  --set logzio-fluentd.env_id='ktdemo1234' \
-  --set metricsOrTraces.enabled=true \
-  --set logzio-k8s-telemetry.metrics.enabled=true \
-  --set logzio-k8s-telemetry.secrets.MetricsToken='SIQFVioypfwhJxNrpjtklXJuuGOuJRKC' \
-  --set logzio-k8s-telemetry.secrets.ListenerHost='https://listener.logz.io:8053' \
-  --set logzio-k8s-telemetry.secrets.p8s_logzio_name='ktdemo1234' \
-  --set logzio-k8s-telemetry.enableMetricsFilter.aks=true \
-  --set logzio-k8s-telemetry.traces.enabled=true \
-  --set logzio-k8s-telemetry.secrets.TracesToken='wyHtBnJHexFohLTQlCqwIezhckHWjbEP' \
-  --set logzio-k8s-telemetry.secrets.LogzioRegion='us' \
-  --set logzio-k8s-telemetry.spm.enabled=true \
-  --set logzio-k8s-telemetry.secrets.env_id='ktdemo1234' \
-  --set logzio-k8s-telemetry.secrets.SpmToken='SIQFVioypfwhJxNrpjtklXJuuGOuJRKC' \
-  --set securityReport.enabled=true \
-  --set logzio-trivy.env_id='ktdemo1234' \
-  --set logzio-trivy.secrets.logzioShippingToken='QGCDkINAfVsSfRiMYCMiUWHeXSBUMlAk' \
-  --set logzio-trivy.secrets.logzioListener='listener.logz.io' \
-logzio-monitoring logzio-helm/logzio-monitoring
-WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
-W1012 09:07:29.877213   37330 warnings.go:70] unknown field "spec.replicas"
-NAME: logzio-monitoring
-LAST DEPLOYED: Thu Oct 12 09:07:22 2023
-NAMESPACE: elastic
-STATUS: deployed
-REVISION: 1
-TEST SUITE: None
-```  
-
-
-<br/>
-
-```bash
-[root@bastion elastic]# kubectl get po -n elastic
-NAME                                                          READY   STATUS      RESTARTS   AGE
-elasticsearch-master-0                                        1/1     Running     0          14h
-integration-server-deployment-7cdf9bbfb5-s6t2m                1/1     Running     0          10h
-kibana-kibana-f66c5d46d-6smhm                                 1/1     Running     0          14h
-logzio-monitoring-kube-state-metrics-7676f49c99-cbzt2         1/1     Running     0          115s
-logzio-monitoring-logzio-fluentd-ld4p9                        1/1     Running     0          114s
-logzio-monitoring-logzio-trivy-57cf4cd595-phpg5               1/1     Running     0          115s
-logzio-monitoring-otel-collector-ds-xzgrc                     1/1     Running     0          115s
-logzio-monitoring-otel-collector-spm-658468cdb9-hbv78         1/1     Running     0          115s
-logzio-monitoring-otel-collector-standalone-b68c5c4dd-7b4jk   1/1     Running     0          115s
-logzio-monitoring-prometheus-pushgateway-84464d8cbd-dljgd     1/1     Running     0          115s
-logzio-monitoring-trivy-operator-84865d6f79-h9jbs             1/1     Running     0          114s
-scan-vulnerabilityreport-57c6f5788b-srfvh                     0/1     Completed   0          96s
-scan-vulnerabilityreport-597bc9fbc9-gtcxr                     0/1     Init:0/1    0          1s
-scan-vulnerabilityreport-598f4fb5f4-s9s6v                     2/2     Running     0          97s
-scan-vulnerabilityreport-6698b65fd8-6w8xs                     2/3     NotReady    0          94s
-scan-vulnerabilityreport-67458979bb-bk7th                     1/1     Running     0          99s
-scan-vulnerabilityreport-6cdc487bd-pvhpp                      1/2     NotReady    0          92s
-scan-vulnerabilityreport-7f6f95947d-2xm8s                     0/1     Completed   0          92s
-scan-vulnerabilityreport-8545c8ff87-gprqh                     2/2     Running     0          98s
-scan-vulnerabilityreport-f9db6984d-hm67t                      0/1     Completed   0          96s
-scan-vulnerabilityreport-fd56c4b8b-28nxh                      1/1     Running     0          97s
-```
-
-<br/>
-
-node-exporter 권한을 할당 한다.  
-
-```bash
-[root@bastion elastic]# oc adm policy add-scc-to-user anyuid -z logzio-monitoring-prometheus-node-exporter -n elastic
-clusterrole.rbac.authorization.k8s.io/system:openshift:scc:anyuid added: "logzio-monitoring-prometheus-node-exporter"
-[root@bastion elastic]# oc adm policy add-scc-to-user privileged -z logzio-monitoring-prometheus-node-exporter -n elastic
-clusterrole.rbac.authorization.k8s.io/system:openshift:scc:privileged added: "logzio-monitoring-prometheus-node-exporter"
-```  
-
-<br/>
-
-<img src="./assets/logz_k8s_1.png" style="width: 80%; height: auto;"/>
-
-
-<br/>
-
-### signoz 설치
-
-<br/>
-
-
-### LOGZ 테스트
-
-
-<br/>
-
-env_id 는 k8s cluster 이름을 명시하면 됨.  
-
-
-```bash
-[root@bastion elastic]# helm repo add signoz https://charts.signoz.io
-WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
-"signoz" has been added to your repositories
-[root@bastion elastic]# helm  repo update
-WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
-Hang tight while we grab the latest from your chart repositories...
-...Successfully got an update from the "elastic" chart repository
-...Successfully got an update from the "signoz" chart repository
-...Successfully got an update from the "nfs-subdir-external-provisioner" chart repository
-...Successfully got an update from the "opensearch" chart repository
-...Successfully got an update from the "kubecost" chart repository
-...Successfully got an update from the "opentelemetry" chart repository
-...Successfully got an update from the "harbor" chart repository
-...Successfully got an update from the "kubescape" chart repository
-...Successfully got an update from the "aspecto" chart repository
-...Successfully got an update from the "logzio-helm" chart repository
-...Successfully got an update from the "jetstack" chart repository
-...Successfully got an update from the "bitnami" chart repository
-Update Complete. ⎈Happy Helming!⎈
-[root@bastion ~]# cd signoz
-[root@bastion signoz]# helm show values  signoz/signoz > values.yaml
-WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
-[root@bastion signoz]# ls
-values.yaml
-[root@bastion signoz]# vi values.yaml
-[root@bastion signoz]# helm install -n edu my-signoz signoz/signoz -f values.yaml
-WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
-coalesce.go:175: warning: skipped value for zookeeper.initContainers: Not a table.
-W1012 10:36:32.509929   38210 warnings.go:70] would violate PodSecurity "baseline:v1.24": hostPath volumes (volumes "varlog", "varlibdockercontainers"), hostPort (container "my-signoz-k8s-infra-otel-agent" uses hostPorts 13133, 4317, 4318, 8888)
-NAME: my-signoz
-LAST DEPLOYED: Thu Oct 12 10:36:20 2023
-NAMESPACE: edu
-STATUS: deployed
-REVISION: 1
-NOTES:
-1. You have just deployed SigNoz cluster:
-
-- frontend version: '0.30.0'
-- query-service version: '0.30.0'
-- alertmanager version: '0.23.4'
-- otel-collector version: '0.79.7'
-- otel-collector-metrics version: '0.79.7'
-
-2. Get the application URL by running these commands:
-
-  export POD_NAME=$(kubectl get pods --namespace edu -l "app.kubernetes.io/name=signoz,app.kubernetes.io/instance=my-signoz,app.kubernetes.io/component=frontend" -o jsonpath="{.items[0].metadata.name}")
-  echo "Visit http://127.0.0.1:3301 to use your application"
-  kubectl --namespace edu port-forward $POD_NAME 3301:3301
-
-
-If you have any ideas, questions, or any feedback, please share on our Github Discussions:
-  https://github.com/SigNoz/signoz/discussions/713
-[root@bastion signoz]# kubectl get po -n edu
-NAME                                                   READY   STATUS              RESTARTS   AGE
-chi-my-signoz-clickhouse-cluster-0-0-0                 0/1     Pending             0          26m
-my-signoz-alertmanager-0                               0/1     Pending             0          17s
-my-signoz-clickhouse-operator-8bb7bb446-tbqtt          0/2     ContainerCreating   0          21s
-my-signoz-frontend-65bbffc466-h9fgh                    0/1     Init:0/1            0          20s
-my-signoz-k8s-infra-otel-deployment-6f45f64457-ch4g5   0/1     Running             0          20s
-my-signoz-otel-collector-7dc69d4b5b-krk9p              0/1     Init:0/1            0          19s
-my-signoz-otel-collector-metrics-5477cf574c-wqkwp      0/1     Init:0/1            0          19s
-my-signoz-query-service-0                              0/1     Pending             0          17s
-my-signoz-zookeeper-0                                  0/1     Pending             0          19s
-nginx                                                  1/1     Running             0          23h
-```
-
-<br/>
-
-agent daemonset 을 위한 권한을 할당한다.   
-
-```bash
-[root@bastion signoz]# oc adm policy add-scc-to-user privileged -z my-signoz-k8s-infra-otel-agent -n opensearch
-clusterrole.rbac.authorization.k8s.io/system:openshift:scc:privileged added: "my-signoz-k8s-infra-otel-agent"
-[root@bastion signoz]# oc adm policy add-scc-to-user anyuid -z my-signoz-k8s-infra-otel-agent -n opensearch
-clusterrole.rbac.authorization.k8s.io/system:openshift:scc:anyuid added: "my-signoz-k8s-infra-otel-agent"
-[root@bastion signoz]# kubectl rollout restart daemonsets my-signoz-k8s-infra-otel-agent -n opensearch
-daemonset.apps/my-signoz-k8s-infra-otel-agent restarted
-```
-
-
-
-
-<br/>
-
-### polaris 설치
-
-
-<br/>
-
-```bash
-[root@bastion polaris]# kubectl apply -f dashboard.yaml -n devops
-serviceaccount/polaris created
-clusterrole.rbac.authorization.k8s.io/polaris created
-clusterrolebinding.rbac.authorization.k8s.io/polaris-view created
-clusterrolebinding.rbac.authorization.k8s.io/polaris created
-service/polaris-dashboard created
-deployment.apps/polaris-dashboard created
-[root@bastion polaris]# kubectl get po -n devops
-NAME                                               READY   STATUS    RESTARTS      AGE
-busybox                                            1/1     Running   2             27d
-nfs-mount                                          1/1     Running   2             27d
-nfs-subdir-external-provisioner-7dc55b4f4c-mjbjm   1/1     Running   92 (8h ago)   27d
-polaris-dashboard-6cfb8d85fd-gs42t                 1/1     Running   0             44s
-polaris-dashboard-6cfb8d85fd-qttbt                 1/1     Running   0             44s
-[root@bastion polaris]# kubectl get svc -n devops
-NAME                TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)   AGE
-[root@bastion opensearch]# cat opensearch_route.yaml
-polaris-dashboard   ClusterIP   172.30.176.142   <none>        80/TCP    53s
-```  
-
-<br/>
-
-route를 생성한다.  
-
-
-<br/>
-
-```bash
-[root@bastion polaris]# kubectl apply -f polaris_route.yaml -n devops
-route.route.openshift.io/polaris created
-```  
-
-### polars 상용버전 설치
-
-<br/>
-
-```bash
-[root@bastion polaris]# helm repo add fairwinds-stable https://charts.fairwinds.com/stable
-WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
-"fairwinds-stable" has been added to your repositories
-[root@bastion polaris]# helm repo update
-WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
-Hang tight while we grab the latest from your chart repositories...
-...Successfully got an update from the "fairwinds-stable" chart repository
-...Successfully got an update from the "elastic" chart repository
-...Successfully got an update from the "harbor" chart repository
-...Successfully got an update from the "kubecost" chart repository
-...Successfully got an update from the "opentelemetry" chart repository
-...Successfully got an update from the "nfs-subdir-external-provisioner" chart repository
-...Successfully got an update from the "aspecto" chart repository
-...Successfully got an update from the "opensearch" chart repository
-...Successfully got an update from the "logzio-helm" chart repository
-...Successfully got an update from the "kubescape" chart repository
-...Successfully got an update from the "signoz" chart repository
-...Successfully got an update from the "jetstack" chart repository
-...Successfully got an update from the "bitnami" chart repository
-Update Complete. ⎈Happy Helming!⎈
-[root@bastion polaris]# cat values.yaml
-insights:
-  organization: "ktdemo"
-  cluster: "ktdemo"
-  base64token: "MGNidUUzTkZhMXg1Sm9SZWdvVVI4U1NsWXZrT2VBT2xfZkhtV0pfdzd3dmtqSnZrbVYxbmpWY0RIekZRWXRFbg=="
-goldilocks:
-  enabled: false
-[root@bastion polaris]# helm upgrade --install insights-agent fairwinds-stable/insights-agent -f values.yaml \
->   --version "2.24.*" \
->   --namespace edu \
->   --wait \
->   --atomic
-WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
-Release "insights-agent" does not exist. Installing it now.
-NAME: insights-agent
-LAST DEPLOYED: Tue Oct 17 08:55:06 2023
-NAMESPACE: edu
-STATUS: deployed
-REVISION: 1
-``` 
-
-
-<br/>
-
-polaris helm 으로 설치하기 
-
-
-```bash
-[root@bastion polaris]# oc new-project opensearch
-[root@bastion polaris]# kubectl edit namespace polaris -n polaris
-namespace/polaris edited
-[root@bastion polaris]# oc adm policy add-scc-to-user anyuid -z default -n polaris
-clusterrole.rbac.authorization.k8s.io/system:openshift:scc:anyuid added: "default"
-[root@bastion polaris]# oc adm policy add-scc-to-user privileged -z default -n polaris
-clusterrole.rbac.authorization.k8s.io/system:openshift:scc:privileged added: "default"
-```
-
-
-```bash
-[root@bastion polaris]# helm repo add fairwinds-stable https://charts.fairwinds.com/stable
-[root@bastion polaris]# helm repo update
-[root@bastion polaris]# helm search repo polaris
-WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
-NAME                    	CHART VERSION	APP VERSION	DESCRIPTION
-fairwinds-stable/polaris	5.15.0       	8.5        	Validation of best practices in your Kubernetes...
-[root@bastion polaris]# helm show values fairwinds-stable/polaris > polaris_values.yaml
-WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
-[root@bastion polaris]# helm install polaris fairwinds-stable/polaris -f polaris_values.yaml -n polaris
-WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
-NAME: polaris
-LAST DEPLOYED: Tue Oct 17 09:22:46 2023
-NAMESPACE: polaris
-STATUS: deployed
-REVISION: 1
-TEST SUITE: None
-NOTES:
-** Please be patient while the chart is being deployed **
-
-Enjoy Polaris and smooth sailing!
-To view the dashboard execute this command:
-
-kubectl port-forward --namespace polaris svc/polaris-dashboard 8080:80
-
-Then open http://localhost:8080 in your browser.
-[root@bastion polaris]# kubectl get po -n polaris
-NAME                                READY   STATUS    RESTARTS   AGE
-polaris-dashboard-f55cd5cc8-fszkw   1/1     Running   0          58s
-polaris-dashboard-f55cd5cc8-xz5h2   1/1     Running   0          58s
-[root@bastion polaris]# kubectl get svc -n polaris
-NAME                TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)   AGE
-polaris-dashboard   ClusterIP   172.30.118.188   <none>        80/TCP    2m35s
-```
-
-route를 생성한다.  
-
-<br/>
-
-```bash
-[root@bastion polaris]# kubectl apply -f polaris_route.yaml -n polaris
-route.route.openshift.io/polaris created
-```  
-
-<br/>
-
-
-
-

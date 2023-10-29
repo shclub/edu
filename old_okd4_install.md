@@ -2273,32 +2273,32 @@ data:
     p, role:manager, clusters, get, *, allow
     p, role:manager, repositories, *, *, allow
     p, role:manager, projects, *, *, allow
-    p, role:manager, exec, create , */*, allow
+    p, role:manager, exec, create, */*, allow
     p, role:edu1, clusters, get, *, allow
     p, role:edu1, repositories, get, *, allow
     p, role:edu1, projects, get, *, allow
     p, role:edu1, applications, *, edu1/*, allow
-    p, role:edu1, exec, create , edu1/*, allow
+    p, role:edu1, exec, create, edu1/*, allow
     p, role:edu2, clusters, get, *, allow
     p, role:edu2, repositories, get, *, allow
     p, role:edu2, projects, get, *, allow
     p, role:edu2, applications, *, edu2/*, allow
-    p, role:edu2, exec, create , edu2/*, allow
+    p, role:edu2, exec, create, edu2/*, allow
     p, role:edu3, clusters, get, *, allow
     p, role:edu3, repositories, get, *, allow
     p, role:edu3, projects, get, *, allow
     p, role:edu3, applications, *, edu3/*, allow
-    p, role:edu3, exec, create , edu3/*, allow
+    p, role:edu3, exec, create, edu3/*, allow
     p, role:edu4, clusters, get, *, allow
     p, role:edu4, repositories, get, *, allow
     p, role:edu4, projects, get, *, allow
     p, role:edu4, applications, *, edu4/*, allow
-    p, role:edu4, exec, create , edu4/*, allow
+    p, role:edu4, exec, create, edu4/*, allow
     p, role:edu5, clusters, get, *, allow
     p, role:edu5, repositories, get, *, allow
     p, role:edu5, projects, get, *, allow
     p, role:edu5, applications, *, edu5/*, allow
-    p, role:edu5, exec, create , edu5/*, allow
+    p, role:edu5, exec, create, edu5/*, allow
     g, edu1, role:edu1
     g, edu2, role:edu2
     g, edu3, role:edu3
