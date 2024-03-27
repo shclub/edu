@@ -2,6 +2,9 @@
  
 SpringBoot 활용 방법에 대해서 실습한다.  
 
+<br/>
+
+
 1. 뷰 템플릿 과 MVC 패턴
 
 2. JDBC vs JPA vs Spring JDBC ( Mybatis ) vs Spring Data JDBC 비교
@@ -18,17 +21,10 @@ SpringBoot 활용 방법에 대해서 실습한다.
 
 8. Spring Data JDBC hands-on 
 
-9. Security
+9. 테스트 작성하기
 
-10. 테스트 작성하기
+10. 댓글 서비스 만들기
 
-11. 댓글 서비스 만들기
-
-12. IoC 와 DI
-
-13. AOP
-
-14. Object Mapper
 
 <br/>
 
@@ -1279,7 +1275,7 @@ public class ArticleService {
 
 리팩토링, Article  생성  
 
-- 참고 소스 : https://github.com/shclub/edu9-1
+- 참고 소스 : https://github.com/kt-cloudnative/springboot_jpa_2
 
 post method를 아래와 같이 변경합니다.
 

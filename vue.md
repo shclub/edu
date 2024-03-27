@@ -37,14 +37,28 @@ React 와 SpringBoot를 연동하면서 security 활용 방법에 대해서 실�
 
 <br/>
 
-## Spring Security
+## Vue
 
 <br/>
 
-### Spring Security ?
+### vue ?
 
 <br/>
 
+
+["ERROR" - 12:50:41 PM] Failed to load module. If you have prettier or plugins referenced in package.json, ensure you have run `npm install`
+["ERROR" - 12:50:41 PM] Cannot find module 'prettier' from '/Users/jakelee/Downloads/vue3'
+Error: Cannot find module 'prettier' from '/Users/jakelee/Downloads/vue3'
+
+
+
+
+<br/>
+<br/>
+<br/>
+<br/>
+
+<br/>
 
 우리는 그동안 Front ( Talend API ) 를 통해서 SpringBoot Backend를 통한 Rest API를 호출 하였습니다.  
 
@@ -422,7 +436,7 @@ updateEmployee(employee, employeeId){
     }
 ```  
 
-AuthenticatedRoute 를 login API 호출과 로그인 이후 token 생성을 나누기 위해 생성.  
+AuthenticatedRoute 를 login API 호출과 로그인 이후 token 생성을 나누기위해 생성.  
 
 ```javascript  
 class AuthenticatedRoute extends Component {    

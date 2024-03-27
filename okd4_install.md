@@ -13,8 +13,13 @@ OKD 설명 참고 :  https://velog.io/@_gyullbb/OKD-%EA%B0%9C%EC%9A%94
    - OKD API : https://api.okd4.ktdemo.duckdns.org:6443
    - Minio Object Storage : https://minino.apps.okd4.ktdemo.duckdns.org/   
    - ArgoCD : https://argocd.apps.okd4.ktdemo.duckdns.org/   
-   - Harbor Private Docker Registry : https://myharbor.apps.okd4.ktdemo.duckdns.org/  
+   - Harbor Private Docker Registry : https://myharbor.apps.okd4.ktdemo.duckdns.org/    
+   - Grafana : https://grafana-route-openshift-user-workload-monitoring.apps.okd4.ktdemo.duckdns.org/  
+   - Opensearch :  https://opensearch.apps.okd4.ktdemo.duckdns.org/  
+   - kibana :  https://kibana.apps.okd4.ktdemo.duckdns.org/  
    
+<br/>
+
 1. 도메인 생성
 
 2. 설치 환경 인프라 구성
@@ -40,6 +45,12 @@ OKD 설명 참고 :  https://velog.io/@_gyullbb/OKD-%EA%B0%9C%EC%9A%94
 12. Compute ( Worker Node ) Join 하기
 
 13. etcd 백업하기 
+
+14. Kubecost 설치  
+
+15. Opensearch 설치  
+
+16. Elastic Stack 설치  
 
 
 <br/>
@@ -2658,9 +2669,9 @@ argocd-metrics                            ClusterIP   172.30.216.229   <none>   
 argocd-notifications-controller-metrics   ClusterIP   172.30.155.71    <none>        9001/TCP                     162m
 argocd-redis                              ClusterIP   172.30.45.66     <none>        6379/TCP                     162m
 argocd-repo-server                        ClusterIP   172.30.178.138   <none>        8081/TCP,8084/TCP            162m
-argocd-server                             NodePort    172.30.154.250   <none>        80:30866/TCP,443:31928/TCP   162m
+argocd-server                             NodePort    172.30.154.250   <none>        80:32270/TCP,443:31928/TCP   162m
 argocd-server-metrics                     ClusterIP   172.30.55.105    <none>        8083/TCP                     162m
-[root@bastion argocd]# argocd login 192.168.1.40:30866
+[root@bastion argocd]# argocd login 192.168.1.40:32270
 FATA[0000] dial tcp 192.168.1.247:30866: connect: connection refused
 ```  
 
@@ -2669,12 +2680,12 @@ FATA[0000] dial tcp 192.168.1.247:30866: connect: connection refused
 Master 와 Workor node 의 ip로 접속한다.  
 
 ```bash
-[root@bastion argocd]# argocd login 192.168.1.146:30866
+[root@bastion argocd]# argocd login 192.168.1.146:32270
 WARNING: server is not configured with TLS. Proceed (y/n)? y
 Username: admin
 Password:
 'admin:login' logged in successfully
-Context '192.168.1.146:30866' updated
+Context '192.168.1.146:32270' updated
 ```  
 
 <br/>
@@ -4676,6 +4687,681 @@ my-harbor-ingress-notary   <none>   notray-harbor.apps.okd4.ktdemo.duckdns.org  
 ```  
 
 
+
+## 15. Opensearch 설치  
+
+<br/> 
+
+`opensearch` namespace를 생성합니다.  
+
+<br/>
+
+```bash
+[root@bastion ~]# oc new-project opensearch
+Now using project "opensearch" on server "https://api.okd4.ktdemo.duckdns.org:6443".
+
+You can add applications to this project with the 'new-app' command. For example, try:
+
+    oc new-app rails-postgresql-example
+
+to build a new example application in Ruby. Or use kubectl to deploy a simple Kubernetes application:
+
+    kubectl create deployment hello-node --image=k8s.gcr.io/e2e-test-images/agnhost:2.33 -- /agnhost serve-hostname
+```
+
+<br/>
+
+namespace 에 annotation 설정을 하고 권한을 할당 합니다.  
+
+```bash
+[root@bastion ~]# kubectl edit namespace opensearch -n opensearch
+namespace/opensearch edited
+[root@bastion ~]# oc adm policy add-scc-to-user anyuid -z default -n opensearch
+clusterrole.rbac.authorization.k8s.io/system:openshift:scc:anyuid added: "default"
+[root@bastion ~]# oc adm policy add-scc-to-user privileged -z default -n opensearch
+clusterrole.rbac.authorization.k8s.io/system:openshift:scc:privileged added: "default"
+```
+
+<br/>
+
+opensearch helm repository를 추가합니다.  
+
+```bash
+[root@bastion ~]# helm repo add opensearch https://opensearch-project.github.io/helm-charts/
+WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
+"opensearch" has been added to your repositories
+[root@bastion ~]# helm repo update
+WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
+Hang tight while we grab the latest from your chart repositories...
+...Successfully got an update from the "opensearch" chart repository
+...Successfully got an update from the "kubecost" chart repository
+...Successfully got an update from the "nfs-subdir-external-provisioner" chart repository
+...Successfully got an update from the "aspecto" chart repository
+...Successfully got an update from the "kubescape" chart repository
+...Successfully got an update from the "harbor" chart repository
+...Successfully got an update from the "bitnami" chart repository
+Update Complete. ⎈Happy Helming!⎈
+[root@bastion ~]# helm repo list
+WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
+NAME                           	URL
+nfs-subdir-external-provisioner	https://kubernetes-sigs.github.io/nfs-subdir-external-provisioner
+harbor                         	https://helm.goharbor.io
+bitnami                        	https://charts.bitnami.com/bitnami
+kubecost                       	https://kubecost.github.io/cost-analyzer/
+aspecto                        	https://aspecto-io.github.io/helm-charts
+kubescape                      	https://kubescape.github.io/helm-charts/
+opensearch                     	https://opensearch-project.github.io/helm-charts/
+[root@bastion ~]# mkdir -p opensearch
+[root@bastion ~]# cd opensearch
+[root@bastion opensearch]# helm search repo opensearch
+WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
+NAME                            	CHART VERSION	APP VERSION	DESCRIPTION
+bitnami/opensearch              	0.2.3        	2.10.0     	OpenSearch is a scalable open-source solution f...
+opensearch/opensearch           	2.15.0       	2.10.0     	A Helm chart for OpenSearch
+opensearch/opensearch-dashboards	2.13.0       	2.10.0     	A Helm chart for OpenSearch Dashboards
+``` 
+
+<br/>
+
+values.yaml 화일을 생성합니다.    
+
+```bash 
+[root@bastion opensearch]# helm show values opensearch/opensearch > values.yaml
+WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
+```  
+
+<br/>
+
+values.yaml 의 화일에서 storageClass 는 `nfs-client` 인 dynamic provisioning 으로 설정한다.     
+
+<br/>
+
+```bash
+[root@bastion opensearch]# vi values.yaml
+```    
+
+<br/>
+
+```bash
+    210   storageClass: "nfs-client"
+    211   accessModes:
+    212     - ReadWriteOnce
+    213   size: 50Gi
+```  
+
+
+설치를 진행 합니다.  
+
+<br/>
+
+```bash
+[root@bastion opensearch]# helm install opensearch  opensearch/opensearch -f opensearch_values.yaml -n opensearch
+WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
+NAME: opensearch
+LAST DEPLOYED: Thu Oct  5 18:20:09 2023
+NAMESPACE: opensearch
+STATUS: deployed
+REVISION: 1
+TEST SUITE: None
+NOTES:
+Watch all cluster members come up.
+  $ kubectl get pods --namespace=opensearch -l app.kubernetes.io/component=opensearch-cluster-master -w
+```  
+
+
+<br/>
+
+정상적으로 설치가 되어 있는지 확인한다.  
+
+```bash
+[root@bastion opensearch]# kubectl get po -n opensearch
+NAME                          READY   STATUS    RESTARTS   AGE
+opensearch-cluster-master-0   1/1     Running   0          4m
+opensearch-cluster-master-1   1/1     Running   0          22s
+opensearch-cluster-master-2   1/1     Running   0          2m44s
+[root@bastion opensearch]# kubectl get svc -n opensearch
+NAME                                 TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)                      AGE
+opensearch-cluster-master            ClusterIP   172.30.175.101   <none>        9200/TCP,9300/TCP            7m56s
+opensearch-cluster-master-headless   ClusterIP   None             <none>        9200/TCP,9300/TCP,9600/TCP   7m56s
+[root@bastion opensearch]# kubectl get pvc -n opensearch
+NAME                                                    STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+opensearch-cluster-master-opensearch-cluster-master-0   Bound    pvc-6bf577dd-14ff-4076-bca4-132a0dfb4203   50Gi       RWO            nfs-client     8m
+opensearch-cluster-master-opensearch-cluster-master-1   Bound    pvc-d283ed3c-4f15-484d-9197-45ae944b1f8e   50Gi       RWO            nfs-client     8m
+opensearch-cluster-master-opensearch-cluster-master-2   Bound    pvc-5b2d0dc9-9c51-4fa5-97ce-bf862e3c19f9   50Gi       RWO            nfs-client     7m59s
+```
+
+<br/>
+
+dashboard 를 설치를 하기 위해 helm 설정을 합니다.  
+
+<br/>
+
+```bash
+[root@bastion opensearch]# helm search repo opensearch
+WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
+NAME                            	CHART VERSION	APP VERSION	DESCRIPTION
+bitnami/opensearch              	0.2.3        	2.10.0     	OpenSearch is a scalable open-source solution f...
+opensearch/opensearch           	2.15.0       	2.10.0     	A Helm chart for OpenSearch
+opensearch/opensearch-dashboards	2.13.0       	2.10.0     	A Helm chart for OpenSearch Dashboards
+[root@bastion opensearch]# helm show values opensearch/opensearch-dashboards > dashboard_values.yaml
+WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
+```
+
+<br/>
+
+아래와 같이 환경에 맞게 수정합니다.  
+- dashboard_values.yaml    
+
+
+```bash
+      9 replicaCount: 2
+    ...  
+    188 resources:
+    189   requests:
+    190     cpu: "100m"
+    191     memory: "512M"
+    192   limits:
+    193     cpu: "1000m"
+    194     memory: "1024M"
+```  
+
+<br/>
+
+Dashboard 설치를 합니다.  
+
+```bash
+[root@bastion opensearch]# helm install opensearch-dashboard  opensearch/opensearch-dashboards -f dashboard_values.yaml -n opensearch
+WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
+NAME: opensearch-dashboard
+LAST DEPLOYED: Thu Oct  5 18:30:31 2023
+NAMESPACE: opensearch
+STATUS: deployed
+REVISION: 1
+TEST SUITE: None
+NOTES:
+1. Get the application URL by running these commands:
+  export POD_NAME=$(kubectl get pods --namespace opensearch -l "app.kubernetes.io/name=opensearch-dashboards,app.kubernetes.io/instance=opensearch-dashboard" -o jsonpath="{.items[0].metadata.name}")
+  export CONTAINER_PORT=$(kubectl get pod --namespace opensearch $POD_NAME -o jsonpath="{.spec.containers[0].ports[0].containerPort}")
+  echo "Visit http://127.0.0.1:8080 to use your application"
+  kubectl --namespace opensearch port-forward $POD_NAME 8080:$CONTAINER_PORT
+[root@bastion opensearch]# kubectl get po -n opensearch
+NAME                                                         READY   STATUS    RESTARTS   AGE
+opensearch-cluster-master-0                                  1/1     Running   0          6m56s
+opensearch-cluster-master-1                                  1/1     Running   0          3m18s
+opensearch-cluster-master-2                                  1/1     Running   0          5m40s
+opensearch-dashboard-opensearch-dashboards-878bcb586-cgz9g   1/1     Running   0          23s
+opensearch-dashboard-opensearch-dashboards-878bcb586-fcxsb   1/1     Running   0          23s
+[root@bastion opensearch]# kubectl get svc -n opensearch
+NAME                                         TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)                      AGE
+opensearch-cluster-master                    ClusterIP   172.30.175.101   <none>        9200/TCP,9300/TCP            10m
+opensearch-cluster-master-headless           ClusterIP   None             <none>        9200/TCP,9300/TCP,9600/TCP   10m
+opensearch-dashboard-opensearch-dashboards   ClusterIP   172.30.185.79    <none>        5601/TCP                     32s
+```
+
+
+<br/>
+
+웹 브라우저에서 Dashboard에 접속하기 위해 route 를 생성합니다.  
+
+```bash
+[root@bastion opensearch]# vi opensearch_route.yaml
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  labels:
+    app : opensearch
+  name: opensearch
+spec:
+  host: opensearch.apps.okd4.ktdemo.duckdns.org
+  port:
+    targetPort: http
+  tls:
+    insecureEdgeTerminationPolicy: Allow
+    termination: edge
+  to:
+    kind: Service
+    name: opensearch-dashboard-opensearch-dashboards
+    weight: 100
+  wildcardPolicy: None
+```
+
+<br/>
+
+적용하고 생성된 route를 확인합니다.  
+
+```bash  
+[root@bastion opensearch]# kubectl apply -f opensearch_dashboard_route.yaml -n opensearch
+route.route.openshift.io/opensearch created
+[root@bastion opensearch]# kubectl get route -n opensearch
+NAME         HOST/PORT                                 PATH   SERVICES                                     PORT   TERMINATION   WILDCARD
+opensearch   opensearch.apps.okd4.ktdemo.duckdns.org          opensearch-dashboard-opensearch-dashboards   http   edge/Allow    None
+```  
+
+<br/>
+
+웹브라우저에서 https://opensearch.apps.okd4.ktdemo.duckdns.org/ 를 입력하면 로그인 하는 창이 나오고
+admin/admin 으로 로그인 한다.  
+
+
+<img src="./assets/opensearch_0.png" style="width: 60%; height: auto;"/>
+
+
+
+<br/>
+
+## 16. Elastic Stack 설치  
+
+<br/> 
+
+`elastic` namespace를 생성합니다.  
+
+<br/>
+
+```bash
+[root@bastion ~]# oc new-project elastic
+Now using project "elastic" on server "https://api.okd4.ktdemo.duckdns.org:6443".
+
+You can add applications to this project with the 'new-app' command. For example, try:
+
+    oc new-app rails-postgresql-example
+
+to build a new example application in Ruby. Or use kubectl to deploy a simple Kubernetes application:
+
+    kubectl create deployment hello-node --image=k8s.gcr.io/e2e-test-images/agnhost:2.33 -- /agnhost serve-hostname
+```
+
+<br/>
+
+node에 label을 추가한다.  
+
+```bash
+[root@bastion elastic]# kubectl edit node okd-4.okd4.ktdemo.duckdns.org -n elastic
+node/okd-4.okd4.ktdemo.duckdns.org edited
+```  
+
+
+```bash
+     18   labels:
+     19     beta.kubernetes.io/arch: amd64
+     20     beta.kubernetes.io/os: linux
+     21     edu2: "true"
+     22     elastic: "true"
+```  
+
+<br/>
+
+namespace 에 annotation 설정을 하고 권한을 할당 합니다.     
+
+```bash
+      8   annotations:
+      9     openshift.io/description: ""
+     10     openshift.io/display-name: ""
+     11     openshift.io/node-selector: elastic=true
+     12     openshift.io/requester: root
+```  
+
+<br/>
+
+
+```bash
+[root@bastion ~]# kubectl edit namespace elastic -n elastic
+namespace/elastic edited
+[root@bastion ~]# oc adm policy add-scc-to-user anyuid -z default -n elastic
+clusterrole.rbac.authorization.k8s.io/system:elastic:scc:anyuid added: "default"
+[root@bastion ~]# oc adm policy add-scc-to-user privileged -z default -n elastic
+clusterrole.rbac.authorization.k8s.io/system:elastic:scc:privileged added: "default"
+```
+
+<br/>
+
+elastic helm repository를 추가합니다.  
+
+```bash
+[root@bastion ~]# helm repo add elastic https://helm.elastic.co
+WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
+"elastic" has been added to your repositories
+[root@bastion ~]# helm repo list
+WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
+NAME                           	URL
+nfs-subdir-external-provisioner	https://kubernetes-sigs.github.io/nfs-subdir-external-provisioner
+harbor                         	https://helm.goharbor.io
+bitnami                        	https://charts.bitnami.com/bitnami
+kubecost                       	https://kubecost.github.io/cost-analyzer/
+aspecto                        	https://aspecto-io.github.io/helm-charts
+kubescape                      	https://kubescape.github.io/helm-charts/
+opensearch                     	https://opensearch-project.github.io/helm-charts/
+elastic                        	https://helm.elastic.co
+[root@bastion ~]# helm search repo elastic
+WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
+NAME                     	CHART VERSION	APP VERSION	DESCRIPTION
+bitnami/elasticsearch    	19.13.0      	8.10.2     	Elasticsearch is a distributed search and analy...
+elastic/eck-elasticsearch	0.7.0        	           	Elasticsearch managed by the ECK operator
+elastic/elasticsearch    	8.5.1        	8.5.1      	Official Elastic helm chart for Elasticsearch
+elastic/apm-attacher     	0.1.0        	           	A Helm chart installing the Elastic APM mutatin...
+elastic/apm-server       	8.5.1        	8.5.1      	Official Elastic helm chart for Elastic APM Server
+elastic/eck-agent        	0.7.0        	           	Elastic Agent managed by the ECK operator
+elastic/eck-beats        	0.7.0        	           	Elastic Beats managed by the ECK operator
+elastic/eck-fleet-server 	0.7.0        	           	Elastic Fleet Server as an Agent managed by the...
+elastic/eck-kibana       	0.7.0        	           	Kibana managed by the ECK operator
+elastic/eck-operator     	2.9.0        	2.9.0      	Elastic Cloud on Kubernetes (ECK) operator
+elastic/eck-operator-crds	2.9.0        	2.9.0      	ECK operator Custom Resource Definitions
+elastic/eck-stack        	0.7.0        	           	Elastic Stack managed by the ECK Operator
+elastic/filebeat         	8.5.1        	8.5.1      	Official Elastic helm chart for Filebeat
+elastic/kibana           	8.5.1        	8.5.1      	Official Elastic helm chart for Kibana
+elastic/logstash         	8.5.1        	8.5.1      	Official Elastic helm chart for Logstash
+elastic/metricbeat       	8.5.1        	8.5.1      	Official Elastic helm chart for Metricbeat
+elastic/pf-host-agent    	8.10.2       	8.10.2     	Hyperscaler software efficiency. For everybody.
+bitnami/dataplatform-bp2 	12.0.5       	1.0.1      	DEPRECATED This Helm chart can be used for the ...
+bitnami/kibana           	10.5.5       	8.10.2     	Kibana is an open source, browser based analyti...
+[root@bastion ~]# mkdir -p elastic
+[root@bastion ~]# cd elastic
+``` 
+
+<br/>
+
+values.yaml 화일을 생성합니다.    
+
+```bash 
+[root@bastion elastic]# helm show values elastic/elasticsearch > values.yaml
+WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
+[root@bastion elastic]# ls
+values.yaml
+```  
+
+<br/>
+
+master용 pvc를 생성한다.  
+
+
+```bash
+[root@bastion elastic]# vi elasticsearch-master-0-pvc.yaml
+```  
+<br/>
+
+```bash
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: elasticsearch-master-elasticsearch-master-0
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: nfs-client
+```
+
+<br/>
+
+```bash
+[root@bastion elastic]# kubectl apply -f elasticsearch-master-0-pvc.yaml -n elastic
+[root@bastion elastic]# kubectl get pvc -n elastic
+NAME                                          STATUS    VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+elasticsearch-master-elasticsearch-master-0   Bound    pvc-d0e92fc9-68a5-428c-a17e-9c7ea2d37787   10Gi       RWO            nfs-client     86m
+```
+
+
+<br/>
+
+snapshot용 pvc를 생성합니다.    
+
+```bash
+[root@bastion elastic]# vi elasticsearch-snapshot-pvc.yaml
+```  
+<br/>
+
+```bash
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: elasticsearch-snapshot-pvc
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+  storageClassName: nfs-client
+```
+
+<br/>
+
+```bash
+[root@bastion elastic]# kubectl apply -f elasticsearch-snapshot-pvc.yaml -n elastic
+[root@bastion elastic]# kubectl get pvc -n elastic
+NAME                                          STATUS    VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+elasticsearch-snapshot-pvc                    Bound     pvc-40957b18-6ce1-4192-af8b-78752163d721   20Gi       RWO            nfs-client     5s
+```
+
+<br/>
+
+values.yaml 의 화일에서 storageClass 는 `nfs-client` 인 dynamic provisioning 으로 설정한다.     
+
+<br/>
+
+```bash
+[root@bastion opensearch]# vi values.yaml
+```    
+
+<br/>
+
+```bash
+     24 replicas: 1  # pod 갯수
+     25 minimumMasterNodes: 1  # 최소 마스터 노드수 
+     ...
+     31 esConfig: #  {}
+     32   elasticsearch.yml: |
+     33     path.repo: "/usr/share/elasticsearch/snapshot"
+     ...
+     60 secret:
+     61   enabled: true
+     62   password: "elastic" # 비밀번호를 입력한다.
+     ...
+     80 imageTag: "8.9.1"
+     ...
+     89 esJavaOpts: "-Xmx5g -Xms5g -Djna.tmpdir=/usr/share/elasticsearch/tmp" # example: "-Xmx1g -Xms1g"
+     90
+     91 resources:
+     92   requests:
+     93     cpu: "1"
+     94     memory: "2Gi"
+     95   limits:
+     96     cpu: "8"
+     97     memory: "20Gi"
+     ...
+    109 volumeClaimTemplate:  # master volume
+    110   accessModes: ["ReadWriteOnce"]
+    111   resources:
+    112     requests:
+    113       storage: 10Gi
+     ...
+    147 extraVolumes: # []
+    148  - name: snapshot #extras
+    149    persistentVolumeClaim:
+    150      claimName: elasticsearch-snapshot-pvc
+    151 #   emptyDir: {}
+    152
+    153 extraVolumeMounts: # []
+    154  - name: snapshot # extras
+    155    mountPath: /usr/share/elasticsearch/snapshot #/usr/share/extras
+    156 #   readOnly: true
+     ...
+    178 antiAffinity: "soft"
+     ...
+    253 nodeSelector: # {}
+    254   elastic: "true" 
+```  
+
+
+<br/>
+
+설치를 진행 합니다.  
+
+<br/>
+
+```bash
+[root@bastion elastic]# helm install elasticsearch elastic/elasticsearch -f values.yaml -n elastic
+WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
+NAME: elasticsearch
+LAST DEPLOYED: Fri Oct  6 13:01:43 2023
+NAMESPACE: elastic
+STATUS: deployed
+REVISION: 1
+NOTES:
+1. Watch all cluster members come up.
+  $ kubectl get pods --namespace=elastic -l app=elasticsearch-master -w
+2. Retrieve elastic user's password.
+  $ kubectl get secrets --namespace=elastic elasticsearch-master-credentials -ojsonpath='{.data.password}' | base64 -d
+3. Test cluster health using Helm test.
+  $ helm --namespace=elastic test elasticsearch
+```  
+
+<br/>
+
+정상적으로 설치가 되어 있는지 확인한다.  
+
+```bash
+[root@bastion elastic]# kubectl get po -n elastic
+NAME                     READY   STATUS    RESTARTS   AGE
+elasticsearch-master-0   1/1     Running   0          102s
+[root@bastion elastic]# kubectl get svc -n elastic
+NAME                            TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)             AGE
+elasticsearch-master            ClusterIP   172.30.217.171   <none>        9200/TCP,9300/TCP   2m6s
+elasticsearch-master-headless   ClusterIP   None             <none>        9200/TCP,9300/TCP   2m6s
+```
+
+<br/>
+
+### kibana 설치
+
+<br/>
+
+kibana 를 설치를 하기 위해 helm 설정을 합니다.  
+
+<br/>
+
+```bash
+[root@bastion elastic]# helm search repo kibana
+WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
+NAME                     	CHART VERSION	APP VERSION	DESCRIPTION
+bitnami/kibana           	10.5.5       	8.10.2     	Kibana is an open source, browser based analyti...
+elastic/eck-kibana       	0.7.0        	           	Kibana managed by the ECK operator
+elastic/kibana           	8.5.1        	8.5.1      	Official Elastic helm chart for Kibana
+elastic/eck-operator     	2.7.0        	2.7.0      	A Helm chart for deploying the Elastic Cloud on...
+elastic/eck-stack        	0.4.0        	           	A Parent Helm chart for all Elastic stack resou...
+bitnami/dataplatform-bp2 	12.0.5       	1.0.1      	DEPRECATED This Helm chart can be used for the ...
+elastic/eck-operator-crds	2.9.0        	2.9.0      	ECK operator Custom Resource Definitions
+[root@bastion elastic]# helm show values elastic/kibana > kibana_values.yaml
+```
+
+<br/>
+
+아래와 같이 환경에 맞게 수정합니다.  
+- kibana_values.yaml    
+
+```bash
+     12 extraEnvs:
+     13   - name: "NODE_OPTIONS"
+     14     value: "--max-old-space-size=3072"
+     ...  
+     41 imageTag: "8.9.1"
+     ...     
+     52 resources:
+     53   requests:
+     54     cpu: "1"
+     55     memory: "2Gi"
+     56 #  limits:
+     57 #    cpu: "1000m"
+     58 #    memory: "2Gi"
+     ...
+    162 nodeSelector: #{}
+    163   elastic: 'true'
+```  
+
+<br/>
+
+kibana 설치를 합니다.  
+
+```bash
+[root@bastion elastic]# helm install kibana elastic/kibana -f kibana_values.yaml -n elastic
+WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
+NAME: kibana
+LAST DEPLOYED: Fri Oct  6 15:45:44 2023
+NAMESPACE: elastic
+STATUS: deployed
+REVISION: 1
+TEST SUITE: None
+NOTES:
+1. Watch all containers come up.
+  $ kubectl get pods --namespace=elastic -l release=kibana -w
+2. Retrieve the elastic user's password.
+  $ kubectl get secrets --namespace=elastic elasticsearch-master-credentials -ojsonpath='{.data.password}' | base64 -d
+3. Retrieve the kibana service account token.
+  $ kubectl get secrets --namespace=elastic kibana-kibana-es-token -ojsonpath='{.data.token}' | base64 -d
+```  
+
+<br/>
+
+```bash  
+[root@bastion elastic]# kubectl get svc -n elastic
+NAME                            TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)             AGE
+elasticsearch-master            ClusterIP   172.30.48.68     <none>        9200/TCP,9300/TCP   106m
+elasticsearch-master-headless   ClusterIP   None             <none>        9200/TCP,9300/TCP   106m
+kibana-kibana                   ClusterIP   172.30.252.244   <none>        5601/TCP            49s
+[root@bastion elastic]# kubectl get po -n elastic
+NAME                           READY   STATUS    RESTARTS   AGE
+elasticsearch-master-0         1/1     Running   0          8m57s
+kibana-kibana-d8dcc5f6-4stg7   1/1     Running   0          2m15s
+```
+
+
+<br/>
+
+웹 브라우저에서 kibana 에 접속하기 위해 route 를 생성합니다.  
+
+```bash
+[root@bastion elastic]# vi kibana_route.yaml
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  labels:
+    app : kibana
+  name: kibana
+spec:
+  host: kibana.apps.okd4.ktdemo.duckdns.org
+  port:
+    targetPort: http
+  tls:
+    insecureEdgeTerminationPolicy: Allow
+    termination: edge
+  to:
+    kind: Service
+    name: kibana-kibana
+    weight: 100
+  wildcardPolicy: None
+```
+
+<br/>
+
+적용하고 생성된 route를 확인합니다.  
+
+```bash  
+[root@bastion elastic]# kubectl apply -f kibana_route.yaml -n elastic
+route.route.openshift.io/kibana created
+[root@bastion elastic]# kubectl get route -n elastic
+NAME     HOST/PORT                             PATH   SERVICES        PORT   TERMINATION   WILDCARD
+kibana   kibana.apps.okd4.ktdemo.duckdns.org          kibana-kibana   http   edge/Allow    None
+```  
+
+<br/>
+
+웹브라우저에서 https://kibana.apps.okd4.ktdemo.duckdns.org/ 를 입력하면 로그인 하는 창이 나오고
+elastic/비밀번호 로 로그인 한다.  
+
+
+<img src="./assets/kibana_0.png" style="width: 60%; height: auto;"/>
+
 <br/><br/><br/>
 
 
@@ -4841,9 +5527,6 @@ TriggeredBy: ● systemd-coredump.socket
 Sep 08 14:46:39 okd-1.okd4.ktdemo.duckdns.org systemd[1]: Listening on systemd-coredump.socket - Process Core Dump Socket.
 ```
 
-
-<br/>
-prometheus 여기 까지 복사
 <br/>
 
 ### bastion에  node exporter를 설치합니다.  
@@ -6177,683 +6860,6 @@ storage                                    4.12.0-0.okd-2023-03-18-084815   True
 
 <br/>
 
-### Opensearch 설치  
-
-<br/> 
-
-`opensearch` namespace를 생성합니다.  
-
-<br/>
-
-```bash
-[root@bastion ~]# oc new-project opensearch
-Now using project "opensearch" on server "https://api.okd4.ktdemo.duckdns.org:6443".
-
-You can add applications to this project with the 'new-app' command. For example, try:
-
-    oc new-app rails-postgresql-example
-
-to build a new example application in Ruby. Or use kubectl to deploy a simple Kubernetes application:
-
-    kubectl create deployment hello-node --image=k8s.gcr.io/e2e-test-images/agnhost:2.33 -- /agnhost serve-hostname
-```
-
-<br/>
-
-namespace 에 annotation 설정을 하고 권한을 할당 합니다.  
-
-```bash
-[root@bastion ~]# kubectl edit namespace opensearch -n opensearch
-namespace/opensearch edited
-[root@bastion ~]# oc adm policy add-scc-to-user anyuid -z default -n opensearch
-clusterrole.rbac.authorization.k8s.io/system:openshift:scc:anyuid added: "default"
-[root@bastion ~]# oc adm policy add-scc-to-user privileged -z default -n opensearch
-clusterrole.rbac.authorization.k8s.io/system:openshift:scc:privileged added: "default"
-```
-
-<br/>
-
-opensearch helm repository를 추가합니다.  
-
-```bash
-[root@bastion ~]# helm repo add opensearch https://opensearch-project.github.io/helm-charts/
-WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
-"opensearch" has been added to your repositories
-[root@bastion ~]# helm repo update
-WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
-Hang tight while we grab the latest from your chart repositories...
-...Successfully got an update from the "opensearch" chart repository
-...Successfully got an update from the "kubecost" chart repository
-...Successfully got an update from the "nfs-subdir-external-provisioner" chart repository
-...Successfully got an update from the "aspecto" chart repository
-...Successfully got an update from the "kubescape" chart repository
-...Successfully got an update from the "harbor" chart repository
-...Successfully got an update from the "bitnami" chart repository
-Update Complete. ⎈Happy Helming!⎈
-[root@bastion ~]# helm repo list
-WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
-NAME                           	URL
-nfs-subdir-external-provisioner	https://kubernetes-sigs.github.io/nfs-subdir-external-provisioner
-harbor                         	https://helm.goharbor.io
-bitnami                        	https://charts.bitnami.com/bitnami
-kubecost                       	https://kubecost.github.io/cost-analyzer/
-aspecto                        	https://aspecto-io.github.io/helm-charts
-kubescape                      	https://kubescape.github.io/helm-charts/
-opensearch                     	https://opensearch-project.github.io/helm-charts/
-[root@bastion ~]# mkdir -p opensearch
-[root@bastion ~]# cd opensearch
-[root@bastion opensearch]# helm search repo opensearch
-WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
-NAME                            	CHART VERSION	APP VERSION	DESCRIPTION
-bitnami/opensearch              	0.2.3        	2.10.0     	OpenSearch is a scalable open-source solution f...
-opensearch/opensearch           	2.15.0       	2.10.0     	A Helm chart for OpenSearch
-opensearch/opensearch-dashboards	2.13.0       	2.10.0     	A Helm chart for OpenSearch Dashboards
-``` 
-
-<br/>
-
-values.yaml 화일을 생성합니다.    
-
-```bash 
-[root@bastion opensearch]# helm show values opensearch/opensearch > values.yaml
-WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
-```  
-
-<br/>
-
-values.yaml 의 화일에서 storageClass 는 `nfs-client` 인 dynamic provisioning 으로 설정한다.     
-
-<br/>
-
-```bash
-[root@bastion opensearch]# vi values.yaml
-```    
-
-<br/>
-
-```bash
-    210   storageClass: "nfs-client"
-    211   accessModes:
-    212     - ReadWriteOnce
-    213   size: 50Gi
-```  
-
-
-설치를 진행 합니다.  
-
-<br/>
-
-```bash
-[root@bastion opensearch]# helm install opensearch  opensearch/opensearch -f opensearch_values.yaml -n opensearch
-WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
-NAME: opensearch
-LAST DEPLOYED: Thu Oct  5 18:20:09 2023
-NAMESPACE: opensearch
-STATUS: deployed
-REVISION: 1
-TEST SUITE: None
-NOTES:
-Watch all cluster members come up.
-  $ kubectl get pods --namespace=opensearch -l app.kubernetes.io/component=opensearch-cluster-master -w
-```  
-
-
-<br/>
-
-정상적으로 설치가 되어 있는지 확인한다.  
-
-```bash
-[root@bastion opensearch]# kubectl get po -n opensearch
-NAME                          READY   STATUS    RESTARTS   AGE
-opensearch-cluster-master-0   1/1     Running   0          4m
-opensearch-cluster-master-1   1/1     Running   0          22s
-opensearch-cluster-master-2   1/1     Running   0          2m44s
-[root@bastion opensearch]# kubectl get svc -n opensearch
-NAME                                 TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)                      AGE
-opensearch-cluster-master            ClusterIP   172.30.175.101   <none>        9200/TCP,9300/TCP            7m56s
-opensearch-cluster-master-headless   ClusterIP   None             <none>        9200/TCP,9300/TCP,9600/TCP   7m56s
-[root@bastion opensearch]# kubectl get pvc -n opensearch
-NAME                                                    STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   AGE
-opensearch-cluster-master-opensearch-cluster-master-0   Bound    pvc-6bf577dd-14ff-4076-bca4-132a0dfb4203   50Gi       RWO            nfs-client     8m
-opensearch-cluster-master-opensearch-cluster-master-1   Bound    pvc-d283ed3c-4f15-484d-9197-45ae944b1f8e   50Gi       RWO            nfs-client     8m
-opensearch-cluster-master-opensearch-cluster-master-2   Bound    pvc-5b2d0dc9-9c51-4fa5-97ce-bf862e3c19f9   50Gi       RWO            nfs-client     7m59s
-```
-
-<br/>
-
-dashboard 를 설치를 하기 위해 helm 설정을 합니다.  
-
-<br/>
-
-```bash
-[root@bastion opensearch]# helm search repo opensearch
-WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
-NAME                            	CHART VERSION	APP VERSION	DESCRIPTION
-bitnami/opensearch              	0.2.3        	2.10.0     	OpenSearch is a scalable open-source solution f...
-opensearch/opensearch           	2.15.0       	2.10.0     	A Helm chart for OpenSearch
-opensearch/opensearch-dashboards	2.13.0       	2.10.0     	A Helm chart for OpenSearch Dashboards
-[root@bastion opensearch]# helm show values opensearch/opensearch-dashboards > dashboard_values.yaml
-WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
-```
-
-<br/>
-
-아래와 같이 환경에 맞게 수정합니다.  
-- dashboard_values.yaml    
-
-
-```bash
-      9 replicaCount: 2
-    ...  
-    188 resources:
-    189   requests:
-    190     cpu: "100m"
-    191     memory: "512M"
-    192   limits:
-    193     cpu: "1000m"
-    194     memory: "1024M"
-```  
-
-<br/>
-
-Dashboard 설치를 합니다.  
-
-```bash
-[root@bastion opensearch]# helm install opensearch-dashboard  opensearch/opensearch-dashboards -f dashboard_values.yaml -n opensearch
-WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
-NAME: opensearch-dashboard
-LAST DEPLOYED: Thu Oct  5 18:30:31 2023
-NAMESPACE: opensearch
-STATUS: deployed
-REVISION: 1
-TEST SUITE: None
-NOTES:
-1. Get the application URL by running these commands:
-  export POD_NAME=$(kubectl get pods --namespace opensearch -l "app.kubernetes.io/name=opensearch-dashboards,app.kubernetes.io/instance=opensearch-dashboard" -o jsonpath="{.items[0].metadata.name}")
-  export CONTAINER_PORT=$(kubectl get pod --namespace opensearch $POD_NAME -o jsonpath="{.spec.containers[0].ports[0].containerPort}")
-  echo "Visit http://127.0.0.1:8080 to use your application"
-  kubectl --namespace opensearch port-forward $POD_NAME 8080:$CONTAINER_PORT
-[root@bastion opensearch]# kubectl get po -n opensearch
-NAME                                                         READY   STATUS    RESTARTS   AGE
-opensearch-cluster-master-0                                  1/1     Running   0          6m56s
-opensearch-cluster-master-1                                  1/1     Running   0          3m18s
-opensearch-cluster-master-2                                  1/1     Running   0          5m40s
-opensearch-dashboard-opensearch-dashboards-878bcb586-cgz9g   1/1     Running   0          23s
-opensearch-dashboard-opensearch-dashboards-878bcb586-fcxsb   1/1     Running   0          23s
-[root@bastion opensearch]# kubectl get svc -n opensearch
-NAME                                         TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)                      AGE
-opensearch-cluster-master                    ClusterIP   172.30.175.101   <none>        9200/TCP,9300/TCP            10m
-opensearch-cluster-master-headless           ClusterIP   None             <none>        9200/TCP,9300/TCP,9600/TCP   10m
-opensearch-dashboard-opensearch-dashboards   ClusterIP   172.30.185.79    <none>        5601/TCP                     32s
-```
-
-
-<br/>
-
-웹 브라우저에서 Dashboard에 접속하기 위해 route 를 생성합니다.  
-
-```bash
-[root@bastion opensearch]# vi opensearch_route.yaml
-apiVersion: route.openshift.io/v1
-kind: Route
-metadata:
-  labels:
-    app : opensearch
-  name: opensearch
-spec:
-  host: opensearch.apps.okd4.ktdemo.duckdns.org
-  port:
-    targetPort: http
-  tls:
-    insecureEdgeTerminationPolicy: Allow
-    termination: edge
-  to:
-    kind: Service
-    name: opensearch-dashboard-opensearch-dashboards
-    weight: 100
-  wildcardPolicy: None
-```
-
-<br/>
-
-적용하고 생성된 route를 확인합니다.  
-
-```bash  
-[root@bastion opensearch]# kubectl apply -f opensearch_dashboard_route.yaml -n opensearch
-route.route.openshift.io/opensearch created
-[root@bastion opensearch]# kubectl get route -n opensearch
-NAME         HOST/PORT                                 PATH   SERVICES                                     PORT   TERMINATION   WILDCARD
-opensearch   opensearch.apps.okd4.ktdemo.duckdns.org          opensearch-dashboard-opensearch-dashboards   http   edge/Allow    None
-```  
-
-<br/>
-
-웹브라우저에서 https://opensearch.apps.okd4.ktdemo.duckdns.org/ 를 입력하면 로그인 하는 창이 나오고
-admin/admin 으로 로그인 한다.  
-
-
-<img src="./assets/opensearch_0.png" style="width: 60%; height: auto;"/>
-
-
-
-<br/>
-
-
-### Elastic Stack 설치  
-
-<br/> 
-
-`elastic` namespace를 생성합니다.  
-
-<br/>
-
-```bash
-[root@bastion ~]# oc new-project elastic
-Now using project "elastic" on server "https://api.okd4.ktdemo.duckdns.org:6443".
-
-You can add applications to this project with the 'new-app' command. For example, try:
-
-    oc new-app rails-postgresql-example
-
-to build a new example application in Ruby. Or use kubectl to deploy a simple Kubernetes application:
-
-    kubectl create deployment hello-node --image=k8s.gcr.io/e2e-test-images/agnhost:2.33 -- /agnhost serve-hostname
-```
-
-<br/>
-
-node에 label을 추가한다.  
-
-```bash
-[root@bastion elastic]# kubectl edit node okd-4.okd4.ktdemo.duckdns.org -n elastic
-node/okd-4.okd4.ktdemo.duckdns.org edited
-```  
-
-
-```bash
-     18   labels:
-     19     beta.kubernetes.io/arch: amd64
-     20     beta.kubernetes.io/os: linux
-     21     edu2: "true"
-     22     elastic: "true"
-```  
-
-<br/>
-
-namespace 에 annotation 설정을 하고 권한을 할당 합니다.     
-
-```bash
-      8   annotations:
-      9     openshift.io/description: ""
-     10     openshift.io/display-name: ""
-     11     openshift.io/node-selector: elastic=true
-     12     openshift.io/requester: root
-```  
-
-<br/>
-
-
-```bash
-[root@bastion ~]# kubectl edit namespace elastic -n elastic
-namespace/elastic edited
-[root@bastion ~]# oc adm policy add-scc-to-user anyuid -z default -n elastic
-clusterrole.rbac.authorization.k8s.io/system:elastic:scc:anyuid added: "default"
-[root@bastion ~]# oc adm policy add-scc-to-user privileged -z default -n elastic
-clusterrole.rbac.authorization.k8s.io/system:elastic:scc:privileged added: "default"
-```
-
-<br/>
-
-elastic helm repository를 추가합니다.  
-
-```bash
-[root@bastion ~]# helm repo add elastic https://helm.elastic.co
-WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
-"elastic" has been added to your repositories
-[root@bastion ~]# helm repo list
-WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
-NAME                           	URL
-nfs-subdir-external-provisioner	https://kubernetes-sigs.github.io/nfs-subdir-external-provisioner
-harbor                         	https://helm.goharbor.io
-bitnami                        	https://charts.bitnami.com/bitnami
-kubecost                       	https://kubecost.github.io/cost-analyzer/
-aspecto                        	https://aspecto-io.github.io/helm-charts
-kubescape                      	https://kubescape.github.io/helm-charts/
-opensearch                     	https://opensearch-project.github.io/helm-charts/
-elastic                        	https://helm.elastic.co
-[root@bastion ~]# helm search repo elastic
-WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
-NAME                     	CHART VERSION	APP VERSION	DESCRIPTION
-bitnami/elasticsearch    	19.13.0      	8.10.2     	Elasticsearch is a distributed search and analy...
-elastic/eck-elasticsearch	0.7.0        	           	Elasticsearch managed by the ECK operator
-elastic/elasticsearch    	8.5.1        	8.5.1      	Official Elastic helm chart for Elasticsearch
-elastic/apm-attacher     	0.1.0        	           	A Helm chart installing the Elastic APM mutatin...
-elastic/apm-server       	8.5.1        	8.5.1      	Official Elastic helm chart for Elastic APM Server
-elastic/eck-agent        	0.7.0        	           	Elastic Agent managed by the ECK operator
-elastic/eck-beats        	0.7.0        	           	Elastic Beats managed by the ECK operator
-elastic/eck-fleet-server 	0.7.0        	           	Elastic Fleet Server as an Agent managed by the...
-elastic/eck-kibana       	0.7.0        	           	Kibana managed by the ECK operator
-elastic/eck-operator     	2.9.0        	2.9.0      	Elastic Cloud on Kubernetes (ECK) operator
-elastic/eck-operator-crds	2.9.0        	2.9.0      	ECK operator Custom Resource Definitions
-elastic/eck-stack        	0.7.0        	           	Elastic Stack managed by the ECK Operator
-elastic/filebeat         	8.5.1        	8.5.1      	Official Elastic helm chart for Filebeat
-elastic/kibana           	8.5.1        	8.5.1      	Official Elastic helm chart for Kibana
-elastic/logstash         	8.5.1        	8.5.1      	Official Elastic helm chart for Logstash
-elastic/metricbeat       	8.5.1        	8.5.1      	Official Elastic helm chart for Metricbeat
-elastic/pf-host-agent    	8.10.2       	8.10.2     	Hyperscaler software efficiency. For everybody.
-bitnami/dataplatform-bp2 	12.0.5       	1.0.1      	DEPRECATED This Helm chart can be used for the ...
-bitnami/kibana           	10.5.5       	8.10.2     	Kibana is an open source, browser based analyti...
-[root@bastion ~]# mkdir -p elastic
-[root@bastion ~]# cd elastic
-``` 
-
-<br/>
-
-values.yaml 화일을 생성합니다.    
-
-```bash 
-[root@bastion elastic]# helm show values elastic/elasticsearch > values.yaml
-WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
-[root@bastion elastic]# ls
-values.yaml
-```  
-
-<br/>
-
-master용 pvc를 생성한다.  
-
-
-```bash
-[root@bastion elastic]# vi elasticsearch-master-0-pvc.yaml
-```  
-<br/>
-
-```bash
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: elasticsearch-master-elasticsearch-master-0
-spec:
-  accessModes:
-  - ReadWriteOnce
-  resources:
-    requests:
-      storage: 10Gi
-  storageClassName: nfs-client
-```
-
-<br/>
-
-```bash
-[root@bastion elastic]# kubectl apply -f elasticsearch-master-0-pvc.yaml -n elastic
-[root@bastion elastic]# kubectl get pvc -n elastic
-NAME                                          STATUS    VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   AGE
-elasticsearch-master-elasticsearch-master-0   Bound    pvc-d0e92fc9-68a5-428c-a17e-9c7ea2d37787   10Gi       RWO            nfs-client     86m
-```
-
-
-<br/>
-
-snapshot용 pvc를 생성합니다.    
-
-```bash
-[root@bastion elastic]# vi elasticsearch-snapshot-pvc.yaml
-```  
-<br/>
-
-```bash
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: elasticsearch-snapshot-pvc
-spec:
-  accessModes:
-  - ReadWriteOnce
-  resources:
-    requests:
-      storage: 20Gi
-  storageClassName: nfs-client
-```
-
-<br/>
-
-```bash
-[root@bastion elastic]# kubectl apply -f elasticsearch-snapshot-pvc.yaml -n elastic
-[root@bastion elastic]# kubectl get pvc -n elastic
-NAME                                          STATUS    VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   AGE
-elasticsearch-snapshot-pvc                    Bound     pvc-40957b18-6ce1-4192-af8b-78752163d721   20Gi       RWO            nfs-client     5s
-```
-
-<br/>
-
-values.yaml 의 화일에서 storageClass 는 `nfs-client` 인 dynamic provisioning 으로 설정한다.     
-
-<br/>
-
-```bash
-[root@bastion opensearch]# vi values.yaml
-```    
-
-<br/>
-
-```bash
-     24 replicas: 1  # pod 갯수
-     25 minimumMasterNodes: 1  # 최소 마스터 노드수 
-     ...
-     31 esConfig: #  {}
-     32   elasticsearch.yml: |
-     33     path.repo: "/usr/share/elasticsearch/snapshot"
-     ...
-     60 secret:
-     61   enabled: true
-     62   password: "elastic" # 비밀번호를 입력한다.
-     ...
-     80 imageTag: "8.9.1"
-     ...
-     89 esJavaOpts: "-Xmx5g -Xms5g -Djna.tmpdir=/usr/share/elasticsearch/tmp" # example: "-Xmx1g -Xms1g"
-     90
-     91 resources:
-     92   requests:
-     93     cpu: "1"
-     94     memory: "2Gi"
-     95   limits:
-     96     cpu: "8"
-     97     memory: "20Gi"
-     ...
-    109 volumeClaimTemplate:  # master volume
-    110   accessModes: ["ReadWriteOnce"]
-    111   resources:
-    112     requests:
-    113       storage: 10Gi
-     ...
-    147 extraVolumes: # []
-    148  - name: snapshot #extras
-    149    persistentVolumeClaim:
-    150      claimName: elasticsearch-snapshot-pvc
-    151 #   emptyDir: {}
-    152
-    153 extraVolumeMounts: # []
-    154  - name: snapshot # extras
-    155    mountPath: /usr/share/elasticsearch/snapshot #/usr/share/extras
-    156 #   readOnly: true
-     ...
-    178 antiAffinity: "soft"
-     ...
-    253 nodeSelector: # {}
-    254   elastic: "true" 
-```  
-
-
-<br/>
-
-설치를 진행 합니다.  
-
-<br/>
-
-```bash
-[root@bastion elastic]# helm install elasticsearch elastic/elasticsearch -f values.yaml -n elastic
-WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
-NAME: elasticsearch
-LAST DEPLOYED: Fri Oct  6 13:01:43 2023
-NAMESPACE: elastic
-STATUS: deployed
-REVISION: 1
-NOTES:
-1. Watch all cluster members come up.
-  $ kubectl get pods --namespace=elastic -l app=elasticsearch-master -w
-2. Retrieve elastic user's password.
-  $ kubectl get secrets --namespace=elastic elasticsearch-master-credentials -ojsonpath='{.data.password}' | base64 -d
-3. Test cluster health using Helm test.
-  $ helm --namespace=elastic test elasticsearch
-```  
-
-<br/>
-
-정상적으로 설치가 되어 있는지 확인한다.  
-
-```bash
-[root@bastion elastic]# kubectl get po -n elastic
-NAME                     READY   STATUS    RESTARTS   AGE
-elasticsearch-master-0   1/1     Running   0          102s
-[root@bastion elastic]# kubectl get svc -n elastic
-NAME                            TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)             AGE
-elasticsearch-master            ClusterIP   172.30.217.171   <none>        9200/TCP,9300/TCP   2m6s
-elasticsearch-master-headless   ClusterIP   None             <none>        9200/TCP,9300/TCP   2m6s
-```
-
-<br/>
-
-#### kibana 설치
-
-<br/>
-
-kibana 를 설치를 하기 위해 helm 설정을 합니다.  
-
-<br/>
-
-```bash
-[root@bastion elastic]# helm search repo kibana
-WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
-NAME                     	CHART VERSION	APP VERSION	DESCRIPTION
-bitnami/kibana           	10.5.5       	8.10.2     	Kibana is an open source, browser based analyti...
-elastic/eck-kibana       	0.7.0        	           	Kibana managed by the ECK operator
-elastic/kibana           	8.5.1        	8.5.1      	Official Elastic helm chart for Kibana
-elastic/eck-operator     	2.7.0        	2.7.0      	A Helm chart for deploying the Elastic Cloud on...
-elastic/eck-stack        	0.4.0        	           	A Parent Helm chart for all Elastic stack resou...
-bitnami/dataplatform-bp2 	12.0.5       	1.0.1      	DEPRECATED This Helm chart can be used for the ...
-elastic/eck-operator-crds	2.9.0        	2.9.0      	ECK operator Custom Resource Definitions
-[root@bastion elastic]# helm show values elastic/kibana > kibana_values.yaml
-```
-
-<br/>
-
-아래와 같이 환경에 맞게 수정합니다.  
-- kibana_values.yaml    
-
-```bash
-     12 extraEnvs:
-     13   - name: "NODE_OPTIONS"
-     14     value: "--max-old-space-size=3072"
-     ...  
-     41 imageTag: "8.9.1"
-     ...     
-     52 resources:
-     53   requests:
-     54     cpu: "1"
-     55     memory: "2Gi"
-     56 #  limits:
-     57 #    cpu: "1000m"
-     58 #    memory: "2Gi"
-     ...
-    162 nodeSelector: #{}
-    163   elastic: 'true'
-```  
-
-<br/>
-
-kibana 설치를 합니다.  
-
-```bash
-[root@bastion elastic]# helm install kibana elastic/kibana -f kibana_values.yaml -n elastic
-WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
-NAME: kibana
-LAST DEPLOYED: Fri Oct  6 15:45:44 2023
-NAMESPACE: elastic
-STATUS: deployed
-REVISION: 1
-TEST SUITE: None
-NOTES:
-1. Watch all containers come up.
-  $ kubectl get pods --namespace=elastic -l release=kibana -w
-2. Retrieve the elastic user's password.
-  $ kubectl get secrets --namespace=elastic elasticsearch-master-credentials -ojsonpath='{.data.password}' | base64 -d
-3. Retrieve the kibana service account token.
-  $ kubectl get secrets --namespace=elastic kibana-kibana-es-token -ojsonpath='{.data.token}' | base64 -d
-```  
-
-<br/>
-
-```bash  
-[root@bastion elastic]# kubectl get svc -n elastic
-NAME                            TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)             AGE
-elasticsearch-master            ClusterIP   172.30.48.68     <none>        9200/TCP,9300/TCP   106m
-elasticsearch-master-headless   ClusterIP   None             <none>        9200/TCP,9300/TCP   106m
-kibana-kibana                   ClusterIP   172.30.252.244   <none>        5601/TCP            49s
-[root@bastion elastic]# kubectl get po -n elastic
-NAME                           READY   STATUS    RESTARTS   AGE
-elasticsearch-master-0         1/1     Running   0          8m57s
-kibana-kibana-d8dcc5f6-4stg7   1/1     Running   0          2m15s
-```
-
-
-<br/>
-
-웹 브라우저에서 kibana 에 접속하기 위해 route 를 생성합니다.  
-
-```bash
-[root@bastion elastic]# vi kibana_route.yaml
-apiVersion: route.openshift.io/v1
-kind: Route
-metadata:
-  labels:
-    app : kibana
-  name: kibana
-spec:
-  host: kibana.apps.okd4.ktdemo.duckdns.org
-  port:
-    targetPort: http
-  tls:
-    insecureEdgeTerminationPolicy: Allow
-    termination: edge
-  to:
-    kind: Service
-    name: kibana-kibana
-    weight: 100
-  wildcardPolicy: None
-```
-
-<br/>
-
-적용하고 생성된 route를 확인합니다.  
-
-```bash  
-[root@bastion elastic]# kubectl apply -f kibana_route.yaml -n elastic
-route.route.openshift.io/kibana created
-[root@bastion elastic]# kubectl get route -n elastic
-NAME     HOST/PORT                             PATH   SERVICES        PORT   TERMINATION   WILDCARD
-kibana   kibana.apps.okd4.ktdemo.duckdns.org          kibana-kibana   http   edge/Allow    None
-```  
-
-<br/>
-
-웹브라우저에서 https://kibana.apps.okd4.ktdemo.duckdns.org/ 를 입력하면 로그인 하는 창이 나오고
-elastic/비밀번호 로 로그인 한다.  
-
-
-<img src="./assets/kibana_0.png" style="width: 60%; height: auto;"/>
-
-<br/>
-
 ### metric 정리
 
 <br/>
@@ -7599,5 +7605,82 @@ route.route.openshift.io/polaris created
 <br/>
 
 
+### kubescape  설치
+
+<br/>
+
+```bash
+[root@bastion kubescape]# helm repo add kubescape https://kubescape.github.io/helm-charts/ 
+[root@bastion kubescape]# helm repo update
+WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
+Hang tight while we grab the latest from your chart repositories...
+...Successfully got an update from the "elastic" chart repository
+...Successfully got an update from the "opensearch" chart repository
+...Successfully got an update from the "kubecost" chart repository
+...Successfully got an update from the "opentelemetry" chart repository
+...Successfully got an update from the "nfs-subdir-external-provisioner" chart repository
+...Successfully got an update from the "harbor" chart repository
+...Successfully got an update from the "aspecto" chart repository
+...Successfully got an update from the "kubescape" chart repository
+...Successfully got an update from the "signoz" chart repository
+...Successfully got an update from the "logzio-helm" chart repository
+...Successfully got an update from the "jetstack" chart repository
+...Successfully got an update from the "fairwinds-stable" chart repository
+...Successfully got an update from the "bitnami" chart repository
+Update Complete. ⎈Happy Helming!⎈
+[root@bastion kubescape]# helm search repo kubescape
+WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
+NAME                                     	CHART VERSION	APP VERSION	DESCRIPTION
+kubescape/kubescape-cloud-operator       	1.14.5       	1.14.5     	Kubescape is an E2E Kubernetes cluster security...
+kubescape/kubescape-operator             	1.16.1       	1.16.1     	Kubescape is an E2E Kubernetes cluster security...
+kubescape/kubescape-prometheus-integrator	0.0.13       	v0.0.13    	Kubescape integration with Prometheus
+kubescape/kubescape-relevancy            	3.0.4        	3.0.4      	Kubescape is an E2E Kubernetes cluster security...
+[root@bastion kubescape]#  helm show values kubescape/kubescape-operator  > values.yaml
+WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
+```  
+
+<br/>
+
+`values.yaml` 화일에 storageClass를 설정한다.  
+
+```bash
+66   # -- persistence storage class
+67   #    ref: https://kubernetes.io/docs/concepts/storage/storage-classes/
+68   #    note: set to "-" (dash) for default storage class
+69   storageClass: "nfs-client"
+```  
+
+<br/>
+
+helm 으로 설치를 한다.   
+
+```bash
+helm install kubescape kubescape/kubescape-operator -f values.yaml -n kubescape  --set clusterName=`kubectl config current-context` --set account=3054be31-a882-4c7e-a223-5b79d9e37157 --set server=api.armosec.io
+```  
+
+Output  
+```bash
+WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
+NAME: kubescape
+LAST DEPLOYED: Tue Oct 31 14:38:51 2023
+NAMESPACE: kubescape
+STATUS: deployed
+REVISION: 1
+TEST SUITE: None
+NOTES:
+Thank you for installing kubescape-operator version 1.16.1.
+
+You can see and change the values of your's recurring configurations daily scan in the following link:
+https://cloud.armosec.io/settings/assets/clusters/scheduled-scans?cluster=edu25-api-okd4-ktdemo-duckdns-org-6443-root
+> kubectl -n kubescape get cj kubescape-scheduler -o=jsonpath='{.metadata.name}{"\t"}{.spec.schedule}{"\n"}'
+
+You can see and change the values of your's recurring images daily scan in the following link:
+https://cloud.armosec.io/settings/assets/images
+> kubectl -n kubescape get cj kubevuln-scheduler -o=jsonpath='{.metadata.name}{"\t"}{.spec.schedule}{"\n"}'
+
+See you!!!
+```  
 
 
+
+https://cloud.armosec.io/
