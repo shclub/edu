@@ -16,8 +16,11 @@ OKD 설명 참고 :  https://velog.io/@_gyullbb/OKD-%EA%B0%9C%EC%9A%94
    - Harbor Private Docker Registry : https://myharbor.apps.okd4.ktdemo.duckdns.org/    
    - Grafana : https://grafana-route-openshift-user-workload-monitoring.apps.okd4.ktdemo.duckdns.org/  
    - Opensearch :  https://opensearch.apps.okd4.ktdemo.duckdns.org/  
-   - kibana :  https://kibana.apps.okd4.ktdemo.duckdns.org/  
-   
+   - kibana :  https://kibana.apps.okd4.ktdemo.duckdns.org/   
+   - Jenkins : https://jenkins-devops.apps.okd4.ktdemo.duckdns.org/
+   - keycloak : https://keycloak.apps.okd4.ktdemo.duckdns.org/
+   - kafka : https://kafka-ui.apps.okd4.ktdemo.duckdns.org/
+
 <br/>
 
 1. 도메인 생성
@@ -51,6 +54,16 @@ OKD 설명 참고 :  https://velog.io/@_gyullbb/OKD-%EA%B0%9C%EC%9A%94
 15. Opensearch 설치  
 
 16. Elastic Stack 설치  
+
+18. Jenkins 설치  
+
+19. Keycloak 설치
+
+20. kafka 설치
+
+
+
+
 
 
 <br/>
@@ -3772,7 +3785,10 @@ podman 의 경우는 `/etc/containers/registries.conf.d` 로 이동하여 `myreg
 
 <br/>
 
-`location` 에 harbor 주소를 적어 주고 `insecure` 옵션은 `true` 로 설정한다.  
+`location` 에 harbor 주소를 적어 주고 `insecure` 옵션은 `true` 로 설정한다.    
+
+이미 설정 된 값이 있으면 다른 이름으로 생성한다. 
+- 예) myregistry.conf
 
 ```bash
 [[registry]]
@@ -3780,7 +3796,20 @@ location = "myharbor.apps.okd4.ktdemo.duckdns.org"
 insecure = true
 ```   
 
-podman의 경우 docker 처럼 재기동 필요가 없다.    
+<br/>
+
+podman의 경우 docker 처럼 재기동 필요가 없지만 OKD의 경우  crio 를 재기동 (각 노드) 해야한다.     
+
+```bash
+[root@okd-4 core]# systemctl restart crio
+```
+
+<br/>
+
+콘솔 로그인이 안되면 아래를 참고 한다.  
+- https://computingforgeeks.com/allow-insecure-registries-in-openshift-okd-4-cluster/  
+
+<br/>
 
 현재 다운 되어 있는 docker image를 조회해 본다.
 
@@ -5362,10 +5391,1687 @@ elastic/비밀번호 로 로그인 한다.
 
 <img src="./assets/kibana_0.png" style="width: 60%; height: auto;"/>
 
+
+<br/>
+
+## 18. Jenkins 설치  
+
+<br/> 
+
+kubernetes에 Jenkins Master/Slave로 구성을 하는 예제입니다.   
+
+<br/>
+
+### k8s 환경 구성 
+
+<br/>
+
+master 용 `devops` 와 slave 용 `devops-slave` namespace를 생성합니다.  
+
+<br/>
+
+```bash
+[root@bastion jenkins]# oc new-project devops
+[root@bastion jenkins]# oc new-project devops-slave
+```
+
+<br/>
+
+node에 label을 추가한다.  
+
+master 용
+```bash
+[root@bastion jenkins]# kubectl edit node okd-4.okd4.ktdemo.duckdns.org
+node/okd-4.okd4.ktdemo.duckdns.org edited
+```  
+<br/>
+
+```bash
+     18   labels:
+     19     beta.kubernetes.io/arch: amd64
+     20     beta.kubernetes.io/os: linux
+     21     devops: "true"
+     22     elastic: "true"
+```  
+
+<br/>
+
+slave용  
+```bash
+[root@bastion jenkins]# kubectl edit node okd-5.okd4.ktdemo.duckdns.org 
+node/okd-5.okd4.ktdemo.duckdns.org edited
+```  
+
+<br/>
+
+```bash
+     18   labels:
+     19     beta.kubernetes.io/arch: amd64
+     20     beta.kubernetes.io/os: linux
+     21     devops-slave: "true"
+     22     elastic: "true"
+```  
+
+
+<br/>
+
+namespace 에 annotation 설정을 하고 권한을 할당 합니다.     
+
+devops namespace  
+```bash
+      8   annotations:
+      9     openshift.io/description: ""
+     10     openshift.io/display-name: ""
+     11     openshift.io/node-selector: devops=true
+     12     openshift.io/requester: root
+```    
+
+
+devops-slave namespace  
+```bash
+      8   annotations:
+      9     openshift.io/description: ""
+     10     openshift.io/display-name: ""
+     11     openshift.io/node-selector: devops-slave=true
+     12     openshift.io/requester: root
+```  
+<br/>
+
+### 계정 생성과 RBAC 생성
+
+<br/>
+
+jenkins admin 계정의 secret를 생성하기 위해 계정과 비밀번호를 base64로 인코딩 한다.  
+
+```bash
+[root@bastion jenkins]# echo -n 'admin' | base64
+YWRtaW4=
+[root@bastion jenkins]# echo -n 'New1234!' | base64
+TmV3MTIzNCE=
+```  
+
+<br/>
+
+secret를 만들기 위해 yaml 화일을 생성한다.
+
+```bash
+[root@bastion jenkins]# vi jenkins-edu-admin-secret.yaml
+```  
+
+data 부분에 base64 인코딩 된 값을 넣어준다.  
+
+```bash
+kind: Secret
+apiVersion: v1
+metadata:
+  name: jenkins-admin-secret
+data:
+  jenkins-admin-user: YWRtaW4=
+  jenkins-admin-password: TmV3MTIzNCE=
+type: Opaque
+```  
+
+
+<br/>
+
+```bash
+[root@bastion jenkins]# kubectl apply -f jenkins-edu-admin-secret.yaml -n devops
+secret/jenkins-admin-secret created
+[root@bastion jenkins]# kubectl get secret -n devops
+NAME                                                    TYPE                                  DATA   AGE
+jenkins-admin-dockercfg-6jjx2                           kubernetes.io/dockercfg               1      42h
+jenkins-admin-secret                                    Opaque                                2      2d
+jenkins-admin-token-77tpj                               kubernetes.io/service-account-token   4      42h
+```
+
+<br/>
+
+jenkins-admin service account 를 생성 하고 role 과 rolebinding 을 생성한다.    
+
+```bash
+[root@bastion jenkins]# vi sa.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: jenkins-admin
+```   
+
+두 개의 namespace에서 모두 생성한다.
+
+```bash
+[root@bastion jenkins]# kubectl apply -f sa.yaml -n devops
+[root@bastion jenkins]# kubectl apply -f sa.yaml -n devops-slave
+```  
+
+
+일단 cluster role을 할당 한다.    
+
+```bash
+[root@bastion jenkins]# cat jenkins_clusterrole_binding.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: jenkins-admin
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- kind: ServiceAccount
+  name: jenkins-admin
+  namespace: devops
+subjects:
+- kind: ServiceAccount
+  name: jenkins-admin
+  namespace: devops-slave
+```  
+
+<br/>
+
+```bash
+[root@bastion jenkins]# kubectl apply -f jenkins_clusterrole_binding.yaml
+clusterrolebinding.rbac.authorization.k8s.io/jenkins-admin configured
+```  
+
+<br/>
+
+권한 최소화 위해서는  role 을 별도 생성한다.  
+
+```bash
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: jenkins-admin
+rules:
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["create","delete","get","list","patch","update","watch"]
+- apiGroups: [""]
+  resources: ["pods/exec"]
+  verbs: ["create","delete","get","list","patch","update","watch"]
+- apiGroups: [""]
+  resources: ["pods/log"]
+  verbs: ["get","list","watch"]
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["get"]
+- apiGroups: [""]
+  resources: ["events"]
+  verbs: ["get", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: jenkins-admin
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: jenkins-admin
+subjects:
+- kind: ServiceAccount
+  name: jenkins-admin
+```    
+
+<br/>
+
+jenkins-admin 으로 OKD에 접속하기 위해 anyuid, privileged 권한을 부여한다.  
+
+privileged 권한은 podman 에서 cri-o 런타임을 연결하기 위해 필요하다.  
+
+<br/>
+
+```bash
+[root@bastion jenkins]# oc adm policy add-scc-to-user anyuid -z jenkins-admin -n devops
+[root@bastion jenkins]# oc adm policy add-scc-to-user anyuid -z jenkins-admin -n devops-slave
+[root@bastion jenkins]# oc adm policy add-scc-to-user privileged -z jenkins-admin -n devops
+[root@bastion jenkins]# oc adm policy add-scc-to-user privileged -z jenkins-admin -n devops-slave
+```  
+
+<br/>
+
+### Storage 할당  
+
+<br/>
+
+Jenkins 가 사용하는 stroage를 위해 pv / pvc 를 생성해야 하며 사전에 NFS 에 접속하여 폴더를 생성한다.
+
+
+```bash
+[root@bastion jenkins]# mount -t nfs 192.168.1.79:/volume3/okd/dynamic /mnt
+[root@bastion jenkins]# cd /mnt
+[root@bastion mnt]# mkdir -p jenkins-master
+[root@bastion mnt]# mkdir -p jenkins-slave
+[root@bastion mnt]# chmod 777 jenkins-master
+[root@bastion mnt]# chmod 777 jenkins-slave
+```  
+
+<br/>
+
+master 용 pv/pvc를 생성한다.  
+
+```bash
+[root@bastion jenkins]# cat jenkins_master_pv.yaml
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: jenkins-master-pv
+spec:
+  accessModes:
+  - ReadWriteMany
+  capacity:
+    storage: 5Gi
+  nfs:
+    path: /volume3/okd/dynamic/jenkins-master
+    server: 192.168.1.79
+  persistentVolumeReclaimPolicy: Retain
+```  
+
+```bash
+[root@bastion jenkins]# cat jenkins_master_pvc.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: jenkins-master-pvc
+spec:
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 5Gi
+  volumeName: jenkins-master-pv
+```  
+
+<br/>
+
+slave 용 pv/pvc를 생성한다.  
+
+```bash
+[root@bastion jenkins]# cat jenkins_slave_pv.yaml
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: jenkins-slave-pv
+spec:
+  accessModes:
+  - ReadWriteMany
+  capacity:
+    storage: 5Gi
+  nfs:
+    path: /volume3/okd/dynamic/jenkins-slave
+    server: 192.168.1.79
+  persistentVolumeReclaimPolicy: Retain
+```  
+
+```bash
+[root@bastion jenkins]# cat jenkins_slave_pvc.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: jenkins-slave-pvc
+spec:
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 5Gi
+  volumeName: jenkins-slave-pv
+```  
+
+<br/>
+
+### helm 설치  
+
+<br/>
+
+jenkins helm repository를 추가합니다.  
+
+```bash
+[root@bastion jenkins]# helm repo add jenkins https://charts.jenkins.io --insecure-skip-tls-verify
+[root@bastion jenkins]# helm repo update
+[root@bastion jenkins]# helm search repo jenkins
+WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
+NAME           	CHART VERSION	APP VERSION	DESCRIPTION
+bitnami/jenkins	13.1.2       	2.440.3    	Jenkins is an open source Continuous Integratio...
+jenkins/jenkins	5.1.12       	2.440.3    	Jenkins - Build great things at any scale! As t...
+``` 
+
+<br/>
+
+jenkins/jenkins 차트에서 차트의 변수 값을 변경하기 위해 jenkins_values.yaml 화일을 추출한다.
+
+```bash 
+[root@bastion jenkins]# helm show values jenkins/jenkins > jenkins_values.yaml
+[root@bastion jenkins]# ls
+jenkins_values.yaml
+```  
+  
+<br/>
+
+아래와 같이 values를 수정한다.  
+
+```bash
+[root@bastion jenkins]# vi jenkins_values.yaml
+```    
+
+<br/>
+
+```bash
+     74   admin:
+     75
+     76     # -- Admin username created as a secret if `controller.admin.createSecret` is true
+     77     username: "admin"
+     78     # -- Admin password created as a secret if `controller.admin.createSecret` is true
+     79     # @default -- <random password>
+     80     password:
+     81
+     82     # -- The key in the existing admin secret containing the username
+     83     userKey: jenkins-admin-user
+     84     # -- The key in the existing admin secret containing the password
+     85     passwordKey: jenkins-admin-password
+     ...
+    154   # -- Append to `JAVA_OPTS` env var
+    155   javaOpts: "-Duser.timezone=Asia/Seoul"
+     ...
+    395   installPlugins: # 일단 주석처리하고 plugin 별도 설치
+    396 #    - kubernetes:4214.vf10083a_42e70
+    397 #    - workflow-aggregator:596.v8c21c963d92d
+    398 #    - git:5.2.2
+    399 #    - configuration-as-code:1775.v810dc950b_514 
+    ...
+    742   # Openshift route
+    743   route:
+    744     # -- Enables openshift route
+    745     enabled: true
+    ...
+    906   jnlpregistry:
+    907   image:
+    908     # agent image를 변경한다.
+    909     repository: "jenkins/jnlp-slave" # "jenkins/inbound-agent"
+    910     # tag 도 변경
+    911     tag: "latest-jdk11" # "3206.vb_15dcf73f6a_9-3"
+    ...
+    971   volumes: #[]
+    991    - type: PVC
+    992      claimName: jenkins-slave-pvc
+    993      mountPath: /var/jenkins_home
+    994      readOnly: false
+    ...
+   1006   workspaceVolume: #{}
+   1026   ## PVC example
+   1027      type: PVC
+   1028      claimName: jenkins-slave-pvc
+   1029      readOnly: false  
+    ...
+   1180 persistence:
+   1181   # -- Enable the use of a Jenkins PVC
+   1182   enabled: true
+   1183
+   1184   # A manually managed Persistent Volume and Claim
+   1185   # Requires persistence.enabled: true
+   1186   # If defined, PVC must be created manually before volume will be bound
+   1187   # -- Provide the name of a PVC
+   1188   existingClaim: "jenkins-master-pvc"
+   1189
+   1190   # jenkins data Persistent Volume Storage Class
+   1191   # If defined, storageClassName: <storageClass>
+   1192   # If set to "-", storageClassName: "", which disables dynamic provisioning
+   1193   # If undefined (the default) or set to null, no storageClassName spec is
+   1194   #   set, choosing the default provisioner (gp2 on AWS, standard on GKE, AWS & OpenStack)
+   1195   # -- Storage class for the PVC
+   1196   storageClass:
+   1197   # -- Annotations for the PVC
+   1198   annotations: {}
+   1199   # -- Labels for the PVC
+   1200   labels: {}
+   1201   # -- The PVC access mode
+   1202   accessMode: "ReadWriteOnce"
+   1203   # -- The size of the PVC
+   1204   size: "5Gi" 
+    ...
+   1249 ## Install Default RBAC roles and bindings
+   1250 rbac:
+   1251   # -- Whether RBAC resources are created
+   1252   create: true
+   1253   # -- Whether the Jenkins service account should be able to read Kubernetes secrets
+   1254   readSecrets: false
+   1255
+   1256 serviceAccount:
+   1257   # -- Configures if a ServiceAccount with this name should be created
+   1258   create: false
+   1259
+   1260   # The name of the ServiceAccount is autogenerated by default
+   1261   #  -- The name of the ServiceAccount to be used by access-controlled resources
+   1262   name: "jenkins-admin"
+```  
+
+
+<br/>
+
+설치를 진행 합니다.  
+
+<br/>
+
+```bash
+[root@bastion jenkins]# helm install jenkins  -f jenkins_values.yaml jenkins/jenkins -n devops
+```  
+
+<br/>
+
+정상적으로 설치가 되어 있는지 확인한다.  
+
+```bash
+[root@bastion jenkins]# kubectl get po -n devops
+NAME                                               READY   STATUS    RESTARTS          AGE
+jenkins-0                                          2/2     Running   0                 41h
+```
+
+<br/>
+
+### 접속 하고 plugin 설치 하기    
+
+<br/>
+
+route를 조회해 본다.  
+
+```bash
+[root@bastion jenkins]# kubectl get route -n devops
+NAME      HOST/PORT                                     PATH   SERVICES   PORT   TERMINATION     WILDCARD
+jenkins   jenkins-devops.apps.okd4.ktdemo.duckdns.org          jenkins    http   edge/Redirect   None
+```  
+
+<br/>
+
+웹 브라우저에서 jenkins 로 접속한다.    
+
+https://jenkins-devops.apps.okd4.ktdemo.duckdns.org/  
+
+처음에는 로그인 창이 안뜬다.
+
+<br/>
+
+DashBoard 에서 Manage Jenkins -> plugins 로 이동하여 필요한 플러그인을 설치한다.  
+- Git parameter
+- kubernetes
+- kKeycloak Authentication Plugin
+Version2.3.2
+- Pipeline: Stage View Plugin
+- Docker Pipeline
+- Pipeline
+- Configuration as Code Plugin
+- Matrix Authorization Strategy Plugin
+
+
+<br/>
+
+계정을 생성한다.  
+
+Manage Jenkins -> Security ->  Authentication 으로 이동하여 security Realm을 Jenkins 로 설정하고 Authorization 은 아래와 같이 설정한다.   
+
+<img src="./assets/jenkins_security.png" style="width: 60%; height: auto;"/>
+
+<br/>
+
+저장하고 나오면 계정을 생성 하는 화면이 나오고 계정을 생성하면 된다.  
+
+<br/>
+
+주의 사항  
+- security Realm 을 `Nothing`으로 설정하면 CSFR를 disable 해야 한다.  
+
+  <img src="./assets/jenkins_csrf_disable.png" style="width: 60%; height: auto;"/>
+
+
+<br/>
+
+향후 keycloak 연동시에는 plugin 설치하고 아래와 같이 설정 하면 된다.  
+
+<img src="./assets/jenkins_security_keycloak.png" style="width: 60%; height: auto;"/>
+
+<br/>
+
+
+## 19. keycloak 설치
+
+
+<br/>
+
+### KeyCloak 소개
+
+<br>
+
+참고
+- https://velog.io/@juhyeon1114/keycloak-개념부터-실행까지
+- https://tommypagy.tistory.com/441 
+- https://velog.io/@freejia/keycloak-%EC%84%9C%EB%B2%84-%EB%A7%8C%EB%93%A4%EA%B8%B0
+- https://medium.com/geekculture/integrate-keycloak-and-argocd-within-kubernetes-with-ease-6871c620d3b3
+
+<br/>
+
+<img src="./assets/keycloak1.png" style="width: 80%; height: auto;"/>  
+
+<br/>
+
+이번에는 Redhat 에서 개발한 오픈소스 IAM 솔루션(Identity and Access Management Solution)인 Keycloak에 대하여 다룹니다.  
+
+<br/>
+
+Keycloak 은 현대의 애플리케이션과 서비스에 초점을 둔 ID 및 접근 관리(Access Management)에 통합 인증(SSO)을 허용하는 오픈 소스 소프트웨어로 Kubernetes 또는 MSA 환경에 최적화 된 솔루션 입니다.  
+
+<br/>
+
+쉽게 말하면 인증(Authentification)과 인가(Authorization)를 쉽게 해주고 SSO(Single-Sign-On)를 가능하게 해주는 것 입니다.
+
+<br/>
+
+SaaS 솔루션으로는 OKTA , AWS 제품으로는 Cognito 가 있습니다.   
+
+<br/>
+
+기능  
+
+- 표준 프로토콜 지원(OpenID Connect, OAuth 2.0, SAML)
+- 통합 인증(Single Sign-On, SSO)
+- 관리자 / 계정관리 콘솔 제공
+- ID 중개 와 소셜 로그인 (OpenID, SAML, GitHub, Google 등)
+- 사용자 UI 정의
+- Client Adapters (다수의 플랫폼과 프로그래밍 언어가 사용 가능한 adapter)
+
+
+<br/>
+
+### 준비
+
+<br/>
+
+keycloak 은 DB로 postgresql를 사용을 합니다.    
+우리 기초 과정에서 생성한 postgresql 있으면 해당 DB 를 사용하고 없으면 신규로 생성합니다.  
+
+<br/>
+
+로그인 한 후에 keycloak 폴더를 생성합니다.  
+
+```bash
+[root@bastion ~]# mkdir -p keycloak
+[root@bastion ~]# cd keycloak
+``` 
+
+<br/>
+
+### Storage 설정
+
+<br/>
+
+
+PostgreSQL 과 keycloak 가 사용하는 stroage를 위해 pv / pvc 를 생성해야 하며
+사전에 NFS 에 접속하여 폴더를 생성한다. 
+
+<br/>
+
+```bash
+[root@bastion keycloak]# mount -t nfs 192.168.1.79:/volume3/okd/dynamic /mnt
+[root@bastion keycloak]# cd /mnt
+
+```  
+
+NFS 에 신규 폴더를 생성한다.  
+
+<br/>
+
+```bash
+[root@bastion mnt]# mkdir -p postgre
+```
+
+<br/>
+
+postgresql / keycloak 용 해당 폴더의 권한을 설정한다.
+
+<br/>
+
+worker node에서 mount 해서 폴더 권한을 주는 경우는 아래 처럼 설정하고   
+
+`chown -R nfsnobody:nfsnobody postgre`  
+
+pod 내에서 nfs 연결해서 권한을 줄때는  nobody:nogroup 으로 준다.  
+
+`chown -R nobody:nogroup postgre`
+
+<br/>
+
+bastion 에서 연결시에는 별도 그룹 설정을 안해도 된다.  
+
+```bash
+[root@bastion mnt]# chmod 777 postgre
+```  
+
+
+<br/>
+
+postgresql 용 PV 를 생성한다. 사이즈는 5G로 설정한다.
+
+<br/>
+
+```bash
+[root@bastion keycloak]# cat postgre_pv.yaml
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: postgre_pv
+spec:
+  accessModes:
+  - ReadWriteMany
+  capacity:
+    storage: 5Gi
+  nfs:
+    path: /volume3/okd/dynamic/postgre
+    server: 192.168.1.79
+  persistentVolumeReclaimPolicy: Retain
+```  
+
+<br/>
+
+PV를 생성하고 Status를 확인해보면 Available 로 되어 있는 것을 알 수 있습니다.  
+
+<br/>
+
+```bash
+[root@bastion keycloak]# kubectl apply -f  postgre_pv.yaml
+```
+
+<br/>
+
+### namesapce  생성 및 권한 할당
+
+<br/>
+
+keycloak namespace 를 생성합니다.  
+
+<br/>
+
+```bash
+[root@bastion keycloak]# oc new-project keycloak
+Now using project "keycloak" on server "https://api.okd4.ktdemo.duckdns.org:6443".
+
+You can add applications to this project with the 'new-app' command. For example, try:
+
+    oc new-app rails-postgresql-example
+
+to build a new example application in Ruby. Or use kubectl to deploy a simple Kubernetes application:
+
+    kubectl create deployment hello-node --image=k8s.gcr.io/e2e-test-images/agnhost:2.33 -- /agnhost serve-hostname
+```
+
+<br/>
+
+namespace의 label을 `devops=true` 로 설정합니다.
+
+```bash
+metadata:
+  annotations:
+    openshift.io/description: ""
+    openshift.io/display-name: ""
+    openshift.io/node-selector: devops=true
+```  
+
+<br/>
+
+권한을 생성합니다.
+
+```bash
+[root@bastion keycloak]# oc adm policy add-scc-to-user anyuid system:serviceaccount:keycloak:default
+clusterrole.rbac.authorization.k8s.io/system:openshift:scc:anyuid added: "default"
+[root@bastion keycloak]# oc adm policy add-scc-to-user privileged system:serviceaccount:keycloak:default
+clusterrole.rbac.authorization.k8s.io/system:openshift:scc:privileged added: "default"
+```
+
+PVC 를 생성합니다.  
+
+
+```bash
+[root@bastion keycloak]# cat postgre_pvc.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgre_pvc
+spec:
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 5Gi
+  volumeName: postgre_pv
+```   
+
+
+```bash
+[root@bastion keycloak]# kubectl apply -f  postgre_pvc.yaml -n keycloak
+```
+
+<br/>
+
+#### Helm 으로 PostgreSQL 설치
+
+<br/>
+
+> 이미 설치 되어 있으면 SKIP  
+
+<br/>
+
+helm repo 업데이트를 합니다.  
+
+```bash
+[root@bastion keycloak]# helm repo update
+Hang tight while we grab the latest from your chart repositories...
+...Successfully got an update from the "jenkins" chart repository
+...Successfully got an update from the "nfs-subdir-external-provisioner" chart repository
+...Successfully got an update from the "bitnami" chart repository
+Update Complete. ⎈Happy Helming!⎈
+```  
+
+<br/>
+
+
+helm 에서 postgreSQL 를 검색합니다.
+
+```bash
+[root@bastion keycloak]# helm search repo postgresql
+NAME                 	CHART VERSION	APP VERSION	DESCRIPTION
+bitnami/postgresql   	12.2.6       	15.2.0     	PostgreSQL (Postgres) is an open source object-...
+bitnami/postgresql-ha	11.2.0       	15.2.0     	This PostgreSQL cluster solution includes the P...
+bitnami/supabase     	0.1.4        	0.23.2     	Supabase is an open source Firebase alternative...
+```  
+
+<br/>
+
+bitnami/postgresql 차트에서 차트의 변수 값을 변경하기 위해 postgre_values.yaml 화일을 추출한다.
+
+<br/>
+
+
+```bash
+[root@bastion keycloak]# helm show values bitnami/postgresql  > postgre_values.yaml
+```
+
+<br/>
+
+postgre_values.yaml 를 수정한다.  
+
+- 28 ,29,30,31 : 본인이 DB 계정 설정
+- 646 : 본인의 pvc로 변경
+- 669 : 5G로 사이즈 변경
+- 694 : read replica 0 ( primary db만 사용 , readReplicas 는 사용 안함)
+
+<br/>
+
+```bash
+  27     auth:
+  28       postgresPassword: "New1234!"
+  29       username: "keycloak"
+  30       password: "New1234!"
+  31       database: "keycloak"
+  32       existingSecret: ""
+ ... 
+ 640   persistence:
+ 641     ## @param primary.persistence.enabled Enable PostgreSQL Primary data persistence using PVC
+ 642     ##
+ 643     enabled: true
+ 644     ## @param primary.persistence.existingClaim Name of an existing PVC to use
+ 645     ##
+ 646     existingClaim: "postgre-pvc"
+ 647     ## @param primary.persistence.mountPath The path the volume will be mounted at
+ 648     ## Note: useful when using custom PostgreSQL images
+ 649     ##
+ 650     mountPath: /bitnami/postgresql
+ 651     ## @param primary.persistence.subPath The subdirectory of the volume to mount to
+ 652     ## Useful in dev environments and one PV for multiple services
+ 653     ##
+ 654     subPath: ""
+ 655     ## @param primary.persistence.storageClass PVC Storage Class for PostgreSQL Primary data volume
+ 656     ## If defined, storageClassName: <storageClass>
+ 657     ## If set to "-", storageClassName: "", which disables dynamic provisioning
+ 658     ## If undefined (the default) or set to null, no storageClassName spec is
+ 659     ##   set, choosing the default provisioner.  (gp2 on AWS, standard on
+ 660     ##   GKE, AWS & OpenStack)
+ 661     ##
+ 662     storageClass: ""
+ 663     ## @param primary.persistence.accessModes PVC Access Mode for PostgreSQL volume
+ 664     ##
+ 665     accessModes:
+ 666       - ReadWriteOnce
+ 667     ## @param primary.persistence.size PVC Storage Request for PostgreSQL volume
+ 668     ##
+ 669     size: 5Gi
+...
+ 688 readReplicas:
+ 689   ## @param readReplicas.name Name of the read replicas database (eg secondary, slave, ...)
+ 690   ##
+ 691   name: read
+ 692   ## @param readReplicas.replicaCount Number of PostgreSQL read only replicas
+ 693   ##
+ 694   replicaCount: 0
+ ```
+
+<br/>
+
+이제 postgreSQL DB를 설치 합니다.
+
+<br/>
+
+```bash
+[root@bastion keycloak]# helm install keycloak-postgre bitnami/postgresql -f postgre_values.yaml
+NAME: keycloak-postgre
+LAST DEPLOYED: Mon Mar 27 10:12:46 2023
+NAMESPACE: edu30
+STATUS: deployed
+REVISION: 1
+TEST SUITE: None
+NOTES:
+CHART NAME: postgresql
+CHART VERSION: 12.2.6
+APP VERSION: 15.2.0
+
+** Please be patient while the chart is being deployed **
+
+PostgreSQL can be accessed via port 5432 on the following DNS names from within your cluster:
+
+    keycloak-postgre-postgresql.edu30.svc.cluster.local - Read/Write connection
+
+To get the password for "postgres" run:
+
+    export POSTGRES_ADMIN_PASSWORD=$(kubectl get secret --namespace edu30 keycloak-postgre-postgresql -o jsonpath="{.data.postgres-password}" | base64 -d)
+
+To get the password for "edu" run:
+
+    export POSTGRES_PASSWORD=$(kubectl get secret --namespace edu30 keycloak-postgre-postgresql -o jsonpath="{.data.password}" | base64 -d)
+
+To connect to your database run the following command:
+
+    kubectl run keycloak-postgre-postgresql-client --rm --tty -i --restart='Never' --namespace edu30 --image docker.io/bitnami/postgresql:15.2.0-debian-11-r14 --env="PGPASSWORD=$POSTGRES_PASSWORD" \
+      --command -- psql --host keycloak-postgre-postgresql -U edu -d edu -p 5432
+
+    > NOTE: If you access the container using bash, make sure that you execute "/opt/bitnami/scripts/postgresql/entrypoint.sh /bin/bash" in order to avoid the error "psql: local user with ID 1001} does not exist"
+
+To connect to your database from outside the cluster execute the following commands:
+
+    kubectl port-forward --namespace edu30 svc/keycloak-postgre-postgresql 5432:5432 &
+    PGPASSWORD="$POSTGRES_PASSWORD" psql --host 127.0.0.1 -U edu -d edu -p 5432
+
+WARNING: The configured password will be ignored on new installation in case when previous Posgresql release was deleted through the helm command. In that case, old PVC will have an old password, and setting it through helm won't take effect. Deleting persistent volumes (PVs) will solve the issue.
+```
+
+<br/>
+
+pod를 확인한다.
+
+```bash
+[root@bastion keycloak]# kubectl get po -n keycloak
+NAME                                        READY   STATUS    RESTARTS   AGE
+keycloak-postgre-postgresql-0                  1/1     Running   0          82s
+```
+
+<br/>
+
+NFS 서버에 접속하여 data 폴더가 생성 되었는지 확인한다.  
+
+```bash
+[root@bastion mnt]# pwd
+/mnt/postgre
+[root@bastion mnt]# ls data
+PG_VERSION  pg_commit_ts   pg_logical    pg_replslot   pg_stat      pg_tblspc    pg_xact               postmaster.pid
+base        pg_dynshmem    pg_multixact  pg_serial     pg_stat_tmp  pg_twophase  postgresql.auto.conf
+global      pg_ident.conf  pg_notify     pg_snapshots  pg_subtrans  pg_wal       postmaster.opts
+```  
+
+<br/>
+
+PostgreSQL DB 가 이미 존재하면 아래와 같이 DB 이름과 계정을 추가합니다.    
+
+<br/>
+
+POD를 조회 해보고  PostgreSQL 해당 POD에 shell 로 들어갑니다.
+
+여기서는 airflow에 설치된 postgresql 를 사용합니다.  
+
+<br/>
+
+```bash
+[root@bastion keycloak]# kubectl get po -n airflow
+NAME                                    READY   STATUS             RESTARTS          my-postgresql-0                         1/1     Running            0                 62d
+[root@bastion keycloak]# kubectl exec -it my-postgresql-0  sh
+```  
+
+<br/>
+
+postgres 유저로 로그인 합니다.  초기 비밀번호는 유저와 같다.   
+
+비밀번호가 변경된 경우에는 아래처럼 진행하여 비밀번호를 알아 냅니다. (k3s 인 경우)
+
+```bash
+[root@bastion keycloak]# kubectl describe secret my-postgresql -n airflow
+Name:         my-postgresql
+Namespace:    airflow
+Labels:       app.kubernetes.io/instance=my-postgresql
+              app.kubernetes.io/managed-by=Helm
+              app.kubernetes.io/name=postgresql
+              app.kubernetes.io/version=16.1.0
+              helm.sh/chart=postgresql-13.4.4
+Annotations:  meta.helm.sh/release-name: my-postgresql
+              meta.helm.sh/release-namespace: airflow
+
+Type:  Opaque
+
+Data
+====
+password:           8 bytes
+postgres-password:  10 bytes
+```  
+
+<br/>
+
+my-postgresql secret를 edit 하면 base64로 인코딩된  postgres-password를 볼 수 있다.   
+
+```bash
+[root@bastion keycloak]# kubectl edit secret my-postgresql -n airflow
+Edit cancelled, no changes made.
+```  
+
+<br/>
+
+위 값을 복사한후 decode 한다.  
+
+```bash
+[root@bastion keycloak]# echo ZWRBTzI4UzUzYw== | base64 --decode
+```  
+
+<br/>
+
+```bash
+[root@bastion keycloak]# kubectl exec -it my-postgresql-0 sh -n airflow
+$ psql -U postgres;
+Password for user postgres:
+psql (15.2)
+Type "help" for help.
+```  
+<br/>
+
+keycloak 용 DB를 생성하고 아이디/비밀번호를 설정합니다.   
+추가적으로 role을 할당합니다. ( 일단 SUPERSUER로 설정합니다. )
+
+
+<br/>
+
+```bash
+postgres=# CREATE DATABASE keycloak;
+CREATE DATABASE
+postgres=# CREATE USER keycloak WITH PASSWORD 'New1234!';
+CREATE ROLE
+postgres=# ALTER USER keycloak WITH SUPERUSER;
+ALTER ROLE
+``` 
+
+<br/>
+
+### Helm KeyCloak  설정
+
+<br/>
+
+PostgreSQL 과 KeyCloak 은 Helm Chart 를 이용하여 설치를 합니다.  
+
+<br/>
+
+현재 로컬의 helm repository 를 확인한다.   
+
+<br/>
+
+```bash
+[root@bastion keycloak]# helm repo list
+NAME                           	URL
+bitnami                        	https://charts.bitnami.com/bitnami
+nfs-subdir-external-provisioner	https://kubernetes-sigs.github.io/nfs-subdir-external-provisioner/
+```  
+
+<br/>
+
+우리는 bitnami chart를 사용할 예정이기 때문에 없으면 아래와 같이 추가한다.  
+
+<br/>
+
+```bash
+[root@bastion keycloak]# helm repo add bitnami https://charts.bitnami.com/bitnami --insecure-skip-tls-verify
+"bitnami" has been added to your repositories
+```
+
+<br/>
+
+helm repository를 update 한다.  
+
+<br/>
+
+```bash
+[root@bastion keycloak]# helm repo update
+Hang tight while we grab the latest from your chart repositories...
+...Successfully got an update from the "nfs-subdir-external-provisioner" chart repository
+...Successfully got an update from the "jenkins" chart repository
+...Successfully got an update from the "bitnami" chart repository
+Update Complete. ⎈Happy Helming!⎈
+```  
+
+<br/>
+
+keycloak helm reppository 에서 helm chart를 검색을 하고 keycloak chart를 선택합니다.  
+
+<br/>
+
+```bash
+[root@bastion keycloak]# helm search repo keycloak
+NAME            	CHART VERSION	APP VERSION	DESCRIPTION
+bitnami/keycloak	18.3.4       	23.0.6     	Keycloak is a high performance Java-based ident...
+```
+
+<br/>
+
+bitnami/keycloak 차트에서 차트의 변수 값을 변경하기 위해 yaml 화일을 추출한다.
+
+<br/>
+
+
+```bash
+[root@bastion keycloak]# helm show values bitnami/keycloak > values.yaml
+```
+
+
+<br/>
+
+vi 데이터에서 생성된 values.yaml을 연다.  
+
+<br/>
+
+```bash
+[root@bastion keycloak]# vi values.yaml
+```  
+
+라인을 보기 위해 ESC 를 누른 후 `:set nu` 를 입력하면 왼쪽에 라인이 보인다.  
+
+<br/>
+
+수정내용  
+
+ - 118~124 라인 : admin 계정과 비밀번호
+ - 205 : okd인 경우 edge로 설정 
+ - 354 라인 : readinessProbe 는 false 로 변경
+ - 1079 라인 : postgresql는  별도 설치된 DB 사용으로 false로 변경
+ - 1102~1102 : 위에서 설정한 postgresql db 로 설정. host는 서비스 이름
+
+<br/>
+
+```bash
+ 118 auth:
+ 119   ## @param auth.adminUser Keycloak administrator user
+ 120   ##
+ 121   adminUser: admin
+ 122   ## @param auth.adminPassword Keycloak administrator password for the new user
+ 123   ##
+ 124   adminPassword: "New1234!"
+ 125   ## @param auth.existingSecret Existing secret containing Keycloak admin password
+ 126   ##
+ 127   existingSecret: ""
+ 128   ## @param auth.passwordSecretKey Key where the Keycloak admin password is being stored inside the existing secret.
+ 129   ##
+ 130   passwordSecretKey: ""
+ 131   ## @param auth.annotations Additional custom annotations for Keycloak auth secret object
+ 132   ##
+ ...
+ 205 proxy:  passthrough # edge : OKD 인경우 
+ ...    
+ 353 readinessProbe:
+ 354   enabled: true # 별도 설정 안함
+ ...
+1078 postgresql:
+1079   enabled: false
+1080   auth:
+1081     postgresPassword: ""
+1082     username: bn_keycloak
+1083     password: ""
+1084     database: bitnami_keycloak
+1085     existingSecret: ""
+1086   architecture: standalone
+ ...
+1102 externalDatabase:
+1103   host: my-postgresql.airflow.svc # 사전에 설치한 airflow postgres 사용  
+1104   port: 5432
+1105   user: keycloak
+1106   database: keycloak
+1107   password: "New1234!"
+1108   existingSecret: ""
+1109   existingSecretHostKey: ""
+1110   existingSecretPortKey: ""
+1111   existingSecretUserKey: ""
+1112   existingSecretDatabaseKey: ""
+1113   existingSecretPasswordKey: ""
+1114   annotations: {}
+```  
+<br/>
+
+### Helm 으로 keycloak 설치
+
+<br/>
+
+values.yaml 를 사용하여 설치 한다.
+
+<br/>
+
+
+```bash
+[root@bastion keycloak]# helm install my-keycloak -f values.yaml bitnami/keycloak -n keycloak --insecure-skip-tls-verify
+NAME: my-keycloak
+LAST DEPLOYED: Tue Feb  6 19:01:47 2024
+NAMESPACE: keycloak
+STATUS: deployed
+REVISION: 1
+TEST SUITE: None
+NOTES:
+CHART NAME: keycloak
+CHART VERSION: 18.3.4
+APP VERSION: 23.0.6
+
+** Please be patient while the chart is being deployed **
+
+Keycloak can be accessed through the following DNS name from within your cluster:
+
+    my-keycloak.keycloak.svc.cluster.local (port 80)
+
+To access Keycloak from outside the cluster execute the following commands:
+
+1. Get the Keycloak URL by running these commands:
+
+    export HTTP_SERVICE_PORT=$(kubectl get --namespace keycloak -o jsonpath="{.spec.ports[?(@.name=='http')].port}" services my-keycloak)
+    kubectl port-forward --namespace keycloak svc/my-keycloak ${HTTP_SERVICE_PORT}:${HTTP_SERVICE_PORT} &
+
+    echo "http://127.0.0.1:${HTTP_SERVICE_PORT}/"
+
+2. Access Keycloak using the obtained URL.
+3. Access the Administration Console using the following credentials:
+
+  echo Username: admin
+  echo Password: $(kubectl get secret --namespace keycloak my-keycloak -o jsonpath="{.data.admin-password}" | base64 -d)
+```  
+
+pod를 확인해봅니다.
+
+<br/>
+
+```bash
+root@newedu:~/keycloak# kubectl get po
+NAME                                        READY   STATUS             RESTARTS   AGE
+keycloak-0                                  1/1     Running            0          34s
+```  
+
+
+<br/>
+
+### Keycloak 설정
+
+<br/>
+
+keycloak route 를 아래 처럼 생성한다.  ( OKD 인 경우 ) 
+
+```bash
+[root@bastion keycloak]# cat keycloak_route.yaml
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: keycloak
+spec:
+  host: keycloak.apps.okd4.ktdemo.duckdns.org
+  port:
+    targetPort: http
+  tls:
+    insecureEdgeTerminationPolicy: Allow
+    termination: edge
+  to:
+    kind: Service
+    name: my-keycloak
+    weight: 100
+  wildcardPolicy: None
+```  
+
+<br/>
+
+```bash
+[root@bastion keycloak]# kubectl apply -f keycloak_route.yaml
+route.route.openshift.io/keycloak created
+[root@bastion keycloak]# kubectl get route
+NAME       HOST/PORT                               PATH   SERVICES      PORT   TERMINATION     WILDCARD
+keycloak   keycloak.apps.okd4.ktdemo.duckdns.org          my-keycloak   http   edge/Redirect   None
+```  
+
+<br/>
+
+
+## 20. kafka 설치
+
+
+<br/>
+
+### 준비
+
+<br/>
+
+kafka는 strimzi operator 로 설치를 진행 합니다.   
+- https://jjongguet.tistory.com/153
+
+
+로그인 한 후에 kafka 폴더를 생성합니다.  
+
+```bash
+[root@bastion ~]# mkdir -p kafka
+[root@bastion ~]# cd kafka
+``` 
+
+<br/>
+
+`kafka` namespace 를 생성하고 권한을 할당한다. 
+
+
+```bash
+[root@bastion kafka]# oc new-project kafka
+Now using project "kafka" on server "https://api.okd4.ktdemo.duckdns.org:6443".
+
+You can add applications to this project with the 'new-app' command. For example, try:
+
+    oc new-app rails-postgresql-example
+
+to build a new example application in Ruby. Or use kubectl to deploy a simple Kubernetes application:
+
+    kubectl create deployment hello-node --image=k8s.gcr.io/e2e-test-images/agnhost:2.33 -- /agnhost serve-hostname
+```
+
+<br/>
+
+```bash
+[root@bastion kafka]# oc adm policy add-scc-to-user anyuid -z default -n kafka
+[root@bastion kafka]# oc adm policy add-scc-to-user privileged -z default -n kafka
+```  
+
+<br/>
+
+namespace node-selector 는  `kafka=true` 로 설정한다.  
+
+```bash
+apiVersion: v1
+kind: Namespace
+metadata:
+  annotations:
+    openshift.io/description: ""
+    openshift.io/display-name: ""
+    openshift.io/node-selector: kafka=true
+```  
+
+<br/>
+
+4번 node 에 label 설정한다.  
+
+```bash
+  labels:
+    beta.kubernetes.io/arch: amd64
+    beta.kubernetes.io/os: linux
+    edu: "true"
+    elastic: "true"
+    kubernetes.io/arch: amd64
+    kubernetes.io/hostname: okd-4.okd4.ktdemo.duckdns.org
+    kubernetes.io/os: linux
+    monitoring: "true"
+    kafka: "true"
+```  
+
+<br/>
+
+
+helm repository 를 추가한다.
+
+```bash
+[root@bastion kafka]# helm repo add strimzi https://strimzi.io/charts/
+WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
+"strimzi" has been added to your repositories
+[root@bastion kafka]# helm repo update
+WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
+Hang tight while we grab the latest from your chart repositories...
+...Successfully got an update from the "strimzi" chart repository
+...Successfully got an update from the "opensearch" chart repository
+...Successfully got an update from the "elastic" chart repository
+...Successfully got an update from the "opentelemetry" chart repository
+...Successfully got an update from the "jetstack" chart repository
+...Successfully got an update from the "aspecto" chart repository
+...Successfully got an update from the "nfs-subdir-external-provisioner" chart repository
+...Successfully got an update from the "harbor" chart repository
+...Successfully got an update from the "logzio-helm" chart repository
+...Successfully got an update from the "signoz" chart repository
+...Successfully got an update from the "kubecost" chart repository
+...Successfully got an update from the "apache-airflow" chart repository
+...Successfully got an update from the "github-stable" chart repository
+...Successfully got an update from the "jenkins" chart repository
+...Successfully got an update from the "kubescape" chart repository
+...Successfully got an update from the "fairwinds-stable" chart repository
+...Successfully got an update from the "vector" chart repository
+...Successfully got an update from the "bitnami" chart repository
+Update Complete. ⎈Happy Helming!⎈
+```  
+
+<br/>
+
+```bash
+[root@bastion kafka]# helm search repo kafka
+WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
+NAME                          	CHART VERSION	APP VERSION	DESCRIPTION
+bitnami/kafka                 	28.2.4       	3.7.0      	Apache Kafka is a distributed streaming platfor...
+strimzi/strimzi-kafka-operator	0.41.0       	0.41.0     	Strimzi: Apache Kafka running on Kubernetes
+bitnami/dataplatform-bp2      	12.0.5       	1.0.1      	DEPRECATED This Helm chart can be used for the ...
+bitnami/schema-registry       	18.0.5       	7.6.1      	Confluent Schema Registry provides a RESTful in...
+strimzi/strimzi-drain-cleaner 	1.1.0        	1.1.0      	Utility which helps with moving the Apache Kafk...
+[root@bastion kafka]# helm show values strimzi/strimzi-kafka-operator > strimzi_values.yaml
+WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
+```  
+<br/>
+
+strimzi_values.yaml 화일을 수정 합니다.  kafka 를 생성하는 것이 아니기 때문에 수정사항이 거의 없다. 
+
+
+<br/>
+
+```bash
+[root@bastion kafka]# helm install strimzi-kafka-operator  -f strimzi_values.yaml strimzi/strimzi-kafka-operator -n kafka
+NAME: strimzi-kafka-operator
+LAST DEPLOYED: Thu May 16 16:10:16 2024
+NAMESPACE: kafka
+STATUS: deployed
+REVISION: 1
+TEST SUITE: None
+NOTES:
+Thank you for installing strimzi-kafka-operator-0.41.0
+
+To create a Kafka cluster refer to the following documentation.
+
+https://strimzi.io/docs/operators/latest/deploying.html#deploying-cluster-operator-helm-chart-str
+```  
+
+<br/>
+
+기동이 되어 있는지 확인한다.  
+
+```bash
+[root@bastion kafka]# kubectl get po -n kafka
+NAME                                               READY   STATUS    RESTARTS         
+strimzi-cluster-operator-b4dcf8fd8-l7j6n           1/1     Running   0                111s
+```  
+
+<br/>
+
+### kafka cluster 생성하기   
+
+<br/>
+
+https://github.com/strimzi/strimzi-kafka-operator 사이트에서 적당한 yaml 화일을 선택한다.  
+
+여기 예제는 1개의 서버에 휘발성 데이터를 구성하기 때문에   https://github.com/strimzi/strimzi-kafka-operator/blob/main/examples/kafka/kafka-ephemeral-single.yaml 를 선택한다.  
+
+<br/>
+
+zookeeper replicas도 1로 설정한다.  
+
+```bash
+[root@bastion kafka]# cat kafka-ephemeral-single.yaml
+apiVersion: kafka.strimzi.io/v1beta2
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    version: 3.7.0
+    replicas: 1
+    listeners:
+      - name: plain
+        port: 9092
+        type: internal
+        tls: false
+      - name: tls
+        port: 9093
+        type: internal
+        tls: true
+    config:
+      offsets.topic.replication.factor: 1
+      transaction.state.log.replication.factor: 1
+      transaction.state.log.min.isr: 1
+      default.replication.factor: 1
+      min.insync.replicas: 1
+      inter.broker.protocol.version: "3.7"
+    storage:
+      type: ephemeral
+  zookeeper:
+    replicas: 1
+    storage:
+      type: ephemeral
+  entityOperator:
+    topicOperator: {}
+    userOperator: {}
+```  
+
+<br/>
+
+Kafka Cluster를 생성하고 Pod 를 조회해 본다.
+
+```bash
+[root@bastion kafka]# kubectl apply -f kafka-ephemeral-single.yaml
+kafka.kafka.strimzi.io/my-cluster created
+[root@bastion kafka]# kubectl get po
+NAME                                          READY   STATUS    RESTARTS   AGE
+my-cluster-entity-operator-5b58cd4799-kxwlr   2/2     Running   0          61s
+my-cluster-kafka-0                            1/1     Running   0          87s
+my-cluster-zookeeper-0                        1/1     Running   0          2m13s
+strimzi-cluster-operator-b4dcf8fd8-v9qp7      1/1     Running   0          3m7s
+```  
+
+<br/>
+
+Topic 을 생성한다.      
+
+- https://github.com/strimzi/strimzi-kafka-operator/blob/main/examples/topic/kafka-topic.yaml  
+
+
+<br/>
+
+```bash
+[root@bastion kafka]# cat topic_pponmvp.yaml
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: pponmvp
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  partitions: 1
+  replicas: 1
+  config:
+    retention.ms: 7200000
+    segment.bytes: 1073741824
+[root@bastion kafka]# kubectl apply -f topic_pponmvp.yaml
+kafkatopic.kafka.strimzi.io/pponmvp created
+```  
+
+<br/>
+
+생성된 Topic 을 조회해 본다.  
+
+```bash
+[root@bastion kafka]# kubectl get kafkatopics
+NAME      CLUSTER      PARTITIONS   REPLICATION FACTOR   READY
+pponmvp   my-cluster   1            1                    True
+```  
+
+<br/>
+
+서비스를 조회해 본다.  
+
+```bash
+[root@bastion kafka]# kubectl get svc
+NAME                          TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)                                        AGE
+my-cluster-kafka-bootstrap    ClusterIP   172.30.124.252   <none>        9091/TCP,9092/TCP,9093/TCP                     2m23s
+my-cluster-kafka-brokers      ClusterIP   None             <none>        9090/TCP,9091/TCP,8443/TCP,9092/TCP,9093/TCP   2m22s
+my-cluster-zookeeper-client   ClusterIP   172.30.101.191   <none>        2181/TCP                                       3m9s
+my-cluster-zookeeper-nodes    ClusterIP   None             <none>        2181/TCP,2888/TCP,3888/TCP                     3m8s
+```    
+
+<br/>
+
+### kafka ui 설치 하기   
+
+<br/>
+
+helm repo를 추가한다.  
+
+```bash
+[root@bastion kafka]# helm repo add kafka-ui https://provectus.github.io/kafka-ui-charts
+WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
+"kafka-ui" has been added to your repositories
+[root@bastion kafka]# helm repo update
+WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
+Hang tight while we grab the latest from your chart repositories...
+...Successfully got an update from the "nfs-subdir-external-provisioner" chart repository
+...Successfully got an update from the "kafka-ui" chart repository
+...Successfully got an update from the "opensearch" chart repository
+...Successfully got an update from the "kubecost" chart repository
+...Successfully got an update from the "elastic" chart repository
+...Successfully got an update from the "vector" chart repository
+...Successfully got an update from the "opentelemetry" chart repository
+...Successfully got an update from the "github-stable" chart repository
+...Successfully got an update from the "kubescape" chart repository
+...Successfully got an update from the "jetstack" chart repository
+...Successfully got an update from the "strimzi" chart repository
+...Successfully got an update from the "apache-airflow" chart repository
+...Successfully got an update from the "aspecto" chart repository
+...Successfully got an update from the "jenkins" chart repository
+...Successfully got an update from the "harbor" chart repository
+...Successfully got an update from the "logzio-helm" chart repository
+...Successfully got an update from the "signoz" chart repository
+...Successfully got an update from the "fairwinds-stable" chart repository
+...Successfully got an update from the "bitnami" chart repository
+Update Complete. ⎈Happy Helming!⎈
+[root@bastion kafka]# helm search repo kafka-ui
+WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
+NAME             	CHART VERSION	APP VERSION	DESCRIPTION
+kafka-ui/kafka-ui	0.7.6        	v0.7.2     	A Helm chart for kafka-UI
+[root@bastion kafka]# helm show values kafka-ui/kafka-ui > kafka_ui_values.yaml
+WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
+```    
+
+<br/>
+
+kafka_ui_values.yaml을 수정한다.  
+
+<br/>
+
+```bash
+[root@bastion kafka]# vi kafka_ui_values.yaml
+```
+
+아래와 같이 cluster 이름과 bootstrapServers 를 설정한다.   
+
+```yaml
+    24 yamlApplicationConfig:
+     25 #  {}
+     26    kafka:
+     27      clusters:
+     28        - name: my-cluster
+     29          bootstrapServers: my-cluster-kafka-bootstrap:9092 #kafka-service:9092
+```  
+
+
+<br/>
+
+helm 으로 설치를 한다.  
+
+```bash
+[root@bastion kafka]# helm install kafka-ui kafka-ui/kafka-ui -f kafka_ui_values.yaml
+WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/okd4/auth/kubeconfig
+NAME: kafka-ui
+LAST DEPLOYED: Thu May 16 16:40:07 2024
+NAMESPACE: devops
+STATUS: deployed
+REVISION: 1
+TEST SUITE: None
+NOTES:
+1. Get the application URL by running these commands:
+  export POD_NAME=$(kubectl get pods --namespace devops -l "app.kubernetes.io/name=kafka-ui,app.kubernetes.io/instance=kafka-ui" -o jsonpath="{.items[0].metadata.name}")
+  echo "Visit http://127.0.0.1:8080 to use your application"
+  kubectl --namespace devops port-forward $POD_NAME 8080:8080
+```  
+
+<br/>
+
+POD를 조회해 본다.  
+
+```bash
+[root@bastion kafka]# kubectl get po
+NAME                                          READY   STATUS    RESTARTS   AGE
+kafka-ui-5b696cd6d-79k88                      1/1     Running   0          3m23s
+my-cluster-entity-operator-5b58cd4799-kxwlr   2/2     Running   0          6m14s
+my-cluster-kafka-0                            1/1     Running   0          6m40s
+my-cluster-zookeeper-0                        1/1     Running   0          7m26s
+strimzi-cluster-operator-b4dcf8fd8-v9qp7      1/1     Running   0          8m20s
+```  
+
+<br/>
+
+route 를 생성한다.  
+
+```bash
+[root@bastion kafka]# cat kafka_ui_route.yaml
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: kafka-ui
+spec:
+  host: kafka-ui.apps.okd4.ktdemo.duckdns.org
+  port:
+    targetPort: http
+  tls:
+    insecureEdgeTerminationPolicy: Redirect
+    termination: edge
+  to:
+    kind: Service
+    name: kafka-ui
+    weight: 100
+  wildcardPolicy: None
+```   
+
+```bash
+[root@bastion kafka]# kubectl apply -f kafka_ui_route.yaml
+route.route.openshift.io/kafka-ui created
+[root@bastion kafka]# kubectl get route
+NAME       HOST/PORT                               PATH   SERVICES   PORT   TERMINATION     WILDCARD
+kafka-ui   kafka-ui.apps.okd4.ktdemo.duckdns.org          kafka-ui   http   edge/Redirect   None
+```  
+
+<br/>
+
+web 브라우저에서 https://kafka-ui.apps.okd4.ktdemo.duckdns.org  로 접속한다.  
+
+
+<img src="./assets/kafka_ui.png" style="width: 80%; height: auto;"/>    
+
+<br/>
+
+인증을 추가하기 위해서는 basic 인증으로 spring security 를 사용한다.  
+
+환경변수에 아래와 같이 추가한다.   
+- AUTH_TYPE: "LOGIN_FORM"
+- SPRING_SECURITY_USER_NAME: admin
+- SPRING_SECURITY_USER_PASSWORD: pass
+
+
 <br/><br/><br/>
 
+## 참고 자료   
 
-참고 자료   
+<br/>
 
 - 소개 : https://velog.io/@_gyullbb/series/OKD
 - OKD 설치 :  https://www.server-world.info/en/note?os=CentOS_Stream_8&p=okd4&f=1
@@ -5390,7 +7096,12 @@ elastic/비밀번호 로 로그인 한다.
 
 <br/>
 
-## 로그 조회
+
+## 기타
+
+<br/>
+
+### 로그 조회
 
 <br/>
 
@@ -6047,84 +7758,6 @@ data:
 
 
 
-[root@bastion monitoring]# kubectl get servicemonitors.monitoring.coreos.com  -n openshift-user-workload-monitoring
-NAME                       AGE
-prometheus-operator        45h
-prometheus-user-workload   45h
-thanos-ruler               45h
-thanos-sidecar             45h
-[root@bastion monitoring]# kubectl get servicemonitors.monitoring.coreos.com  -n shclub
-NAME                     AGE
-backend-monitor          39h
-external-node-exporter   14h
-
-
-
-minio 
-
-13502
-
-15306
-
-12563  : standalone 으로 설치 된경우
-
-
-prometheusK8s:
-      - job_name: 'kubernetes-pods'
-        kubernetes_sd_configs:
-        - role: pod
-
-- job_name: minio-job
-  bearer_token: my-minio
-  metrics_path: /minio/v2/metrics/cluster
-  scheme: http
-  static_configs:
-  - targets: ['my-minio.minio.svc.cluster.local:9000']
-
-
-
-https://min.io/docs/minio/kubernetes/upstream/operations/monitoring/metrics-and-alerts.html
-https://min.io/docs/minio/linux/reference/minio-server/minio-server.html#envvar.MINIO_PROMETHEUS_AUTH_TYPE
-
-
-
- curl https://play.min.io/minio/v2/metrics/cluster
-
-http://minio.example.net:9000/minio/v2/metrics/cluster
-
-
-잠시만 백업
-
-apiVersion: v1
-data:
-  config.yaml: |
-    prometheus:
-      - job_name: minio-job
-        bearer_token: my-minio
-        metrics_path: /minio/v2/metrics/cluster
-        scheme: http
-        static_configs:
-         - targets: ['my-minio.minio.svc.cluster.local:9000']
-      retention: 14d
-      additionalScrapeConfigs:
-        enabled: true
-        name: additional-scrape-configs
-        key: additional_scrape_config.yaml
-
-
-
-        TOKEN=$(oc create token grafana-serviceaccount -n openshift-user-workload-monitoring)
-
-cat manifests/grafana-datasource.yaml | sed 's/Bearer .*/Bearer '"$TOKEN""'"'/'|oc apply -n openshift-user-workload-monitoring -f -
-
-okd_minio_env.png
-
-okd_minio_metric_test.png
-
-
-okd_cadvisor1.png
-
-
 api server 에러 로그
 [root@okd-1 core]# cat /var/log/kube-apiserver/audit.log
 
@@ -6184,90 +7817,6 @@ master node 에 접속 하여
 
 # export KUBECONFIG=/etc/kubernetes/static-pod-resources/kube-apiserver-certs/secrets/node-kubeconfigs/lb-int.kubeconfig
 # oc get csr -o name | xargs oc adm certificate approve 
-
-
-[root@okd-1 kubernetes]# systemctl status kubelet
-● kubelet.service - Kubernetes Kubelet
-     Loaded: loaded (/etc/systemd/system/kubelet.service; enabled; preset: disabled)
-    Drop-In: /etc/systemd/system/kubelet.service.d
-             └─01-kubens.conf, 10-mco-default-env.conf, 10-mco-default-madv.conf, 20-logging.conf, 20-nodenet.conf
-     Active: active (running) since Sat 2023-09-16 22:47:25 KST; 6min ago
-    Process: 1992 ExecStartPre=/bin/mkdir --parents /etc/kubernetes/manifests (code=exited, status=0/SUCCESS)
-    Process: 1993 ExecStartPre=/bin/rm -f /var/lib/kubelet/cpu_manager_state (code=exited, status=0/SUCCESS)
-    Process: 1994 ExecStartPre=/bin/rm -f /var/lib/kubelet/memory_manager_state (code=exited, status=0/SUCCESS)
-   Main PID: 1995 (kubelet)
-      Tasks: 24 (limit: 11606)
-     Memory: 46.3M
-        CPU: 7.025s
-     CGroup: /system.slice/kubelet.service
-             └─1995 /usr/bin/kubelet --config=/etc/kubernetes/kubelet.conf --bootstrap-kubeconfig=/etc/kubernetes/kubeconfig --kubeconfig=/var/lib/kubelet/kubeconfig --container-runtime=rem>
-
-Sep 16 22:54:20 okd-1.okd4.ktdemo.duckdns.org kubenswrapper[1995]: I0916 22:54:20.970618    1995 kubelet_node_status.go:590] "Recording event message for node" node="okd-1.okd4.ktdemo.duckd>
-Sep 16 22:54:20 okd-1.okd4.ktdemo.duckdns.org kubenswrapper[1995]: I0916 22:54:20.970627    1995 kubelet_node_status.go:590] "Recording event message for node" node="okd-1.okd4.ktdemo.duckd>
-Sep 16 22:54:20 okd-1.okd4.ktdemo.duckdns.org kubenswrapper[1995]: I0916 22:54:20.970647    1995 kubelet_node_status.go:72] "Attempting to register node" node="okd-1.okd4.ktdemo.duckdns.org"
-Sep 16 22:54:20 okd-1.okd4.ktdemo.duckdns.org kubenswrapper[1995]: E0916 22:54:20.971915    1995 kubelet_node_status.go:94] "Unable to register node with API server" err="nodes is forbidden>
-Sep 16 22:54:21 okd-1.okd4.ktdemo.duckdns.org kubenswrapper[1995]: E0916 22:54:21.057688    1995 kubelet.go:2471] "Error getting node" err="node \"okd-1.okd4.ktdemo.duckdns.org\" not found"
-Sep 16 22:54:21 okd-1.okd4.ktdemo.duckdns.org kubenswrapper[1995]: E0916 22:54:21.158320    1995 kubelet.go:2471] "Error getting node" err="node \"okd-1.okd4.ktdemo.duckdns.org\" not found"
-Sep 16 22:54:21 okd-1.okd4.ktdemo.duckdns.org kubenswrapper[1995]: E0916 22:54:21.259128    1995 kubelet.go:2471] "Error getting node" err="node \"okd-1.okd4.ktdemo.duckdns.org\" not found"
-Sep 16 22:54:21 okd-1.okd4.ktdemo.duckdns.org kubenswrapper[1995]: E0916 22:54:21.359983    1995 kubelet.go:2471] "Error getting node" err="node \"okd-1.okd4.ktdemo.duckdns.org\" not found"
-Sep 16 22:54:21 okd-1.okd4.ktdemo.duckdns.org kubenswrapper[1995]: E0916 22:54:21.460865    1995 kubelet.go:2471] "Error getting node" err="node \"okd-1.okd4.ktdemo.duckdns.org\" not found"
-Sep 16 22:54:21 okd-1.okd4.ktdemo.duckdns.org kubenswrapper[1995]: E0916 22:54:21.561750    1995 kubelet.go:2471] "Error getting node" err="node \"okd-1.okd4.ktdemo.duckdns.org\" not found"
-
-
-
-
-[root@okd-1 kubernetes]# oc whoami
-Error from server (ServiceUnavailable): the server is currently unable to handle the request (get users.user.openshift.io ~)
-[root@okd-1 kubernetes]# oc get csr
-NAME        AGE     SIGNERNAME                                    REQUESTOR                                                                   REQUESTEDDURATION   CONDITION
-csr-48vzj   77m     kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper   <none>              Pending
-csr-5tscx   113m    kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper   <none>              Pending
-csr-6xnr7   72m     kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper   <none>              Pending
-csr-bjftj   6m30s   kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper   <none>              Pending
-csr-g2fjp   96m     kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper   <none>              Pending
-csr-h2f95   27m     kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper   <none>              Pending
-csr-kh7dr   42m     kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper   <none>              Pending
-csr-pbkq2   106m    kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper   <none>              Pending
-csr-qn87p   99m     kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper   <none>              Pending
-csr-x2k78   92m     kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper   <none>              Pending
-csr-zp94n   57m     kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper   <none>              Pending
-[root@okd-1 kubernetes]# oc get csr -o name | xargs oc adm certificate approve
-certificatesigningrequest.certificates.k8s.io/csr-48vzj approved
-certificatesigningrequest.certificates.k8s.io/csr-5tscx approved
-certificatesigningrequest.certificates.k8s.io/csr-6xnr7 approved
-certificatesigningrequest.certificates.k8s.io/csr-bjftj approved
-certificatesigningrequest.certificates.k8s.io/csr-g2fjp approved
-certificatesigningrequest.certificates.k8s.io/csr-h2f95 approved
-certificatesigningrequest.certificates.k8s.io/csr-kh7dr approved
-certificatesigningrequest.certificates.k8s.io/csr-pbkq2 approved
-certificatesigningrequest.certificates.k8s.io/csr-qn87p approved
-certificatesigningrequest.certificates.k8s.io/csr-x2k78 approved
-certificatesigningrequest.certificates.k8s.io/csr-zp94n approved
-
-
-[root@okd-1 kubernetes]# oc get csr
-NAME        AGE     SIGNERNAME                                    REQUESTOR                                                                   REQUESTEDDURATION   CONDITION
-csr-48vzj   79m     kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper   <none>              Approved,Issued
-csr-5tscx   115m    kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper   <none>              Approved,Issued
-csr-6xnr7   74m     kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper   <none>              Approved,Issued
-csr-bjftj   8m36s   kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper   <none>              Approved,Issued
-csr-g2fjp   98m     kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper   <none>              Approved,Issued
-csr-ghlqp   41s     kubernetes.io/kubelet-serving                 system:node:okd-1.okd4.ktdemo.duckdns.org                                   <none>              Pending
-csr-h2f95   29m     kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper   <none>              Approved,Issued
-csr-kh7dr   44m     kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper   <none>              Approved,Issued
-csr-pbkq2   108m    kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper   <none>              Approved,Issued
-csr-qn87p   101m    kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper   <none>              Approved,Issued
-csr-x2k78   94m     kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper   <none>              Approved,Issued
-csr-zp94n   59m     kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper   <none>              Approved,Issued
-[root@okd-1 kubernetes]# oc get csr -o name | xargs oc adm certificate approve
-certificatesigningrequest.certificates.k8s.io/csr-48vzj approved
-
-
-```bash
-[root@okd-1 kubernetes]# oc adm certificate approve csr-ghlqp
-certificatesigningrequest.certificates.k8s.io/csr-ghlqp approved
-```  
-
 
 
 ```bash
@@ -6417,284 +7966,6 @@ okd-3.okd4.ktdemo.duckdns.org   Ready    worker                 9d    v1.25.7+ea
 [root@okd-1 core]# oc get csr
 No resources found
 ```
-
-
-
-[root@okd-1 core]# cd /var/lib/kubelet/pki
-[root@okd-1 pki]# ls
-kubelet-client-2023-09-01-03-16-13.pem  kubelet-client-current.pem              kubelet-server-2023-09-17-08-10-36.pem  kubelet.crt
-kubelet-client-2023-09-16-22-57-51.pem  kubelet-server-2023-09-01-03-16-34.pem  kubelet-server-current.pem              kubelet.key
-[root@okd-1 pki]# mv * /home/core
-
-
-[root@okd-1 pki]# openssl  x509 -in kubelet-client.pem -text
-Certificate:
-    Data:
-        Version: 3 (0x2)
-        Serial Number:
-            da:2f:6e:89:7b:8f:6b:56:e5:b9:40:0c:a5:61:d1:4d
-        Signature Algorithm: sha256WithRSAEncryption
-        Issuer: OU = openshift, CN = kubelet-signer
-        Validity
-            Not Before: Sep  1 03:11:13 2023 GMT
-            Not After : Sep  2 00:36:57 2023 GMT
-        Subject: O = system:nodes, CN = system:node:okd-1.okd4.ktdemo.duckdns.org
-        Subject Public Key Info:
-            Public Key Algorithm: id-ecPublicKey
-                Public-Key: (256 bit)
-                pub:
-                    04:eb:ab:91:53:ab:50:73:4d:75:ce:f0:c6:19:a6:
-                    12:50:74:e4:6a:b8:d5:0d:62:5f:00:44:6e:14:91:
-                    19:db:97:a5:95:6e:fa:17:1b:0d:4a:13:23:a6:fb:
-                    24:d6:e8:fd:c0:e0:e1:f2:e9:94:9c:33:6f:8f:f5:
-                    f7:57:42:17:77
-                ASN1 OID: prime256v1
-                NIST CURVE: P-256
-        X509v3 extensions:
-            X509v3 Key Usage: critical
-                Digital Signature, Key Encipherment
-            X509v3 Extended Key Usage:
-                TLS Web Client Authentication
-            X509v3 Basic Constraints: critical
-                CA:FALSE
-            X509v3 Authority Key Identifier:
-                4A:13:BB:F5:96:36:01:5C:BA:FE:26:06:96:81:EA:F5:4B:67:D2:95
-    Signature Algorithm: sha256WithRSAEncryption
-    Signature Value:
-        20:7b:f7:92:5b:b8:06:fb:99:18:53:bb:02:39:12:99:dd:9f:
-        82:a5:f3:a0:18:65:9c:eb:1c:3d:af:bd:81:ec:71:ee:4d:86:
-        e0:4c:dd:38:56:40:d5:2a:c8:b5:ec:a6:bd:09:bf:0f:ef:c1:
-        80:bf:97:a6:e1:0b:3e:40:fa:fc:38:5a:54:4e:45:5d:26:52:
-        2d:2e:4a:f4:6c:3d:c0:7d:83:da:02:d1:f3:89:27:ac:8c:53:
-        55:9d:9f:12:3c:ea:b0:f4:00:12:e2:48:dc:85:e4:04:d5:83:
-        c3:24:65:00:7c:4e:57:93:30:7e:ef:07:ef:e4:83:0d:96:77:
-        b0:b6:bd:22:1c:14:08:36:eb:20:7a:29:0d:52:2b:09:63:12:
-        12:66:0d:c1:66:90:01:9c:44:0a:4f:95:69:27:87:2e:21:50:
-        fd:b5:83:09:37:58:d5:3b:9f:0b:01:00:17:9a:fa:bd:60:a4:
-        66:88:36:d1:cc:ae:e4:5f:4a:8c:ee:8c:66:a8:bc:85:3b:79:
-        8f:98:12:48:14:99:21:15:c8:81:85:3c:fe:49:07:dc:59:9e:
-        76:ee:9d:ff:74:d5:76:99:1b:e4:e0:ef:a0:a9:2b:2f:29:4a:
-        b9:17:c2:ce:79:57:ec:bb:a1:dd:c8:4c:a7:b5:f1:bc:cb:b2:
-        b0:47:31:4e
------BEGIN CERTIFICATE-----
-MIICjjCCAXagAwIBAgIRANovbol7j2tW5blADKVh0U0wDQYJKoZIhvcNAQELBQAw
-LTESMBAGA1UECxMJb3BlbnNoaWZ0MRcwFQYDVQQDEw5rdWJlbGV0LXNpZ25lcjAe
-Fw0yMzA5MDEwMzExMTNaFw0yMzA5MDIwMDM2NTdaMEsxFTATBgNVBAoTDHN5c3Rl
-bTpub2RlczEyMDAGA1UEAxMpc3lzdGVtOm5vZGU6b2tkLTEub2tkNC5rdGRlbW8u
-ZHVja2Rucy5vcmcwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAATrq5FTq1BzTXXO
-8MYZphJQdORquNUNYl8ARG4UkRnbl6WVbvoXGw1KEyOm+yTW6P3A4OHy6ZScM2+P
-9fdXQhd3o1YwVDAOBgNVHQ8BAf8EBAMCBaAwEwYDVR0lBAwwCgYIKwYBBQUHAwIw
-DAYDVR0TAQH/BAIwADAfBgNVHSMEGDAWgBRKE7v1ljYBXLr+JgaWger1S2fSlTAN
-BgkqhkiG9w0BAQsFAAOCAQEAIHv3klu4BvuZGFO7AjkSmd2fgqXzoBhlnOscPa+9
-gexx7k2G4EzdOFZA1SrIteymvQm/D+/BgL+XpuELPkD6/DhaVE5FXSZSLS5K9Gw9
-wH2D2gLR84knrIxTVZ2fEjzqsPQAEuJI3IXkBNWDwyRlAHxOV5Mwfu8H7+SDDZZ3
-sLa9IhwUCDbrIHopDVIrCWMSEmYNwWaQAZxECk+VaSeHLiFQ/bWDCTdY1TufCwEA
-F5r6vWCkZog20cyu5F9KjO6MZqi8hTt5j5gSSBSZIRXIgYU8/kkH3Fmedu6d/3TV
-dpkb5ODvoKkrLylKuRfCznlX7Luh3chMp7XxvMuysEcxTg==
------END CERTIFICATE-----
-
-
-[root@okd-1 pki]# openssl  x509 -in kubelet-client.pem -text
-Certificate:
-    Data:
-        Version: 3 (0x2)
-        Serial Number:
-            da:2f:6e:89:7b:8f:6b:56:e5:b9:40:0c:a5:61:d1:4d
-        Signature Algorithm: sha256WithRSAEncryption
-        Issuer: OU = openshift, CN = kubelet-signer
-        Validity
-            Not Before: Sep  1 03:11:13 2023 GMT
-            Not After : Sep  2 00:36:57 2023 GMT
-        Subject: O = system:nodes, CN = system:node:okd-1.okd4.ktdemo.duckdns.org
-        Subject Public Key Info:
-            Public Key Algorithm: id-ecPublicKey
-                Public-Key: (256 bit)
-                pub:
-                    04:eb:ab:91:53:ab:50:73:4d:75:ce:f0:c6:19:a6:
-                    12:50:74:e4:6a:b8:d5:0d:62:5f:00:44:6e:14:91:
-                    19:db:97:a5:95:6e:fa:17:1b:0d:4a:13:23:a6:fb:
-                    24:d6:e8:fd:c0:e0:e1:f2:e9:94:9c:33:6f:8f:f5:
-                    f7:57:42:17:77
-                ASN1 OID: prime256v1
-                NIST CURVE: P-256
-        X509v3 extensions:
-            X509v3 Key Usage: critical
-                Digital Signature, Key Encipherment
-            X509v3 Extended Key Usage:
-                TLS Web Client Authentication
-            X509v3 Basic Constraints: critical
-                CA:FALSE
-            X509v3 Authority Key Identifier:
-                4A:13:BB:F5:96:36:01:5C:BA:FE:26:06:96:81:EA:F5:4B:67:D2:95
-    Signature Algorithm: sha256WithRSAEncryption
-    Signature Value:
-        20:7b:f7:92:5b:b8:06:fb:99:18:53:bb:02:39:12:99:dd:9f:
-        82:a5:f3:a0:18:65:9c:eb:1c:3d:af:bd:81:ec:71:ee:4d:86:
-        e0:4c:dd:38:56:40:d5:2a:c8:b5:ec:a6:bd:09:bf:0f:ef:c1:
-        80:bf:97:a6:e1:0b:3e:40:fa:fc:38:5a:54:4e:45:5d:26:52:
-        2d:2e:4a:f4:6c:3d:c0:7d:83:da:02:d1:f3:89:27:ac:8c:53:
-        55:9d:9f:12:3c:ea:b0:f4:00:12:e2:48:dc:85:e4:04:d5:83:
-        c3:24:65:00:7c:4e:57:93:30:7e:ef:07:ef:e4:83:0d:96:77:
-        b0:b6:bd:22:1c:14:08:36:eb:20:7a:29:0d:52:2b:09:63:12:
-        12:66:0d:c1:66:90:01:9c:44:0a:4f:95:69:27:87:2e:21:50:
-        fd:b5:83:09:37:58:d5:3b:9f:0b:01:00:17:9a:fa:bd:60:a4:
-        66:88:36:d1:cc:ae:e4:5f:4a:8c:ee:8c:66:a8:bc:85:3b:79:
-        8f:98:12:48:14:99:21:15:c8:81:85:3c:fe:49:07:dc:59:9e:
-        76:ee:9d:ff:74:d5:76:99:1b:e4:e0:ef:a0:a9:2b:2f:29:4a:
-        b9:17:c2:ce:79:57:ec:bb:a1:dd:c8:4c:a7:b5:f1:bc:cb:b2:
-        b0:47:31:4e
------BEGIN CERTIFICATE-----
-MIICjjCCAXagAwIBAgIRANovbol7j2tW5blADKVh0U0wDQYJKoZIhvcNAQELBQAw
-LTESMBAGA1UECxMJb3BlbnNoaWZ0MRcwFQYDVQQDEw5rdWJlbGV0LXNpZ25lcjAe
-Fw0yMzA5MDEwMzExMTNaFw0yMzA5MDIwMDM2NTdaMEsxFTATBgNVBAoTDHN5c3Rl
-bTpub2RlczEyMDAGA1UEAxMpc3lzdGVtOm5vZGU6b2tkLTEub2tkNC5rdGRlbW8u
-ZHVja2Rucy5vcmcwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAATrq5FTq1BzTXXO
-8MYZphJQdORquNUNYl8ARG4UkRnbl6WVbvoXGw1KEyOm+yTW6P3A4OHy6ZScM2+P
-9fdXQhd3o1YwVDAOBgNVHQ8BAf8EBAMCBaAwEwYDVR0lBAwwCgYIKwYBBQUHAwIw
-DAYDVR0TAQH/BAIwADAfBgNVHSMEGDAWgBRKE7v1ljYBXLr+JgaWger1S2fSlTAN
-BgkqhkiG9w0BAQsFAAOCAQEAIHv3klu4BvuZGFO7AjkSmd2fgqXzoBhlnOscPa+9
-gexx7k2G4EzdOFZA1SrIteymvQm/D+/BgL+XpuELPkD6/DhaVE5FXSZSLS5K9Gw9
-wH2D2gLR84knrIxTVZ2fEjzqsPQAEuJI3IXkBNWDwyRlAHxOV5Mwfu8H7+SDDZZ3
-sLa9IhwUCDbrIHopDVIrCWMSEmYNwWaQAZxECk+VaSeHLiFQ/bWDCTdY1TufCwEA
-F5r6vWCkZog20cyu5F9KjO6MZqi8hTt5j5gSSBSZIRXIgYU8/kkH3Fmedu6d/3TV
-dpkb5ODvoKkrLylKuRfCznlX7Luh3chMp7XxvMuysEcxTg==
------END CERTIFICATE-----
-[root@okd-1 pki]# ls
-kubelet-client.pem  kubelet-server.pem  kubelet.crt  kubelet.key
-[root@okd-1 pki]# openssl  x509 -in kubelet-server.pem -text
-Certificate:
-    Data:
-        Version: 3 (0x2)
-        Serial Number:
-            3e:09:e2:5b:a9:a2:08:bb:cd:81:89:39:53:2a:18:f6
-        Signature Algorithm: sha256WithRSAEncryption
-        Issuer: OU = openshift, CN = kubelet-signer
-        Validity
-            Not Before: Sep  1 03:11:34 2023 GMT
-            Not After : Sep  2 00:36:57 2023 GMT
-        Subject: O = system:nodes, CN = system:node:okd-1.okd4.ktdemo.duckdns.org
-        Subject Public Key Info:
-            Public Key Algorithm: id-ecPublicKey
-                Public-Key: (256 bit)
-                pub:
-                    04:60:0a:eb:a7:80:87:33:55:94:ad:76:af:b7:c3:
-                    67:ba:71:cc:b5:73:20:f3:be:27:b2:b9:3b:2f:b9:
-                    9a:ec:70:88:b7:58:65:ed:1b:16:95:ad:9f:d2:b1:
-                    82:73:11:3c:a2:df:20:79:5d:d6:dd:6d:40:17:3a:
-                    6a:44:c4:0c:a8
-                ASN1 OID: prime256v1
-                NIST CURVE: P-256
-        X509v3 extensions:
-            X509v3 Key Usage: critical
-                Digital Signature, Key Encipherment
-            X509v3 Extended Key Usage:
-                TLS Web Server Authentication
-            X509v3 Basic Constraints: critical
-                CA:FALSE
-            X509v3 Authority Key Identifier:
-                4A:13:BB:F5:96:36:01:5C:BA:FE:26:06:96:81:EA:F5:4B:67:D2:95
-            X509v3 Subject Alternative Name:
-                DNS:okd-1.okd4.ktdemo.duckdns.org, IP Address:192.168.1.146
-    Signature Algorithm: sha256WithRSAEncryption
-    Signature Value:
-        8a:95:28:9f:f7:6a:6a:69:7b:c2:ad:52:db:05:3a:b8:1d:f2:
-        26:4d:a4:ae:79:f5:2a:c6:66:35:ac:f3:e9:48:ac:d8:e9:6a:
-        23:a4:07:9f:be:78:cb:64:7e:45:4a:0f:80:06:e3:df:82:c2:
-        cc:fc:ee:93:01:63:f8:11:0c:28:a5:58:7a:87:ef:c4:3c:33:
-        ea:03:46:df:2d:94:ac:b0:e6:e2:4d:39:a0:07:6c:0c:b8:a8:
-        1b:17:01:69:58:2b:38:59:dd:d0:83:03:21:a9:c6:b3:d1:73:
-        c9:39:91:6f:71:b2:a1:2e:c7:62:3a:d0:d7:76:12:a4:28:1b:
-        a5:6e:55:d8:e4:20:38:6d:05:22:c8:6e:e1:94:6e:7f:b0:b8:
-        ee:53:06:fb:fe:cd:3b:78:a4:fe:8d:8f:db:6f:fa:0c:18:a0:
-        4f:cb:ac:37:fe:eb:8d:dd:f0:97:72:1c:54:ca:ac:91:3a:4b:
-        3e:b0:8c:55:ba:5d:22:5d:43:97:9d:ee:26:e8:7a:be:e7:da:
-        4c:3d:97:36:44:40:eb:3f:ca:0b:08:18:59:d4:05:e4:76:c5:
-        1a:0c:59:00:a8:8d:29:93:68:f1:7d:6d:fb:29:b5:00:32:34:
-        2a:d4:be:3b:dd:63:9a:aa:1e:d4:40:21:d2:d6:c6:c2:7f:20:
-        2a:6d:1e:71
------BEGIN CERTIFICATE-----
-MIICvzCCAaegAwIBAgIQPgniW6miCLvNgYk5UyoY9jANBgkqhkiG9w0BAQsFADAt
-MRIwEAYDVQQLEwlvcGVuc2hpZnQxFzAVBgNVBAMTDmt1YmVsZXQtc2lnbmVyMB4X
-DTIzMDkwMTAzMTEzNFoXDTIzMDkwMjAwMzY1N1owSzEVMBMGA1UEChMMc3lzdGVt
-Om5vZGVzMTIwMAYDVQQDEylzeXN0ZW06bm9kZTpva2QtMS5va2Q0Lmt0ZGVtby5k
-dWNrZG5zLm9yZzBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABGAK66eAhzNVlK12
-r7fDZ7pxzLVzIPO+J7K5Oy+5muxwiLdYZe0bFpWtn9KxgnMRPKLfIHld1t1tQBc6
-akTEDKijgYcwgYQwDgYDVR0PAQH/BAQDAgWgMBMGA1UdJQQMMAoGCCsGAQUFBwMB
-MAwGA1UdEwEB/wQCMAAwHwYDVR0jBBgwFoAUShO79ZY2AVy6/iYGloHq9Utn0pUw
-LgYDVR0RBCcwJYIdb2tkLTEub2tkNC5rdGRlbW8uZHVja2Rucy5vcmeHBMCoAZIw
-DQYJKoZIhvcNAQELBQADggEBAIqVKJ/3amppe8KtUtsFOrgd8iZNpK559SrGZjWs
-8+lIrNjpaiOkB5++eMtkfkVKD4AG49+Cwsz87pMBY/gRDCilWHqH78Q8M+oDRt8t
-lKyw5uJNOaAHbAy4qBsXAWlYKzhZ3dCDAyGpxrPRc8k5kW9xsqEux2I60Nd2EqQo
-G6VuVdjkIDhtBSLIbuGUbn+wuO5TBvv+zTt4pP6Nj9tv+gwYoE/LrDf+643d8Jdy
-HFTKrJE6Sz6wjFW6XSJdQ5ed7iboer7n2kw9lzZEQOs/ygsIGFnUBeR2xRoMWQCo
-jSmTaPF9bfsptQAyNCrUvjvdY5qqHtRAIdLWxsJ/ICptHnE=
------END CERTIFICATE-----
-
-
-[root@okd-1 core]# oc get csr
-NAME                                             AGE   SIGNERNAME                                    REQUESTOR                                                                         REQUESTEDDURATION   CONDITION
-csr-4zbk8                                        19s   kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper         <none>              Pending
-csr-5nbgm                                        16d   kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper         <none>              Pending
-csr-cck4v                                        16d   kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper         <none>              Approved,Issued
-csr-dxq7v                                        16d   kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper         <none>              Pending
-csr-k8cns                                        16d   kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper         <none>              Pending
-csr-lmw6j                                        16d   kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper         <none>              Pending
-csr-phl8h                                        16d   kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper         <none>              Pending
-csr-qn8pj                                        16d   kubernetes.io/kubelet-serving                 system:node:okd-1.okd4.ktdemo.duckdns.org                                         <none>              Approved,Issued
-csr-r8554                                        16d   kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper         <none>              Approved,Issued
-system:openshift:openshift-authenticator-d7v5c   16d   kubernetes.io/kube-apiserver-client           system:serviceaccount:openshift-authentication-operator:authentication-operator   <none>              Approved,Issued
-system:openshift:openshift-monitoring-np6r8      16d   kubernetes.io/kube-apiserver-client           system:serviceaccount:openshift-monitoring:cluster-monitoring-operator            <none>              Approved,Issued
-
-
-
-3번노드 재설치
-
-[root@okd-1 core]# oc get csr
-NAME                                             AGE   SIGNERNAME                                    REQUESTOR                                                                         REQUESTEDDURATION   CONDITION
-csr-4zbk8                                        67m   kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper         <none>              Approved,Issued
-csr-5nbgm                                        16d   kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper         <none>              Approved,Issued
-csr-6b8z9                                        11m   kubernetes.io/kubelet-serving                 system:node:okd-1.okd4.ktdemo.duckdns.org                                         <none>              Approved,Issued
-csr-b2hhb                                        63m   kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper         <none>              Approved,Issued
-csr-cck4v                                        17d   kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper         <none>              Approved,Issued
-csr-dxq7v                                        16d   kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper         <none>              Approved,Issued
-csr-dxtxg                                        32s   kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper         <none>              Pending
-csr-k8cns                                        16d   kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper         <none>              Approved,Issued
-csr-lmw6j                                        16d   kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper         <none>              Approved,Issued
-csr-nr9dz                                        42s   kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper         <none>              Pending
-
-
-승인하고 나면 
-
-[root@okd-1 core]# oc get csr
-NAME                                             AGE    SIGNERNAME                                    REQUESTOR                                                                         REQUESTEDDURATION   CONDITION
-csr-4zbk8                                        69m    kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper         <none>              Approved,Issued
-csr-5nbgm                                        16d    kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper         <none>              Approved,Issued
-csr-6b8z9                                        13m    kubernetes.io/kubelet-serving                 system:node:okd-1.okd4.ktdemo.duckdns.org                                         <none>              Approved,Issued
-csr-6f5jq                                        14s    kubernetes.io/kubelet-serving                 system:node:okd-3.okd4.ktdemo.duckdns.org                                         <none>              Pending
-
-
-4번 서버
-
-[root@bastion ~]# oc get csr
-NAME        AGE   SIGNERNAME                                    REQUESTOR                                                                   REQUESTEDDURATION   CONDITION
-csr-fzpbw   8s    kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper   <none>              Pending
-csr-sphb7   19s   kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper   <none>              Pending
-
-[root@bastion ~]# oc get csr
-NAME        AGE    SIGNERNAME                                    REQUESTOR                                                                   REQUESTEDDURATION   CONDITION
-csr-fzpbw   108s   kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper   <none>              Approved,Issued
-csr-nn266   4s     kubernetes.io/kubelet-serving                 system:node:okd-4.okd4.ktdemo.duckdns.org                                   <none>              Pending
-csr-sphb7   119s   kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper   <none>              Approved,Issued
-[root@bastion ~]#  oc adm certificate approve csr-nn266
-certificatesigningrequest.certificates.k8s.io/csr-nn266 approved
-
-
-journalctl -u kubelet 에서 특정 날짜 에러 보기
-
-
-No valid client certificate is found but the server is not responsive. A restart may be necessary to retrieve new initial credentials." lastCertificateAvailabilityTim
-
-https://access.redhat.com/solutions/6748611
 
 
 <br/>
